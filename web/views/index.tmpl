@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="id" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ .title }}</title>
+    <!-- Bootstrap CSS v5.3.8 (via npm install) -->
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+    <!-- Bootstrap Icons v1.13.2 -->
+    <link rel="stylesheet" href="/static/css/bootstrap-icons.min.css">
+    <style>
+        :root {
+            --sidebar-width: 260px;
+        }
+        body {
+            min-height: 100vh;
+            background-color: #0d1117;
+            color: #e6edf3;
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        }
+        .sidebar {
+            width: var(--sidebar-width);
+            min-height: 100vh;
+            background-color: #161b22;
+            border-right: 1px solid #30363d;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 1000;
+        }
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 2rem;
+        }
+        .card {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 0.75rem;
+        }
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.5rem;
+            font-size: 1.5rem;
+        }
+        .nav-link {
+            color: #8b949e;
+            border-radius: 0.5rem;
+            padding: 0.65rem 1rem;
+            margin-bottom: 0.25rem;
+            transition: all 0.2s ease;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #58a6ff;
+            background-color: rgba(56, 139, 253, 0.1);
+        }
+        .table {
+            color: #e6edf3;
+        }
+        .table th {
+            border-color: #30363d;
+            color: #8b949e;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+        .table td {
+            border-color: #30363d;
+            vertical-align: middle;
+        }
+        .badge-status {
+            font-size: 0.75rem;
+            padding: 0.35em 0.65em;
+        }
+        .live-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #238636;
+            display: inline-block;
+            margin-right: 6px;
+            box-shadow: 0 0 8px #2ea043;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar d-flex flex-column p-3">
+        <div class="d-flex align-items-center mb-4 px-2">
+            <i class="bi bi-envelope-paper-heart-fill text-primary fs-3 me-2"></i>
+            <div>
+                <h5 class="mb-0 fw-bold tracking-tight">RaHaMail Server</h5>
+                <span class="badge text-bg-info-subtle text-info border border-info-subtle" style="font-size: 0.65rem;">
+                    <i class="bi bi-database me-1"></i> {{ .db_driver }}
+                </span>
+            </div>
+        </div>
+
+        <ul class="nav nav-pills flex-column mb-auto">
+            <li class="nav-item">
+                <a href="#dashboard" class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-dashboard">
+                    <i class="bi bi-speedometer2 me-2"></i> Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#webmail" class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-webmail">
+                    <i class="bi bi-inbox-fill me-2"></i> Mailbox (Inbox)
+                    <span id="unreadBadge" class="badge rounded-pill bg-danger float-end" style="display: none;">0</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#compose" class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-compose">
+                    <i class="bi bi-send-plus-fill me-2"></i> Kirim Email (REST)
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#domains" class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-domains">
+                    <i class="bi bi-globe me-2"></i> Domains & DKIM
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#logs" class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-logs">
+                    <i class="bi bi-broadcast me-2"></i> Live SSE Stream
+                </a>
+            </li>
+        </ul>
+
+        <hr class="border-secondary my-3">
+
+        <div class="px-2 mb-3">
+            <span class="badge text-bg-secondary w-100 py-2 d-flex align-items-center justify-content-center mb-1" style="font-size: 0.65rem;">
+                <i class="bi bi-shield-check me-1"></i> GNU GPLv3 / Commercial
+            </span>
+            <a href="https://www.paypal.com/paypalme" target="_blank" class="text-decoration-none text-secondary d-block text-center" style="font-size: 0.65rem;">
+                <i class="bi bi-paypal text-primary me-1"></i> Donate via PayPal
+            </a>
+        </div>
+
+        <div class="dropdown px-2">
+            <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" alt="Admin" width="32" height="32" class="rounded-circle me-2">
+                <strong>admin@example.com</strong>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-dark text-small shadow">
+                <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i> Pengaturan</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-box-arrow-right me-2"></i> Keluar</a></li>
+            </ul>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        <!-- Top Navigation Bar -->
+        <header class="d-flex justify-content-between align-items-center pb-3 mb-4 border-bottom border-secondary">
+            <div>
+                <h4 class="fw-bold mb-0" id="page-title">{{ .title }}</h4>
+                <p class="text-secondary mb-0 small">Server email real-time bertenaga Server-Sent Events (SSE)</p>
+            </div>
+            <div class="d-flex gap-2 align-items-center">
+                <!-- Status SSE Connection -->
+                <span class="badge text-bg-dark border border-secondary d-flex align-items-center py-2 px-3" id="sseBadge">
+                    <span class="live-indicator" id="sseIndicator"></span>
+                    <span id="sseStatusText">SSE: CONNECTING...</span>
+                </span>
+                <button class="btn btn-outline-secondary btn-sm" id="btnThemeToggle" title="Ganti Tema">
+                    <i class="bi bi-sun-fill" id="themeIcon"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Tab Contents -->
+        <div class="tab-content">
+            <!-- TAB 1: DASHBOARD -->
+            <div class="tab-pane fade show active" id="tab-dashboard">
+                <!-- Stats Row -->
+                <div class="row g-4 mb-4">
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <div class="card p-3 shadow-sm h-100">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <span class="text-secondary small fw-medium">Total Messages</span>
+                                    <h3 class="fw-bold my-1" id="statEmails">{{ .stats.messages }}</h3>
+                                    <span class="text-success small"><i class="bi bi-lightning-charge-fill"></i> Live Sync via SSE</span>
+                                </div>
+                                <div class="stat-icon bg-primary-subtle text-primary">
+                                    <i class="bi bi-inbox-fill"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <div class="card p-3 shadow-sm h-100">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <span class="text-secondary small fw-medium">Active Domains</span>
+                                    <h3 class="fw-bold my-1" id="statDomains">{{ .stats.domains }}</h3>
+                                    <span class="text-info small"><i class="bi bi-key-fill"></i> DKIM 2048-bit</span>
+                                </div>
+                                <div class="stat-icon bg-info-subtle text-info">
+                                    <i class="bi bi-hdd-network-fill"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <div class="card p-3 shadow-sm h-100">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <span class="text-secondary small fw-medium">Total Users</span>
+                                    <h3 class="fw-bold my-1" id="statUsers">{{ .stats.users }}</h3>
+                                    <span class="text-success small"><i class="bi bi-people-fill"></i> Registered Accounts</span>
+                                </div>
+                                <div class="stat-icon bg-success-subtle text-success">
+                                    <i class="bi bi-people-fill"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <div class="card p-3 shadow-sm h-100">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <span class="text-secondary small fw-medium">MTA Delivery Rate</span>
+                                    <h3 class="fw-bold my-1">99.8%</h3>
+                                    <span class="text-success small"><i class="bi bi-check-all"></i> High Reputation</span>
+                                </div>
+                                <div class="stat-icon bg-warning-subtle text-warning">
+                                    <i class="bi bi-send-check-fill"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Server Listeners & Health -->
+                <div class="row g-4 mb-4">
+                    <div class="col-12 col-lg-8">
+                        <div class="card p-4 h-100 shadow-sm">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="fw-bold mb-0">Status Protokol & Port Listener</h5>
+                                <span class="badge text-bg-success"><i class="bi bi-check-circle-fill me-1"></i> Running</span>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Protokol</th>
+                                            <th>Port</th>
+                                            <th>Enkripsi (TLS)</th>
+                                            <th>Backend Go Handler</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><i class="bi bi-envelope text-primary me-2"></i><strong>SMTP Inbound</strong></td>
+                                            <td><span class="badge text-bg-dark border border-secondary">25</span></td>
+                                            <td>STARTTLS (Opportunistic)</td>
+                                            <td><code>emersion/go-smtp</code></td>
+                                            <td><span class="badge text-bg-success badge-status">READY (FASE 3)</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td><i class="bi bi-envelope-arrow-up text-info me-2"></i><strong>SMTP Submission</strong></td>
+                                            <td><span class="badge text-bg-dark border border-secondary">587 / 465</span></td>
+                                            <td>STARTTLS / Implicit TLS</td>
+                                            <td><code>emersion/go-smtp</code></td>
+                                            <td><span class="badge text-bg-success badge-status">READY (FASE 3)</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td><i class="bi bi-folder2-open text-warning me-2"></i><strong>IMAP Server</strong></td>
+                                            <td><span class="badge text-bg-dark border border-secondary">993 / 143</span></td>
+                                            <td>SSL/TLS / STARTTLS</td>
+                                            <td><code>emersion/go-imap/v2</code></td>
+                                            <td><span class="badge text-bg-secondary badge-status">FASE 5</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td><i class="bi bi-broadcast text-danger me-2"></i><strong>REST API & SSE</strong></td>
+                                            <td><span class="badge text-bg-dark border border-secondary">8080</span></td>
+                                            <td>HTTP/SSE Stream</td>
+                                            <td><code>gin-gonic/gin + .tmpl</code></td>
+                                            <td><span class="badge text-bg-success badge-status">LIVE STREAM</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-lg-4">
+                        <div class="card p-4 h-100 shadow-sm">
+                            <h5 class="fw-bold mb-3">Status Autentikasi DNS</h5>
+                            <div class="list-group list-group-flush bg-transparent">
+                                <div class="list-group-item bg-transparent text-white px-0 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>SPF Record</strong>
+                                        <div class="text-secondary small">v=spf1 mx ~all</div>
+                                    </div>
+                                    <span class="badge text-bg-success"><i class="bi bi-check-lg"></i> Valid</span>
+                                </div>
+                                <div class="list-group-item bg-transparent text-white px-0 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>DKIM Signature</strong>
+                                        <div class="text-secondary small">Selector: mail._domainkey</div>
+                                    </div>
+                                    <span class="badge text-bg-success"><i class="bi bi-check-lg"></i> Valid</span>
+                                </div>
+                                <div class="list-group-item bg-transparent text-white px-0 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>DMARC Policy</strong>
+                                        <div class="text-secondary small">p=quarantine; pct=100</div>
+                                    </div>
+                                    <span class="badge text-bg-success"><i class="bi bi-check-lg"></i> Valid</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: WEBMAIL / INBOX -->
+            <div class="tab-pane fade" id="tab-webmail">
+                <div class="card p-4 shadow-sm">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0"><i class="bi bi-inbox me-2"></i> Kotak Masuk (INBOX)</h5>
+                        <span class="badge text-bg-primary-subtle text-primary border border-primary-subtle">Auto-Updated via SSE</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th width="40"><input type="checkbox" class="form-check-input"></th>
+                                    <th>Pengirim</th>
+                                    <th>Subjek</th>
+                                    <th>SPF/DKIM</th>
+                                    <th>Waktu</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inboxTableBody">
+                                {{ range .messages }}
+                                <tr>
+                                    <td><input type="checkbox" class="form-check-input"></td>
+                                    <td><strong>{{ .From }}</strong></td>
+                                    <td>{{ .Subject }}<br><span class="text-secondary small">{{ .Snippet }}</span></td>
+                                    <td><span class="badge text-bg-success-subtle text-success border border-success-subtle">{{ .SPFStatus }}/{{ .DKIMStatus }} PASS</span></td>
+                                    <td>{{ .CreatedAt.Format "15:04:05" }}</td>
+                                    <td><button class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i> Baca</button></td>
+                                </tr>
+                                {{ else }}
+                                <tr>
+                                    <td colspan="6" class="text-center text-secondary py-4">Belum ada email yang diterima</td>
+                                </tr>
+                                {{ end }}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: COMPOSE EMAIL -->
+            <div class="tab-pane fade" id="tab-compose">
+                <div class="card p-4 shadow-sm" style="max-width: 800px; margin: auto;">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="bi bi-send text-primary fs-4 me-2"></i>
+                        <h5 class="fw-bold mb-0">Kirim Email Cepat (REST API + SSE Broadcast)</h5>
+                    </div>
+                    <form id="composeForm">
+                        <div class="mb-3">
+                            <label class="form-label text-secondary small fw-bold">DARI (FROM)</label>
+                            <input type="email" class="form-control bg-dark text-white border-secondary" id="fromEmail" value="admin@example.com" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-secondary small fw-bold">KEPADA (TO)</label>
+                            <input type="email" class="form-control bg-dark text-white border-secondary" id="toEmail" placeholder="penerima@tujuan.com" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-secondary small fw-bold">SUBJEK</label>
+                            <input type="text" class="form-control bg-dark text-white border-secondary" id="subject" placeholder="Subjek email..." required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-secondary small fw-bold">PESAN (HTML / PLAIN TEXT)</label>
+                            <textarea class="form-control bg-dark text-white border-secondary" id="messageBody" rows="6" placeholder="Tulis isi email di sini..."></textarea>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-secondary small"><i class="bi bi-broadcast text-success"></i> Pengiriman akan disiarkan ke dashboard via SSE stream</span>
+                            <button type="button" class="btn btn-primary px-4" id="btnSubmitSend" onclick="sendEmailAjax()">
+                                <i class="bi bi-send-fill me-1"></i> Kirim Sekarang
+                            </button>
+                        </div>
+                    </form>
+                    <div id="alertSuccess" class="alert alert-success mt-3 d-none" role="alert">
+                        <i class="bi bi-check-circle-fill me-2"></i> <span id="alertMsg"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: DOMAIN MANAGEMENT -->
+            <div class="tab-pane fade" id="tab-domains">
+                <div class="card p-4 shadow-sm">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0"><i class="bi bi-globe me-2"></i> Daftar Domain & DKIM Key</h5>
+                        <button class="btn btn-sm btn-primary"><i class="bi bi-plus-lg"></i> Tambah Domain Baru</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Domain</th>
+                                    <th>DKIM Selector</th>
+                                    <th>Panjang Kunci</th>
+                                    <th>Status DKIM</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="domainTableBody">
+                                {{ range .domains }}
+                                <tr>
+                                    <td><strong>{{ .Name }}</strong></td>
+                                    <td><code>{{ .DKIMSelector }}</code></td>
+                                    <td>RSA 2048-bit</td>
+                                    <td><span class="badge text-bg-success">ACTIVE</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-info me-1"><i class="bi bi-key"></i> DNS TXT</button>
+                                    </td>
+                                </tr>
+                                {{ end }}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 5: LIVE SSE STREAM LOGS -->
+            <div class="tab-pane fade" id="tab-logs">
+                <div class="card p-4 shadow-sm">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0"><i class="bi bi-broadcast text-danger me-2"></i> Real-time Server-Sent Events (SSE) Feed</h5>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="clearLogs()"><i class="bi bi-trash"></i> Bersihkan Log</button>
+                    </div>
+                    <div id="sseTerminal" class="bg-black p-3 rounded font-monospace small text-light" style="max-height: 420px; overflow-y: auto;">
+                        <div><span class="text-secondary">[*]</span> Menginisialisasi koneksi EventSource ke <code>/api/v1/sse</code>...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bootstrap Bundle JS v5.3.8 (via npm install) -->
+    <script src="/static/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Update Page Title on Tab Switch
+        const triggerTabList = document.querySelectorAll('.sidebar .nav-link');
+        triggerTabList.forEach(triggerEl => {
+            triggerEl.addEventListener('shown.bs.tab', event => {
+                const text = event.target.innerText.trim();
+                document.getElementById('page-title').innerText = text;
+            });
+        });
+
+        // Toggle Dark / Light Theme
+        const toggleBtn = document.getElementById('btnThemeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        toggleBtn.addEventListener('click', () => {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-bs-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-bs-theme', newTheme);
+            if (newTheme === 'light') {
+                themeIcon.classList.replace('bi-sun-fill', 'bi-moon-fill');
+                document.body.style.backgroundColor = '#f8f9fa';
+                document.body.style.color = '#212529';
+            } else {
+                themeIcon.classList.replace('bi-moon-fill', 'bi-sun-fill');
+                document.body.style.backgroundColor = '#0d1117';
+                document.body.style.color = '#e6edf3';
+            }
+        });
+
+        function appendLog(category, message, colorClass = 'text-info') {
+            const terminal = document.getElementById('sseTerminal');
+            const time = new Date().toLocaleTimeString();
+            const logLine = document.createElement('div');
+            logLine.innerHTML = `<span class="text-secondary">[${time}]</span> <span class="${colorClass}">[${category}]</span> ${message}`;
+            terminal.appendChild(logLine);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        function clearLogs() {
+            document.getElementById('sseTerminal').innerHTML = '<div><span class="text-secondary">[*]</span> Log dibersihkan. Menunggu event baru...</div>';
+        }
+
+        // ==========================================
+        // SERVER-SENT EVENTS (SSE) CLIENT SETUP
+        // ==========================================
+        let evtSource;
+        function initSSE() {
+            const sseBadge = document.getElementById('sseBadge');
+            const sseIndicator = document.getElementById('sseIndicator');
+            const sseStatusText = document.getElementById('sseStatusText');
+
+            evtSource = new EventSource('/api/v1/sse');
+
+            evtSource.onopen = function() {
+                sseBadge.className = 'badge text-bg-success d-flex align-items-center py-2 px-3';
+                sseIndicator.style.backgroundColor = '#3fb950';
+                sseStatusText.innerText = 'SSE: CONNECTED (LIVE)';
+                appendLog('SSE-SYSTEM', 'Koneksi stream real-time aktif', 'text-success');
+            };
+
+            evtSource.onerror = function(err) {
+                sseBadge.className = 'badge text-bg-danger d-flex align-items-center py-2 px-3';
+                sseIndicator.style.backgroundColor = '#f85149';
+                sseStatusText.innerText = 'SSE: DISCONNECTED';
+                appendLog('SSE-SYSTEM', 'Koneksi terputus, mencoba reconnect otomatis...', 'text-danger');
+            };
+
+            // Listener event pesan sambutan
+            evtSource.addEventListener('connected', function(e) {
+                const data = JSON.parse(e.data);
+                appendLog('SSE-INIT', data.message, 'text-primary');
+            });
+
+            // Listener event pembaruan statistik
+            evtSource.addEventListener('stats', function(e) {
+                const stats = JSON.parse(e.data);
+                if (stats.messages !== undefined) document.getElementById('statEmails').innerText = stats.messages;
+                if (stats.domains !== undefined) document.getElementById('statDomains').innerText = stats.domains;
+                if (stats.users !== undefined) document.getElementById('statUsers').innerText = stats.users;
+                appendLog('SSE-STATS', `Statistik diperbarui: Total Pesan=${stats.messages}, Domains=${stats.domains}`, 'text-warning');
+            });
+
+            // Listener event email baru yang masuk / terkirim
+            evtSource.addEventListener('new_email', function(e) {
+                const email = JSON.parse(e.data);
+                appendLog('SSE-EMAIL', `Email Baru: Dari [${email.from}] ke [${email.to}] - "${email.subject}"`, 'text-success');
+
+                // Tambahkan baris baru ke tabel Inbox secara real-time
+                const tbody = document.getElementById('inboxTableBody');
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `
+                    <td><input type="checkbox" class="form-check-input"></td>
+                    <td><strong>${email.from}</strong></td>
+                    <td>${email.subject}<br><span class="text-secondary small">${email.snippet || ''}</span></td>
+                    <td><span class="badge text-bg-success-subtle text-success border border-success-subtle">SPF/DKIM PASS</span></td>
+                    <td>Baru saja</td>
+                    <td><button class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i> Baca</button></td>
+                `;
+                tbody.insertBefore(newRow, tbody.firstChild);
+
+                // Efek visual update badge
+                const unreadBadge = document.getElementById('unreadBadge');
+                unreadBadge.style.display = 'inline-block';
+                unreadBadge.innerText = parseInt(unreadBadge.innerText || '0') + 1;
+            });
+        }
+
+        // Send Email Handler
+        async function sendEmailAjax() {
+            const from = document.getElementById('fromEmail').value;
+            const to = document.getElementById('toEmail').value;
+            const subject = document.getElementById('subject').value;
+            const body = document.getElementById('messageBody').value;
+
+            if (!to || !subject) {
+                alert('Penerima dan Subjek wajib diisi!');
+                return;
+            }
+
+            const btn = document.getElementById('btnSubmitSend');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Mengirim...';
+
+            try {
+                const res = await fetch('/api/v1/email/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ from, to, subject, body })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    const alertBox = document.getElementById('alertSuccess');
+                    document.getElementById('alertMsg').innerText = `${data.message} (Message ID: #${data.data.id})`;
+                    alertBox.classList.remove('d-none');
+                    document.getElementById('subject').value = '';
+                    document.getElementById('messageBody').value = '';
+                    setTimeout(() => alertBox.classList.add('d-none'), 5000);
+                } else {
+                    alert('Gagal: ' + (data.error || 'Terjadi kesalahan sistem'));
+                }
+            } catch (err) {
+                alert('Kesalahan jaringan: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-send-fill me-1"></i> Kirim Sekarang';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', initSSE);
+    </script>
+</body>
+</html>

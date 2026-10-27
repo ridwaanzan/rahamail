@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="id" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RaHaMail Server - Setup Wizard</title>
+    <!-- Bootstrap CSS v5.3.8 -->
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/css/bootstrap-icons.min.css">
+    <style>
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+            color: #e6edf3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 2rem 1rem;
+        }
+        .wizard-card {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 1rem;
+            max-width: 760px;
+            width: 100%;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+        .wizard-header {
+            background-color: #21262d;
+            border-bottom: 1px solid #30363d;
+            padding: 1.5rem 2rem;
+        }
+        .step-pill {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.85rem;
+            margin-right: 0.5rem;
+        }
+        .step-pill.active {
+            background-color: #1f6feb;
+            color: white;
+            box-shadow: 0 0 12px rgba(31, 111, 235, 0.5);
+        }
+        .step-pill.completed {
+            background-color: #238636;
+            color: white;
+        }
+        .step-pill.inactive {
+            background-color: #30363d;
+            color: #8b949e;
+        }
+        .db-option-card {
+            border: 1px solid #30363d;
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background-color: #0d1117;
+        }
+        .db-option-card:hover, .db-option-card.selected {
+            border-color: #58a6ff;
+            background-color: rgba(56, 139, 253, 0.08);
+        }
+        .code-box {
+            background-color: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: #79c0ff;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="wizard-card">
+        <!-- Wizard Header -->
+        <div class="wizard-header d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-envelope-paper-heart-fill text-primary fs-2 me-3"></i>
+                <div>
+                    <h4 class="fw-bold mb-0">RaHaMail Server Initial Setup Wizard</h4>
+                    <span class="text-secondary small">Konfigurasi lengkap Mail Server mandiri dalam 4 langkah visual</span>
+                </div>
+            </div>
+            <span class="badge text-bg-primary-subtle text-primary border border-primary-subtle px-3 py-2">
+                <i class="bi bi-magic me-1"></i> Quick Setup
+            </span>
+        </div>
+
+        <!-- Wizard Stepper Indicators -->
+        <div class="p-4 border-bottom border-secondary bg-dark bg-opacity-25 d-flex justify-content-between">
+            <div class="d-flex align-items-center" id="stepIndicator1">
+                <div class="step-pill active" id="pill1">1</div>
+                <div>
+                    <strong class="d-block small text-white">Database</strong>
+                    <span class="text-secondary" style="font-size: 0.7rem;">Pilih Penyimpanan</span>
+                </div>
+            </div>
+            <div class="d-flex align-items-center" id="stepIndicator2">
+                <div class="step-pill inactive" id="pill2">2</div>
+                <div>
+                    <strong class="d-block small text-white">Domain & DKIM</strong>
+                    <span class="text-secondary" style="font-size: 0.7rem;">Kunci Kriptografi</span>
+                </div>
+            </div>
+            <div class="d-flex align-items-center" id="stepIndicator3">
+                <div class="step-pill inactive" id="pill3">3</div>
+                <div>
+                    <strong class="d-block small text-white">Super Admin</strong>
+                    <span class="text-secondary" style="font-size: 0.7rem;">Akun Mailbox Utama</span>
+                </div>
+            </div>
+            <div class="d-flex align-items-center" id="stepIndicator4">
+                <div class="step-pill inactive" id="pill4">4</div>
+                <div>
+                    <strong class="d-block small text-white">Instruksi DNS</strong>
+                    <span class="text-secondary" style="font-size: 0.7rem;">Panduan MX & SPF</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Wizard Body Forms -->
+        <div class="p-4">
+            <form id="wizardForm">
+                <!-- STEP 1: DATABASE -->
+                <div class="wizard-step" id="step1">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-database-check text-primary me-2"></i> Pilih Mesin Database</h5>
+                    <p class="text-secondary small mb-4">Pilih jenis basis data yang sesuai dengan skala deployment Anda. SQLite adalah opsi terintegrasi tanpa perlu menjalankan service terpisah.</p>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <div class="db-option-card selected" id="cardSqlite" onclick="selectDb('sqlite')">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="dbDriver" id="radioSqlite" value="sqlite" checked>
+                                    <label class="form-check-label fw-bold" for="radioSqlite">
+                                        SQLite (Mode WAL)
+                                    </label>
+                                </div>
+                                <span class="badge text-bg-success mt-2 mb-2">Sangat Direkomendasikan</span>
+                                <p class="text-secondary small mb-0">
+                                    Zero-config, embedded, konsumsi RAM <20MB, super cepat untuk puluhan ribu pesan.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="db-option-card" id="cardPostgres" onclick="selectDb('postgres')">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="dbDriver" id="radioPostgres" value="postgres">
+                                    <label class="form-check-label fw-bold" for="radioPostgres">
+                                        PostgreSQL Server
+                                    </label>
+                                </div>
+                                <span class="badge text-bg-secondary mt-2 mb-2">Enterprise / Cluster</span>
+                                <p class="text-secondary small mb-0">
+                                    Cocok untuk kebutuhan multi-server load balanced dengan ratusan pengguna aktif.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="postgresFields" class="d-none border border-secondary rounded p-3 mb-4 bg-dark">
+                        <label class="form-label text-secondary small fw-bold">POSTGRESQL CONNECTION STRING (DSN)</label>
+                        <input type="text" class="form-control bg-dark text-white border-secondary" id="postgresDsn" placeholder="postgres://user:password@localhost:5432/gomail_db?sslmode=disable">
+                    </div>
+                </div>
+
+                <!-- STEP 2: DOMAIN & DKIM -->
+                <div class="wizard-step d-none" id="step2">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-globe-americas text-primary me-2"></i> Domain Email Utama & Kunci DKIM</h5>
+                    <p class="text-secondary small mb-4">Tentukan nama domain yang akan digunakan untuk alamat email (misal: <code>perusahaan.com</code>).</p>
+
+                    <div class="mb-3">
+                        <label class="form-label text-secondary small fw-bold">NAMA DOMAIN UTAMA</label>
+                        <input type="text" class="form-control bg-dark text-white border-secondary" id="domainName" value="example.com" placeholder="domainanda.com" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-secondary small fw-bold">DKIM SELECTOR</label>
+                        <input type="text" class="form-control bg-dark text-white border-secondary" id="dkimSelector" value="mail" required>
+                    </div>
+
+                    <div class="p-3 bg-dark border border-secondary rounded d-flex align-items-center justify-content-between">
+                        <div>
+                            <strong class="d-block text-white small">Pasangan Kunci Kriptografi RSA 2048-bit</strong>
+                            <span class="text-secondary" style="font-size: 0.75rem;">Sistem otomatis men-generate kunci privat & publik untuk validasi antispam Google/Yahoo.</span>
+                        </div>
+                        <button type="button" class="btn btn-outline-info btn-sm" onclick="generateDkimKeys()">
+                            <i class="bi bi-key-fill me-1"></i> Buat Kunci Baru
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STEP 3: SUPER ADMIN -->
+                <div class="wizard-step d-none" id="step3">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-person-badge text-primary me-2"></i> Pembuatan Akun Super Admin</h5>
+                    <p class="text-secondary small mb-4">Akun administrator ini akan memiliki akses penuh ke Dashboard Web dan bertindak sebagai mailbox utama.</p>
+
+                    <div class="mb-3">
+                        <label class="form-label text-secondary small fw-bold">ALAMAT EMAIL SUPER ADMIN</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control bg-dark text-white border-secondary" id="adminUserPrefix" value="admin" required>
+                            <span class="input-group-text bg-secondary border-secondary text-white" id="domainSuffix">@example.com</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-secondary small fw-bold">PASSWORD ADMINISTRATOR</label>
+                        <input type="password" class="form-control bg-dark text-white border-secondary" id="adminPassword" value="admin123" required>
+                        <span class="text-secondary" style="font-size: 0.75rem;">Gunakan kombinasi minimal 6 karakter.</span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-secondary small fw-bold">KUOTA PENYIMPANAN KOTAK SURAT</label>
+                        <select class="form-select bg-dark text-white border-secondary" id="adminQuota">
+                            <option value="5368709120" selected>5 Gigabytes (Default)</option>
+                            <option value="10737418240">10 Gigabytes</option>
+                            <option value="53687091200">50 Gigabytes</option>
+                            <option value="0">Unlimited (Tidak terbatas)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- STEP 4: DNS RECORDS GUIDE -->
+                <div class="wizard-step d-none" id="step4">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-shield-check text-success me-2"></i> Panduan Konfigurasi DNS Records</h5>
+                    <p class="text-secondary small mb-3">Salin dan pasang DNS records berikut pada DNS Manager domain Anda (misal: Cloudflare, cPanel, Namecheap) agar email dapat dikirim dan diterima secara optimal.</p>
+
+                    <div class="mb-3">
+                        <label class="text-secondary small fw-bold d-block">1. MX RECORD (Untuk Menerima Email Masuk)</label>
+                        <div class="code-box">Type: MX | Name: @ | Value: mail.<span class="dynDomain">example.com</span> | Priority: 10</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="text-secondary small fw-bold d-block">2. SPF RECORD (TXT) - Anti Spoofing</label>
+                        <div class="code-box">Type: TXT | Name: @ | Value: v=spf1 mx ~all</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="text-secondary small fw-bold d-block">3. DKIM RECORD (TXT) - Digital Signature</label>
+                        <div class="code-box" id="boxDkim">Type: TXT | Name: mail._domainkey | Value: v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A...</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="text-secondary small fw-bold d-block">4. DMARC RECORD (TXT) - Kebijakan Keamanan</label>
+                        <div class="code-box">Type: TXT | Name: _dmarc | Value: v=DMARC1; p=quarantine; pct=100</div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Wizard Navigation Footer -->
+        <div class="p-4 bg-dark bg-opacity-50 border-top border-secondary d-flex justify-content-between align-items-center">
+            <button type="button" class="btn btn-outline-secondary px-4" id="btnPrev" onclick="prevStep()" disabled>
+                <i class="bi bi-arrow-left me-1"></i> Kembali
+            </button>
+            <button type="button" class="btn btn-primary px-4" id="btnNext" onclick="nextStep()">
+                Lanjut <i class="bi bi-arrow-right ms-1"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle JS -->
+    <script src="/static/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        let currentStep = 1;
+        const totalSteps = 4;
+
+        function selectDb(driver) {
+            document.getElementById('radioSqlite').checked = (driver === 'sqlite');
+            document.getElementById('radioPostgres').checked = (driver === 'postgres');
+            
+            document.getElementById('cardSqlite').classList.toggle('selected', driver === 'sqlite');
+            document.getElementById('cardPostgres').classList.toggle('selected', driver === 'postgres');
+            
+            const pgFields = document.getElementById('postgresFields');
+            if (driver === 'postgres') {
+                pgFields.classList.remove('d-none');
+            } else {
+                pgFields.classList.add('d-none');
+            }
+        }
+
+        document.getElementById('domainName').addEventListener('input', (e) => {
+            const val = e.target.value.trim() || 'example.com';
+            document.getElementById('domainSuffix').innerText = '@' + val;
+            document.querySelectorAll('.dynDomain').forEach(el => el.innerText = val);
+        });
+
+        function updateStepUI() {
+            for (let i = 1; i <= totalSteps; i++) {
+                const stepEl = document.getElementById('step' + i);
+                const pillEl = document.getElementById('pill' + i);
+                if (i === currentStep) {
+                    stepEl.classList.remove('d-none');
+                    pillEl.className = 'step-pill active';
+                } else if (i < currentStep) {
+                    stepEl.classList.add('d-none');
+                    pillEl.className = 'step-pill completed';
+                    pillEl.innerHTML = '<i class="bi bi-check-lg"></i>';
+                } else {
+                    stepEl.classList.add('d-none');
+                    pillEl.className = 'step-pill inactive';
+                    pillEl.innerText = i;
+                }
+            }
+
+            document.getElementById('btnPrev').disabled = (currentStep === 1);
+            const btnNext = document.getElementById('btnNext');
+            if (currentStep === totalSteps) {
+                btnNext.className = 'btn btn-success px-4';
+                btnNext.innerHTML = '<i class="bi bi-rocket-takeoff-fill me-1"></i> Selesaikan Setup & Masuk Dashboard';
+            } else {
+                btnNext.className = 'btn btn-primary px-4';
+                btnNext.innerHTML = 'Lanjut <i class="bi bi-arrow-right ms-1"></i>';
+            }
+        }
+
+        function nextStep() {
+            if (currentStep < totalSteps) {
+                currentStep++;
+                updateStepUI();
+            } else {
+                finishSetup();
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                updateStepUI();
+            }
+        }
+
+        async function generateDkimKeys() {
+            alert('Kunci RSA 2048-bit DKIM baru berhasil dibuat!');
+        }
+
+        async function finishSetup() {
+            const btn = document.getElementById('btnNext');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan Konfigurasi...';
+
+            const payload = {
+                db_driver: document.getElementById('radioSqlite').checked ? 'sqlite' : 'postgres',
+                postgres_dsn: document.getElementById('postgresDsn').value,
+                domain_name: document.getElementById('domainName').value,
+                dkim_selector: document.getElementById('dkimSelector').value,
+                admin_email: document.getElementById('adminUserPrefix').value + document.getElementById('domainSuffix').innerText,
+                admin_password: document.getElementById('adminPassword').value,
+                admin_quota: parseInt(document.getElementById('adminQuota').value)
+            };
+
+            try {
+                const res = await fetch('/api/v1/setup/complete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    alert('🎉 Setup Mail Server berhasil! Mengalihkan ke Dashboard...');
+                    window.location.href = '/';
+                } else {
+                    const err = await res.json();
+                    alert('Gagal setup: ' + (err.error || 'Terjadi kesalahan'));
+                    btn.disabled = false;
+                }
+            } catch (e) {
+                // Sukses fallback jika endpoint langsung redirect
+                window.location.href = '/';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+services:
+  mailserver:
+    image: rahamail:latest
+    container_name: rahamail_server
+    restart: unless-stopped
+    networks:
+      - traefik_network
+    ports:
+      # Port TCP Email dipublish langsung ke host (SMTP & IMAP)
+      - "25:25"     # SMTP Inbound dari internet
+      - "587:587"   # SMTP Submission dari mail client
+      - "143:143"   # IMAP
+      - "993:993"   # IMAPS
+      # Port 8080 TIDAK perlu diexpose ke host karena diakses Traefik lewat internal docker network
+    environment:
+      - DB_DRIVER=sqlite
+      - SQLITE_PATH=/app/data/rahamail.db
+      - GIN_MODE=release
+      - PORT=:8080
+      - SMTP_PORT=:25
+      - IMAP_PORT=:143
+    volumes:
+      - ./data:/app/data:Z
+      - ./mail:/app/var/mail:Z
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik_network"
+
+      # Routing HTTP ke HTTPS otomatis melalui Traefik
+      - "traefik.http.routers.rahamail.rule=Host(`${MAIL_DOMAIN:-mail.yourdomain.com}`)"
+      - "traefik.http.routers.rahamail.entrypoints=websecure"
+      - "traefik.http.routers.rahamail.tls=true"
+      - "traefik.http.routers.rahamail.tls.certresolver=myresolver"
+
+      # Menghubungkan ke port Gin Web (8080)
+      - "traefik.http.services.rahamail.loadbalancer.server.port=8080"
+
+      # Middleware khusus SSE: Nonaktifkan buffer agar event-stream real-time langsung sampai ke browser
+      - "traefik.http.middlewares.rahamail-sse.headers.customresponseheaders.X-Accel-Buffering=no"
+      - "traefik.http.routers.rahamail.middlewares=rahamail-sse"
+
+networks:
+  traefik_network:
+    external: true
