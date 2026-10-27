@@ -46,7 +46,11 @@ func main() {
 	defer imapServer.Close()
 
 	// 6. Setup Gin Web Server
-	gin.SetMode(gin.DebugMode)
+	ginMode := os.Getenv("GIN_MODE")
+	if ginMode == "" {
+		ginMode = gin.ReleaseMode
+	}
+	gin.SetMode(ginMode)
 	r := gin.Default()
 
 	// Melayani Static Assets langsung dari Memory Binary (go:embed)

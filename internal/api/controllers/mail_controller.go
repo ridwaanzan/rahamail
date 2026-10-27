@@ -96,10 +96,12 @@ func (mc *MailController) RenderWebmail(c *gin.Context) {
 	if folder == "Scheduled" {
 		repository.DB.Where("user_id = ?", currentUser.ID).
 			Order("scheduled_at desc").
+			Limit(100).
 			Find(&scheduledMails)
 	} else {
 		repository.DB.Where("user_id = ? AND mailbox = ?", currentUser.ID, folder).
 			Order("id desc").
+			Limit(100).
 			Find(&messages)
 	}
 
