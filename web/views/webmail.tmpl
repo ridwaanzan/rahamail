@@ -1,23 +1,31 @@
 <!DOCTYPE html>
-<html lang="id" data-bs-theme="dark">
+<html lang="id" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ .title }}</title>
     <link rel="stylesheet" href="/static/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/static/icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="/static/css/bootstrap-icons.min.css">
     <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --sidebar-bg: #f8fafc;
+            --border-color: #e2e8f0;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+        }
         body {
-            background-color: #0b0f19;
-            color: #f1f5f9;
+            background-color: #f1f5f9;
+            color: var(--text-main);
             font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
             height: 100vh;
             overflow: hidden;
         }
         .webmail-sidebar {
             width: 250px;
-            background: #0f172a;
-            border-right: 1px solid #1e293b;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
             height: 100vh;
@@ -27,7 +35,7 @@
             align-items: center;
             justify-content: space-between;
             padding: 0.6rem 0.85rem;
-            color: #94a3b8;
+            color: var(--text-muted);
             text-decoration: none;
             border-radius: 0.5rem;
             margin-bottom: 0.25rem;
@@ -36,30 +44,30 @@
             transition: all 0.15s ease;
         }
         .nav-folder-link:hover {
-            background-color: #1e293b;
-            color: #38bdf8;
+            background-color: #e2e8f0;
+            color: var(--primary-color);
         }
         .nav-folder-link.active {
-            background-color: #0284c7;
+            background-color: var(--primary-color);
             color: #ffffff;
         }
         .brand-badge {
-            background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
+            background: linear-gradient(135deg, #2563eb 0%, #38bdf8 100%);
         }
         
         /* Split Pane Styling */
         .mail-list-pane {
             width: 420px;
             min-width: 340px;
-            border-right: 1px solid #1e293b;
-            background: #090d16;
+            border-right: 1px solid var(--border-color);
+            background: #ffffff;
             display: flex;
             flex-direction: column;
             height: 100vh;
         }
         .mail-reader-pane {
             flex: 1;
-            background: #0b0f19;
+            background: #f8fafc;
             display: flex;
             flex-direction: column;
             height: 100vh;
@@ -67,38 +75,39 @@
         }
         .mail-item {
             cursor: pointer;
-            border-bottom: 1px solid #1e293b;
+            border-bottom: 1px solid var(--border-color);
             padding: 0.85rem 1rem;
+            background: #ffffff;
             transition: background 0.15s ease;
         }
         .mail-item:hover {
-            background-color: #131b2e;
+            background-color: #f1f5f9;
         }
         .mail-item.selected {
-            background-color: #1e293b;
-            border-left: 3px solid #38bdf8;
+            background-color: #e0f2fe;
+            border-left: 3px solid var(--primary-color);
         }
         .mail-item.unread {
             font-weight: 600;
         }
         .mail-item.unread .mail-subject {
-            color: #f8fafc;
+            color: #0f172a;
         }
         .mail-item.unread .mail-from {
-            color: #38bdf8;
+            color: var(--primary-color);
         }
         .reader-body-frame {
             width: 100%;
             height: 100%;
-            border: none;
+            border: 1px solid var(--border-color);
             background: #ffffff;
             border-radius: 8px;
         }
 
         /* Composer Modal Styling */
         .composer-editor-toolbar {
-            background: #1e293b;
-            border: 1px solid #334155;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
             border-bottom: none;
             border-radius: 6px 6px 0 0;
             padding: 6px;
@@ -108,35 +117,36 @@
         .composer-editor-toolbar button {
             background: transparent;
             border: none;
-            color: #cbd5e1;
+            color: #475569;
             padding: 4px 8px;
             border-radius: 4px;
             font-size: 0.85rem;
         }
         .composer-editor-toolbar button:hover {
-            background: #334155;
-            color: #38bdf8;
+            background: #e2e8f0;
+            color: var(--primary-color);
         }
         .composer-editor-area {
             min-height: 200px;
             max-height: 320px;
             overflow-y: auto;
-            background: #0f172a;
-            border: 1px solid #334155;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
             border-radius: 0 0 6px 6px;
             padding: 12px;
-            color: #f8fafc;
+            color: #0f172a;
             outline: none;
         }
         .composer-editor-area:focus {
-            border-color: #38bdf8;
+            border-color: var(--primary-color);
         }
         .attachment-chip {
-            background: #1e293b;
-            border: 1px solid #334155;
+            background: #e2e8f0;
+            border: 1px solid #cbd5e1;
             border-radius: 16px;
             padding: 3px 10px;
             font-size: 0.78rem;
+            color: #1e293b;
             display: inline-flex;
             align-items: center;
             gap: 6px;
@@ -146,12 +156,12 @@
 <body class="d-flex">
     <!-- 1. SIDEBAR -->
     <aside class="webmail-sidebar p-3">
-        <div class="d-flex align-items-center mb-3 pb-2 border-bottom border-secondary border-opacity-25">
+        <div class="d-flex align-items-center mb-3 pb-2 border-bottom">
             <div class="brand-badge p-2 rounded-3 me-2 text-white">
                 <i class="bi bi-envelope-fill fs-5"></i>
             </div>
             <div>
-                <h6 class="fw-bold mb-0 text-white">RaHaMail</h6>
+                <h6 class="fw-bold mb-0 text-dark">RaHaMail</h6>
                 <small class="text-secondary" style="font-size: 0.72rem;">Webmail Client</small>
             </div>
         </div>
@@ -186,20 +196,20 @@
         </nav>
 
         <!-- Storage & User info -->
-        <div class="pt-3 border-top border-secondary border-opacity-25">
+        <div class="pt-3 border-top">
             <div class="d-flex align-items-center justify-content-between mb-1">
                 <span class="small text-secondary" style="font-size: 0.75rem;"><i class="bi bi-hdd-fill me-1"></i>Penyimpanan</span>
                 <span class="small text-secondary" style="font-size: 0.75rem;">{{ .storage_used }} MB / {{ .storage_quota }} MB</span>
             </div>
             <div class="progress mb-3" style="height: 5px;">
-                <div class="progress-bar bg-info" role="progressbar" style="width: 2%"></div>
+                <div class="progress-bar bg-primary" role="progressbar" style="width: 2%"></div>
             </div>
 
             <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center text-truncate me-2">
                     <i class="bi bi-person-circle fs-5 text-secondary me-2"></i>
                     <div class="text-truncate">
-                        <div class="small fw-semibold text-white text-truncate">{{ .current_user.Email }}</div>
+                        <div class="small fw-semibold text-dark text-truncate">{{ .current_user.Email }}</div>
                         <div class="text-secondary" style="font-size: 0.68rem;">Mailbox User</div>
                     </div>
                 </div>
@@ -213,9 +223,9 @@
     <!-- 2. MESSAGE LIST PANE -->
     <div class="mail-list-pane">
         <!-- List Header -->
-        <div class="p-3 border-bottom border-secondary border-opacity-25 bg-dark bg-opacity-40">
+        <div class="p-3 border-bottom bg-light">
             <div class="d-flex align-items-center justify-content-between mb-2">
-                <h6 class="fw-bold mb-0 text-white">
+                <h6 class="fw-bold mb-0 text-dark">
                     {{ if eq .current_folder "Scheduled" }}
                     <i class="bi bi-clock-history text-warning me-1"></i>Email Terjadwal
                     {{ else }}
@@ -224,7 +234,7 @@
                 </h6>
                 <div>
                     {{ if .current_user.IsAdmin }}
-                    <a href="/" class="btn btn-sm btn-outline-info p-1 px-2 me-1" title="Dashboard Admin">
+                    <a href="/" class="btn btn-sm btn-outline-primary p-1 px-2 me-1" title="Dashboard Admin">
                         <i class="bi bi-speedometer2"></i>
                     </a>
                     {{ end }}
@@ -235,8 +245,8 @@
             </div>
             <!-- Search bar -->
             <div class="input-group input-group-sm">
-                <span class="input-group-text bg-dark border-secondary border-opacity-50 text-secondary"><i class="bi bi-search"></i></span>
-                <input type="text" id="searchInput" class="form-control bg-dark border-secondary border-opacity-50 text-light" placeholder="Cari pesan..." onkeyup="filterMessages()">
+                <span class="input-group-text bg-white text-secondary"><i class="bi bi-search"></i></span>
+                <input type="text" id="searchInput" class="form-control" placeholder="Cari pesan..." onkeyup="filterMessages()">
             </div>
         </div>
 
@@ -254,7 +264,7 @@
                             {{ .Status }}
                         </span>
                     </div>
-                    <div class="mail-subject small mb-1 text-truncate text-white">{{ .Subject }}</div>
+                    <div class="mail-subject small mb-1 text-truncate text-dark fw-semibold">{{ .Subject }}</div>
                     <div class="text-secondary text-truncate" style="font-size: 0.75rem;">Kepada: {{ .To }}</div>
                     {{ if eq .Status "pending" }}
                     <div class="mt-2 text-end">
@@ -312,7 +322,7 @@
         <!-- Reader Container (Hidden by default) -->
         <div id="readerContainer" class="d-none h-100 d-flex flex-column">
             <!-- Reader Action Toolbar -->
-            <div class="p-3 border-bottom border-secondary border-opacity-25 bg-dark bg-opacity-40 d-flex align-items-center justify-content-between">
+            <div class="p-3 border-bottom bg-white d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center gap-2">
                     <button class="btn btn-sm btn-outline-secondary" onclick="replyCurrentMail()" title="Balas"><i class="bi bi-reply-fill me-1"></i>Balas</button>
                     <button class="btn btn-sm btn-outline-secondary" onclick="forwardCurrentMail()" title="Teruskan"><i class="bi bi-forward-fill me-1"></i>Teruskan</button>
@@ -326,17 +336,17 @@
             </div>
 
             <!-- Email Headers Detail -->
-            <div class="p-3 border-bottom border-secondary border-opacity-25 bg-dark bg-opacity-20">
+            <div class="p-3 border-bottom bg-white">
                 <div class="d-flex align-items-start justify-content-between">
                     <div>
-                        <h5 id="readMailSubject" class="fw-bold text-white mb-2"></h5>
+                        <h5 id="readMailSubject" class="fw-bold text-dark mb-2"></h5>
                         <div class="d-flex align-items-center mb-1">
                             <span class="badge bg-primary me-2">Dari</span>
-                            <span id="readMailFrom" class="text-info fw-semibold small"></span>
+                            <span id="readMailFrom" class="text-primary fw-semibold small"></span>
                         </div>
                         <div class="d-flex align-items-center">
                             <span class="badge bg-secondary me-2">Kepada</span>
-                            <span id="readMailTo" class="text-light small"></span>
+                            <span id="readMailTo" class="text-dark small"></span>
                         </div>
                     </div>
                     <div class="text-end">
@@ -347,7 +357,7 @@
                 </div>
 
                 <!-- Attachment Area -->
-                <div id="attachmentArea" class="d-none mt-3 pt-2 border-top border-secondary border-opacity-25">
+                <div id="attachmentArea" class="d-none mt-3 pt-2 border-top">
                     <small class="fw-semibold text-secondary d-block mb-1"><i class="bi bi-paperclip me-1"></i>Lampiran File:</small>
                     <div id="attachmentList" class="d-flex flex-wrap gap-2"></div>
                 </div>
@@ -355,7 +365,7 @@
 
             <!-- Email Body Content (Sandboxed IFrame anti-XSS) -->
             <div class="p-3 flex-grow-1 overflow-hidden d-flex flex-column">
-                <div id="textContentContainer" class="p-3 rounded bg-dark border border-secondary border-opacity-25 h-100 overflow-auto d-none text-light" style="white-space: pre-wrap; font-family: monospace;"></div>
+                <div id="textContentContainer" class="p-3 rounded bg-white border h-100 overflow-auto d-none text-dark" style="white-space: pre-wrap; font-family: monospace;"></div>
                 <iframe id="htmlContentFrame" class="reader-body-frame d-none" sandbox="allow-same-origin"></iframe>
             </div>
         </div>
@@ -364,20 +374,20 @@
     <!-- 4. RICH-TEXT COMPOSER MODAL (FASE 4 & 5) -->
     <div class="modal fade" id="composerModal" tabindex="-1" aria-labelledby="composerModalLabel" aria-hidden="true" data-bs-backdrop="static">
         <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content bg-dark border-secondary border-opacity-50 text-light shadow-lg">
-                <div class="modal-header border-secondary border-opacity-25 py-2">
+            <div class="modal-content bg-white text-dark shadow-lg">
+                <div class="modal-header border-bottom py-2">
                     <h6 class="modal-title fw-bold" id="composerModalLabel">
                         <i class="bi bi-pencil-square text-primary me-2"></i>Tulis Pesan Baru
                     </h6>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-3">
                     <form id="composeForm">
                         <!-- To -->
                         <div class="mb-2">
                             <div class="input-group input-group-sm">
-                                <span class="input-group-text bg-secondary bg-opacity-25 text-secondary border-secondary border-opacity-50" style="width: 75px;">Kepada:</span>
-                                <input type="text" id="composeTo" class="form-control bg-dark border-secondary border-opacity-50 text-light" placeholder="penerima@domain.com" required>
+                                <span class="input-group-text bg-light text-secondary" style="width: 75px;">Kepada:</span>
+                                <input type="text" id="composeTo" class="form-control" placeholder="penerima@domain.com" required>
                                 <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleCcBcc()">Cc / Bcc</button>
                             </div>
                         </div>
@@ -386,14 +396,14 @@
                         <div id="ccBccContainer" class="d-none">
                             <div class="mb-2">
                                 <div class="input-group input-group-sm">
-                                    <span class="input-group-text bg-secondary bg-opacity-25 text-secondary border-secondary border-opacity-50" style="width: 75px;">Cc:</span>
-                                    <input type="text" id="composeCc" class="form-control bg-dark border-secondary border-opacity-50 text-light" placeholder="cc1@domain.com, cc2@domain.com">
+                                    <span class="input-group-text bg-light text-secondary" style="width: 75px;">Cc:</span>
+                                    <input type="text" id="composeCc" class="form-control" placeholder="cc1@domain.com, cc2@domain.com">
                                 </div>
                             </div>
                             <div class="mb-2">
                                 <div class="input-group input-group-sm">
-                                    <span class="input-group-text bg-secondary bg-opacity-25 text-secondary border-secondary border-opacity-50" style="width: 75px;">Bcc:</span>
-                                    <input type="text" id="composeBcc" class="form-control bg-dark border-secondary border-opacity-50 text-light" placeholder="bcc@domain.com">
+                                    <span class="input-group-text bg-light text-secondary" style="width: 75px;">Bcc:</span>
+                                    <input type="text" id="composeBcc" class="form-control" placeholder="bcc@domain.com">
                                 </div>
                             </div>
                         </div>
@@ -401,8 +411,8 @@
                         <!-- Subject -->
                         <div class="mb-3">
                             <div class="input-group input-group-sm">
-                                <span class="input-group-text bg-secondary bg-opacity-25 text-secondary border-secondary border-opacity-50" style="width: 75px;">Subjek:</span>
-                                <input type="text" id="composeSubject" class="form-control bg-dark border-secondary border-opacity-50 text-light fw-semibold" placeholder="Subjek email..." required>
+                                <span class="input-group-text bg-light text-secondary" style="width: 75px;">Subjek:</span>
+                                <input type="text" id="composeSubject" class="form-control fw-semibold" placeholder="Subjek email..." required>
                             </div>
                         </div>
 
@@ -411,10 +421,10 @@
                             <button type="button" onclick="formatDoc('bold')" title="Tebal (Ctrl+B)"><i class="bi bi-type-bold"></i></button>
                             <button type="button" onclick="formatDoc('italic')" title="Miring (Ctrl+I)"><i class="bi bi-type-italic"></i></button>
                             <button type="button" onclick="formatDoc('underline')" title="Garis Bawah (Ctrl+U)"><i class="bi bi-type-underline"></i></button>
-                            <div class="vr my-1 bg-secondary"></div>
+                            <div class="vr my-1 bg-secondary opacity-25"></div>
                             <button type="button" onclick="formatDoc('insertUnorderedList')" title="Daftar Bullet"><i class="bi bi-list-ul"></i></button>
                             <button type="button" onclick="formatDoc('insertOrderedList')" title="Daftar Angka"><i class="bi bi-list-ol"></i></button>
-                            <div class="vr my-1 bg-secondary"></div>
+                            <div class="vr my-1 bg-secondary opacity-25"></div>
                             <button type="button" onclick="insertLinkPrompt()" title="Sisipkan Tautan"><i class="bi bi-link-45deg"></i></button>
                             <button type="button" onclick="formatDoc('removeFormat')" title="Hapus Format"><i class="bi bi-eraser"></i></button>
                         </div>
@@ -426,16 +436,16 @@
                         <div id="composerAttachments" class="d-flex flex-wrap gap-2 mt-2"></div>
 
                         <!-- Scheduler Box (Fase 5) -->
-                        <div id="scheduleTimeBox" class="d-none mt-3 p-2 rounded bg-warning bg-opacity-10 border border-warning border-opacity-25">
+                        <div id="scheduleTimeBox" class="d-none mt-3 p-2 rounded bg-warning-subtle border border-warning">
                             <div class="d-flex align-items-center justify-content-between mb-1">
-                                <span class="small fw-semibold text-warning"><i class="bi bi-clock-history me-1"></i>Pilih Waktu Penjadwalan:</span>
-                                <button type="button" class="btn-close btn-close-white small" style="transform: scale(0.7);" onclick="toggleScheduleBox()"></button>
+                                <span class="small fw-semibold text-warning-emphasis"><i class="bi bi-clock-history me-1"></i>Pilih Waktu Penjadwalan:</span>
+                                <button type="button" class="btn-close small" style="transform: scale(0.7);" onclick="toggleScheduleBox()"></button>
                             </div>
-                            <input type="datetime-local" id="scheduleDatetimeInput" class="form-control form-control-sm bg-dark border-secondary text-light">
+                            <input type="datetime-local" id="scheduleDatetimeInput" class="form-control form-control-sm">
                         </div>
                     </form>
                 </div>
-                <div class="modal-footer border-secondary border-opacity-25 py-2 d-flex justify-content-between">
+                <div class="modal-footer border-top py-2 d-flex justify-content-between">
                     <div>
                         <!-- Hidden file input for attachments -->
                         <input type="file" id="composerFileInput" class="d-none" multiple onchange="handleFileSelect(event)">
@@ -547,7 +557,7 @@
             container.innerHTML = '';
             selectedAttachments.forEach((att, idx) => {
                 const chip = document.createElement('div');
-                chip.className = 'attachment-chip text-light';
+                chip.className = 'attachment-chip';
                 chip.innerHTML = `
                     <i class="bi bi-file-earmark"></i>
                     <span>${att.file_name} (${(att.size / 1024).toFixed(0)} KB)</span>
@@ -701,7 +711,7 @@
                     attArea.classList.remove('d-none');
                     content.attachments.forEach(att => {
                         const card = document.createElement('div');
-                        card.className = 'badge bg-secondary p-2 d-flex align-items-center';
+                        card.className = 'badge bg-light text-dark border p-2 d-flex align-items-center';
                         card.innerHTML = `<i class="bi bi-file-earmark-arrow-down me-2 fs-6"></i> ${att.file_name} (${(att.size / 1024).toFixed(1)} KB)`;
                         attList.appendChild(card);
                     });

@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="id" data-bs-theme="dark">
+<html lang="id" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ .title }}</title>
-    <!-- Bootstrap CSS v5.3.8 (via npm install) -->
+    <!-- Bootstrap CSS v5.3.8 -->
     <link rel="stylesheet" href="/static/css/bootstrap.min.css">
     <!-- Bootstrap Icons v1.13.2 -->
     <link rel="stylesheet" href="/static/css/bootstrap-icons.min.css">
@@ -14,15 +14,15 @@
         }
         body {
             min-height: 100vh;
-            background-color: #0d1117;
-            color: #e6edf3;
+            background-color: #f1f5f9;
+            color: #0f172a;
             font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
         }
         .sidebar {
             width: var(--sidebar-width);
             min-height: 100vh;
-            background-color: #161b22;
-            border-right: 1px solid #30363d;
+            background-color: #ffffff;
+            border-right: 1px solid #e2e8f0;
             position: fixed;
             top: 0;
             bottom: 0;
@@ -34,9 +34,10 @@
             padding: 2rem;
         }
         .card {
-            background-color: #161b22;
-            border: 1px solid #30363d;
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
             border-radius: 0.75rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
         }
         .stat-icon {
             width: 48px;
@@ -143,14 +144,14 @@
         </div>
 
         <div class="dropdown px-2">
-            <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
-                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" alt="Admin" width="32" height="32" class="rounded-circle me-2">
-                <strong>admin@example.com</strong>
+            <a href="#" class="d-flex align-items-center text-dark text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
+                <i class="bi bi-person-circle fs-4 me-2 text-primary"></i>
+                <strong class="small">admin@example.com</strong>
             </a>
-            <ul class="dropdown-menu dropdown-menu-dark text-small shadow">
-                <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i> Pengaturan</a></li>
+            <ul class="dropdown-menu text-small shadow">
+                <li><a class="dropdown-item" href="/mail"><i class="bi bi-envelope me-2"></i> Buka Webmail</a></li>
                 <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-box-arrow-right me-2"></i> Keluar</a></li>
+                <li><a class="dropdown-item text-danger" href="/logout"><i class="bi bi-box-arrow-right me-2"></i> Keluar</a></li>
             </ul>
         </div>
     </aside>
@@ -158,20 +159,21 @@
     <!-- Main Content Area -->
     <main class="main-content">
         <!-- Top Navigation Bar -->
-        <header class="d-flex justify-content-between align-items-center pb-3 mb-4 border-bottom border-secondary">
+        <header class="d-flex justify-content-between align-items-center pb-3 mb-4 border-bottom">
             <div>
-                <h4 class="fw-bold mb-0" id="page-title">{{ .title }}</h4>
+                <h4 class="fw-bold mb-0 text-dark" id="page-title">{{ .title }}</h4>
                 <p class="text-secondary mb-0 small">Server email real-time bertenaga Server-Sent Events (SSE)</p>
             </div>
             <div class="d-flex gap-2 align-items-center">
+                <!-- Link ke Webmail User -->
+                <a href="/mail" class="btn btn-primary btn-sm fw-semibold">
+                    <i class="bi bi-envelope-at-fill me-1"></i> Buka Webmail
+                </a>
                 <!-- Status SSE Connection -->
-                <span class="badge text-bg-dark border border-secondary d-flex align-items-center py-2 px-3" id="sseBadge">
+                <span class="badge text-bg-light border d-flex align-items-center py-2 px-3" id="sseBadge">
                     <span class="live-indicator" id="sseIndicator"></span>
-                    <span id="sseStatusText">SSE: CONNECTING...</span>
+                    <span id="sseStatusText" class="text-dark">SSE: CONNECTING...</span>
                 </span>
-                <button class="btn btn-outline-secondary btn-sm" id="btnThemeToggle" title="Ganti Tema">
-                    <i class="bi bi-sun-fill" id="themeIcon"></i>
-                </button>
             </div>
         </header>
 
@@ -463,25 +465,6 @@
                 const text = event.target.innerText.trim();
                 document.getElementById('page-title').innerText = text;
             });
-        });
-
-        // Toggle Dark / Light Theme
-        const toggleBtn = document.getElementById('btnThemeToggle');
-        const themeIcon = document.getElementById('themeIcon');
-        toggleBtn.addEventListener('click', () => {
-            const html = document.documentElement;
-            const currentTheme = html.getAttribute('data-bs-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            html.setAttribute('data-bs-theme', newTheme);
-            if (newTheme === 'light') {
-                themeIcon.classList.replace('bi-sun-fill', 'bi-moon-fill');
-                document.body.style.backgroundColor = '#f8f9fa';
-                document.body.style.color = '#212529';
-            } else {
-                themeIcon.classList.replace('bi-moon-fill', 'bi-sun-fill');
-                document.body.style.backgroundColor = '#0d1117';
-                document.body.style.color = '#e6edf3';
-            }
         });
 
         function appendLog(category, message, colorClass = 'text-info') {
