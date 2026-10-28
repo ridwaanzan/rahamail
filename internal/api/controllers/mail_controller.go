@@ -1,10 +1,7 @@
 package controllers
 
 import (
-	"fmt"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -16,6 +13,7 @@ import (
 	"mail-server/internal/queue"
 	"mail-server/internal/repository"
 	"mail-server/internal/sse"
+	"mail-server/internal/storage"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -412,12 +410,12 @@ func (mc *MailController) ComposeAndSendEmail(c *gin.Context) {
 		}
 	}
 
-	// Simpan ke storage Maildir sent
-	storageDir := filepath.Join("var", "mail", "sent")
-	os.MkdirAll(storageDir, 0755)
-	filename := fmt.Sprintf("%d_sent_%d.eml", time.Now().UnixNano(), currentUser.ID)
-	filePath := filepath.Join(storageDir, filename)
-	_ = os.WriteFile(filePath, rawBytes, 0644)
+	// Simpan ke storage Maildir sent secara aman
+	filePath, err := storage.SaveMailToFile("sent", currentUser.ID, messageID, rawBytes)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menyimpan file email sent: " + err.Error()})
+		return
+	}
 
 	// Simpan riwayat ke folder 'Sent' di database
 	snippet := req.BodyText
@@ -464,6 +462,11 @@ func (mc *MailController) ComposeAndSendEmail(c *gin.Context) {
 				// Penerima Lokal: masukkan langsung ke INBOX penerima
 				var recUser domain.User
 				if err := repository.DB.Where("email = ?", rec).First(&recUser).Error; err == nil {
+					localPath, err := storage.SaveMailToFile("inbox", recUser.ID, messageID, rawBytes)
+					if err != nil {
+						localPath = filePath
+					}
+
 					localMsg := domain.Message{
 						UserID:      recUser.ID,
 						Mailbox:     "INBOX",
@@ -473,7 +476,7 @@ func (mc *MailController) ComposeAndSendEmail(c *gin.Context) {
 						Subject:     req.Subject,
 						Snippet:     snippet,
 						Size:        int64(len(rawBytes)),
-						StoragePath: filePath,
+						StoragePath: localPath,
 						SPFStatus:   "pass",
 						DKIMStatus:  "pass",
 						DMARCStatus: "pass",
@@ -519,6 +522,12 @@ func (mc *MailController) GetMessageDetail(c *gin.Context) {
 	var msg domain.Message
 	if err := repository.DB.Where("id = ? AND user_id = ?", msgID, currentUser.ID).First(&msg).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Pesan tidak ditemukan"})
+		return
+	}
+
+	// Validasi keamanan Anti-Path Traversal pada storage file
+	if msg.StoragePath != "" && !storage.IsPathSafe(msg.StoragePath) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Insecure file path access detected"})
 		return
 	}
 

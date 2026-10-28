@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 
+	"mail-server/internal/sanitizer"
+
 	"github.com/emersion/go-message/mail"
 )
 
@@ -90,7 +92,7 @@ func ParseEML(filePath string, fallbackSnippet string) (*ParsedEmail, error) {
 			contentType, _, _ := h.ContentType()
 			b, _ := io.ReadAll(p.Body)
 			if strings.HasPrefix(contentType, "text/html") && result.BodyHTML == "" {
-				result.BodyHTML = string(b)
+				result.BodyHTML = sanitizer.SanitizeHTML(string(b))
 			} else if strings.HasPrefix(contentType, "text/plain") && result.BodyText == "" {
 				result.BodyText = string(b)
 			}
@@ -113,6 +115,8 @@ func ParseEML(filePath string, fallbackSnippet string) (*ParsedEmail, error) {
 	// Fallback jika tidak ada body html/text
 	if result.BodyHTML == "" && result.BodyText == "" {
 		result.BodyText = fallbackSnippet
+	} else if result.BodyHTML != "" {
+		result.BodyHTML = sanitizer.SanitizeHTML(result.BodyHTML)
 	}
 
 	return result, nil
