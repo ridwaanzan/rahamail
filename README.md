@@ -2,7 +2,7 @@
 
 > Modern, ultra-lightweight, high-performance, single-binary Mail Server written in pure Go with Webmail Portal, Admin Dashboard, SMTP Inbound & Submission, IMAP4rev1 Server, Email Scheduler, Server-Sent Events (SSE), and embedded SQLite WAL storage.
 
-[![Release](https://img.shields.io/badge/release-v1.4.0-blue.svg)](RELEASE_NOTES.md)
+[![Release](https://img.shields.io/badge/release-v1.2.0-blue.svg)](RELEASE_NOTES.md)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Go Report Card](https://img.shields.io/badge/Go-1.26+-00ADD8.svg)](https://go.dev/)
 [![Docker Image Size](https://img.shields.io/badge/docker%20image-~51MB-2496ED.svg)](Dockerfile)
@@ -39,9 +39,9 @@
 - **SHA-256 Hashed Storage Paths**: Eliminates directory traversal and Zip-Slip risks by persisting raw `.eml` Maildir files under isolated cryptographic paths: `var/mail/{folder}/{userID}/{sha256}.eml`.
 
 ### 💻 Webmail & Productivity
-- **Address Book & Contact Auto-Complete (v1.3.0)**: Integrated contact management portal with auto-suggest dropdowns in composer `To`/`Cc`/`Bcc` fields and background auto-harvesting from sent messages.
-- **Vacation Notice / Out-of-Office Responder (v1.3.0)**: Scheduled automated reply engine with anti-looping protection and a 24-hour rate limit per sender.
-- **Canned Responses & Quick Templates (v1.3.0)**: Reusable email snippets that can be inserted into the composer with one click.
+- **Address Book & Contact Auto-Complete (v1.2.0)**: Integrated contact management portal with auto-suggest dropdowns in composer `To`/`Cc`/`Bcc` fields and background auto-harvesting from sent messages.
+- **Vacation Notice / Out-of-Office Responder (v1.2.0)**: Scheduled automated reply engine with anti-looping protection and a 24-hour rate limit per sender.
+- **Canned Responses & Quick Templates (v1.2.0)**: Reusable email snippets that can be inserted into the composer with one click.
 - **Split-View Mailbox Portal (`/mail`)**: Fastmail/Gmail-style split pane layout with real-time live search, unread badges, star flagging, and storage quota progress bars.
 - **Anti-XSS Sandboxed Reader**: Isolated iframe (`sandbox="allow-same-origin"`) for rendering HTML email bodies safely.
 - **Mailbox Pagination**: Dynamic query pagination (`?folder=...&page=1&limit=25`) with interactive Next/Previous navigation controls.
