@@ -1,10 +1,7 @@
 package controllers
 
 import (
-	"fmt"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -16,6 +13,7 @@ import (
 	"mail-server/internal/queue"
 	"mail-server/internal/repository"
 	"mail-server/internal/sse"
+	"mail-server/internal/storage"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -84,24 +82,47 @@ func (mc *MailController) CompleteSetup(c *gin.Context) {
 	})
 }
 
-// RenderWebmail merender tampilan utama webmail user
+// RenderWebmail merender tampilan utama webmail user dengan dukungan pagination
 func (mc *MailController) RenderWebmail(c *gin.Context) {
 	val, _ := c.Get("user")
 	currentUser := val.(*domain.User)
 
 	folder := c.DefaultQuery("folder", "INBOX")
+
+	// Parsing parameter pagination: ?page=1&limit=25
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil || page < 1 {
+		page = 1
+	}
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "25"))
+	if err != nil || limit < 5 || limit > 100 {
+		limit = 25
+	}
+	offset := (page - 1) * limit
+
 	var messages []domain.Message
 	var scheduledMails []domain.ScheduledMail
+	var totalItems int64
 
 	if folder == "Scheduled" {
+		repository.DB.Model(&domain.ScheduledMail{}).
+			Where("user_id = ?", currentUser.ID).
+			Count(&totalItems)
+
 		repository.DB.Where("user_id = ?", currentUser.ID).
 			Order("scheduled_at desc").
-			Limit(100).
+			Offset(offset).
+			Limit(limit).
 			Find(&scheduledMails)
 	} else {
+		repository.DB.Model(&domain.Message{}).
+			Where("user_id = ? AND mailbox = ?", currentUser.ID, folder).
+			Count(&totalItems)
+
 		repository.DB.Where("user_id = ? AND mailbox = ?", currentUser.ID, folder).
 			Order("id desc").
-			Limit(100).
+			Offset(offset).
+			Limit(limit).
 			Find(&messages)
 	}
 
@@ -112,6 +133,21 @@ func (mc *MailController) RenderWebmail(c *gin.Context) {
 	quotaMB := currentUser.QuotaBytes / (1024 * 1024)
 	usedMB := currentUser.UsedBytes / (1024 * 1024)
 
+	// Hitung pagination info
+	totalPages := int((totalItems + int64(limit) - 1) / int64(limit))
+	if totalPages < 1 {
+		totalPages = 1
+	}
+
+	startItem := offset + 1
+	if totalItems == 0 {
+		startItem = 0
+	}
+	endItem := offset + limit
+	if int64(endItem) > totalItems {
+		endItem = int(totalItems)
+	}
+
 	c.HTML(http.StatusOK, "webmail.tmpl", gin.H{
 		"title":           "RaHaMail Webmail - " + currentUser.Email,
 		"current_user":    currentUser,
@@ -121,6 +157,16 @@ func (mc *MailController) RenderWebmail(c *gin.Context) {
 		"scheduled_count": scheduledCount,
 		"storage_used":    usedMB,
 		"storage_quota":   quotaMB,
+		"page":            page,
+		"limit":           limit,
+		"total_pages":     totalPages,
+		"total_items":     totalItems,
+		"start_item":      startItem,
+		"end_item":        endItem,
+		"has_prev":        page > 1,
+		"prev_page":       page - 1,
+		"has_next":        page < totalPages,
+		"next_page":       page + 1,
 	})
 }
 
@@ -412,12 +458,12 @@ func (mc *MailController) ComposeAndSendEmail(c *gin.Context) {
 		}
 	}
 
-	// Simpan ke storage Maildir sent
-	storageDir := filepath.Join("var", "mail", "sent")
-	os.MkdirAll(storageDir, 0755)
-	filename := fmt.Sprintf("%d_sent_%d.eml", time.Now().UnixNano(), currentUser.ID)
-	filePath := filepath.Join(storageDir, filename)
-	_ = os.WriteFile(filePath, rawBytes, 0644)
+	// Simpan ke storage Maildir sent secara aman
+	filePath, err := storage.SaveMailToFile("sent", currentUser.ID, messageID, rawBytes)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menyimpan file email sent: " + err.Error()})
+		return
+	}
 
 	// Simpan riwayat ke folder 'Sent' di database
 	snippet := req.BodyText
@@ -464,6 +510,11 @@ func (mc *MailController) ComposeAndSendEmail(c *gin.Context) {
 				// Penerima Lokal: masukkan langsung ke INBOX penerima
 				var recUser domain.User
 				if err := repository.DB.Where("email = ?", rec).First(&recUser).Error; err == nil {
+					localPath, err := storage.SaveMailToFile("inbox", recUser.ID, messageID, rawBytes)
+					if err != nil {
+						localPath = filePath
+					}
+
 					localMsg := domain.Message{
 						UserID:      recUser.ID,
 						Mailbox:     "INBOX",
@@ -473,7 +524,7 @@ func (mc *MailController) ComposeAndSendEmail(c *gin.Context) {
 						Subject:     req.Subject,
 						Snippet:     snippet,
 						Size:        int64(len(rawBytes)),
-						StoragePath: filePath,
+						StoragePath: localPath,
 						SPFStatus:   "pass",
 						DKIMStatus:  "pass",
 						DMARCStatus: "pass",
@@ -519,6 +570,12 @@ func (mc *MailController) GetMessageDetail(c *gin.Context) {
 	var msg domain.Message
 	if err := repository.DB.Where("id = ? AND user_id = ?", msgID, currentUser.ID).First(&msg).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Pesan tidak ditemukan"})
+		return
+	}
+
+	// Validasi keamanan Anti-Path Traversal pada storage file
+	if msg.StoragePath != "" && !storage.IsPathSafe(msg.StoragePath) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Insecure file path access detected"})
 		return
 	}
 

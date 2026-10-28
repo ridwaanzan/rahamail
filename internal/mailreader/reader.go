@@ -2,10 +2,13 @@ package mailreader
 
 import (
 	"bytes"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"os"
 	"strings"
+
+	"mail-server/internal/sanitizer"
 
 	"github.com/emersion/go-message/mail"
 )
@@ -27,6 +30,7 @@ type Attachment struct {
 	ContentType string `json:"content_type"`
 	Size        int64  `json:"size"`
 	PartIndex   int    `json:"part_index"`
+	DataBase64  string `json:"data_base64,omitempty"` // Data Base64 untuk live preview di browser
 }
 
 // ParseEML membaca file .eml dari disk dan mengekstrak isi teks, HTML, dan attachments
@@ -90,7 +94,7 @@ func ParseEML(filePath string, fallbackSnippet string) (*ParsedEmail, error) {
 			contentType, _, _ := h.ContentType()
 			b, _ := io.ReadAll(p.Body)
 			if strings.HasPrefix(contentType, "text/html") && result.BodyHTML == "" {
-				result.BodyHTML = string(b)
+				result.BodyHTML = sanitizer.SanitizeHTML(string(b))
 			} else if strings.HasPrefix(contentType, "text/plain") && result.BodyText == "" {
 				result.BodyText = string(b)
 			}
@@ -101,11 +105,19 @@ func ParseEML(filePath string, fallbackSnippet string) (*ParsedEmail, error) {
 			}
 			contentType, _, _ := h.ContentType()
 			b, _ := io.ReadAll(p.Body)
+
+			// Sertakan data base64 untuk preview jika ukuran file di bawah 10 MB
+			var dataB64 string
+			if len(b) <= 10*1024*1024 {
+				dataB64 = base64.StdEncoding.EncodeToString(b)
+			}
+
 			result.Attachments = append(result.Attachments, Attachment{
 				FileName:    filename,
 				ContentType: contentType,
 				Size:        int64(len(b)),
 				PartIndex:   partIdx,
+				DataBase64:  dataB64,
 			})
 		}
 	}
@@ -113,6 +125,8 @@ func ParseEML(filePath string, fallbackSnippet string) (*ParsedEmail, error) {
 	// Fallback jika tidak ada body html/text
 	if result.BodyHTML == "" && result.BodyText == "" {
 		result.BodyText = fallbackSnippet
+	} else if result.BodyHTML != "" {
+		result.BodyHTML = sanitizer.SanitizeHTML(result.BodyHTML)
 	}
 
 	return result, nil

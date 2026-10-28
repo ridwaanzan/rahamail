@@ -4,6 +4,21 @@ This document tracks all official releases of **RaHaMail**, highlighting new fea
 
 ---
 
+## 📦 Version 1.1.0 (October 28, 2026) — Security Hardening & Usability Release
+
+A comprehensive security, reliability, and usability upgrade for **RaHaMail**, delivering all enhancement opportunities identified in the v1.0.0 roadmap.
+
+### 🌟 Release Highlights
+- **SMTP Smuggling Defense (RFC 5321)**: Mitigated global high-profile vulnerabilities **CVE-2023-51764 & CVE-2023-51765** by enforcing canonical CRLF sequence validation and outright rejecting naked LF characters in SMTP DATA streams.
+- **Backend HTML Sanitization Engine**: Direct server-side parsing to eliminate Stored XSS vectors (stripping `<script>`, `<iframe>`, `<object>`, `<embed>`, inline `on*` event handlers, and `javascript:` URIs) before delivering emails to the webmail client.
+- **Multi-Tier Token Bucket Rate Limiting**: In-memory rate limiting powered by `golang.org/x/time/rate` defending against brute-force logins (5 req/min per IP), registration floods (3 req/hr per IP), and outbound spam abuse (30 emails/min per user).
+- **SHA-256 Hashed Storage Architecture**: Hardened physical Maildir storage using randomized SHA-256 directories (`var/mail/{folder}/{userID}/{hash}.eml`) with strict path traversal isolation.
+- **Mailbox Pagination**: Dynamic cursor and limit pagination (`?page=1&limit=25`) with interactive page navigation controls in the webmail interface.
+- **Composer Draft Auto-Save**: Real-time browser `localStorage` draft saving every second with automatic recovery upon reopening the composer and automated cleanup upon sending.
+- **In-Browser Attachment Live Previews**: Native modal preview for images (`.png`, `.jpg`, `.webp`, `.gif`), PDF documents, and text files (`.txt`, `.log`, `.csv`, `.json`) without requiring file downloads.
+
+---
+
 ## 📦 Version 1.0.0 (October 28, 2026) — Initial Stable Release
 
 Official initial general availability release of **RaHaMail v1.0.0**, an ultra-lightweight, modern, and standalone mail server written entirely in pure **Go** using the **Gin** framework.

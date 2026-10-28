@@ -308,6 +308,32 @@
                 {{ end }}
             {{ end }}
         </div>
+
+        <!-- Pagination Controls Footer -->
+        <div class="p-2 px-3 border-top bg-light d-flex align-items-center justify-content-between small text-secondary">
+            <span>{{ .start_item }}-{{ .end_item }} dari {{ .total_items }}</span>
+            <div class="btn-group btn-group-sm">
+                {{ if .has_prev }}
+                <a href="/mail?folder={{ .current_folder }}&page={{ .prev_page }}&limit={{ .limit }}" class="btn btn-outline-secondary py-0 px-2" title="Halaman Sebelumnya">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+                {{ else }}
+                <button class="btn btn-outline-secondary py-0 px-2" disabled>
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                {{ end }}
+
+                {{ if .has_next }}
+                <a href="/mail?folder={{ .current_folder }}&page={{ .next_page }}&limit={{ .limit }}" class="btn btn-outline-secondary py-0 px-2" title="Halaman Selanjutnya">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+                {{ else }}
+                <button class="btn btn-outline-secondary py-0 px-2" disabled>
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+                {{ end }}
+            </div>
+        </div>
     </div>
 
     <!-- 3. MESSAGE READER PANE (Split View) -->
@@ -432,6 +458,16 @@
                         <!-- Editable Content Area -->
                         <div id="composeEditor" class="composer-editor-area" contenteditable="true" placeholder="Tulis pesan Anda di sini..."></div>
 
+                        <!-- Auto-Save Draft Status Indicator -->
+                        <div class="d-flex justify-content-between align-items-center mt-1">
+                            <span id="draftSaveStatus" class="small text-secondary" style="font-size: 0.72rem;">
+                                <i class="bi bi-cloud-check text-success me-1"></i>Draf otomatis disimpan
+                            </span>
+                            <button type="button" class="btn btn-link btn-xs text-secondary text-decoration-none p-0" style="font-size: 0.72rem;" onclick="clearDraft()">
+                                <i class="bi bi-trash me-1"></i>Hapus Draf
+                            </button>
+                        </div>
+
                         <!-- Attachment Chips Area -->
                         <div id="composerAttachments" class="d-flex flex-wrap gap-2 mt-2"></div>
 
@@ -467,27 +503,132 @@
         </div>
     </div>
 
+    <!-- 5. ATTACHMENT PREVIEW MODAL (PHASE 4 - v1.1.0) -->
+    <div class="modal fade" id="attachmentPreviewModal" tabindex="-1" aria-labelledby="attachmentPreviewTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content bg-white text-dark shadow-lg">
+                <div class="modal-header border-bottom py-2">
+                    <h6 class="modal-title fw-bold text-truncate" id="attachmentPreviewTitle">
+                        <i class="bi bi-file-earmark-text text-primary me-2"></i>Preview Lampiran
+                    </h6>
+                    <div class="d-flex align-items-center gap-2">
+                        <a id="btnDownloadPreview" href="#" download="" class="btn btn-sm btn-outline-primary py-1">
+                            <i class="bi bi-download me-1"></i>Unduh
+                        </a>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                </div>
+                <div class="modal-body p-3 text-center" style="min-height: 450px; max-height: 80vh; overflow: auto;" id="attachmentPreviewContent">
+                    <!-- Dynamic preview rendered here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="/static/js/bootstrap.bundle.min.js"></script>
     <script>
         let currentLoadedMailId = null;
         let composerModalInstance = null;
+        let attachmentPreviewModalInstance = null;
         let selectedAttachments = [];
+        let currentMailAttachments = [];
         let isScheduleMode = false;
+        let autoSaveTimer = null;
 
         document.addEventListener('DOMContentLoaded', () => {
             composerModalInstance = new bootstrap.Modal(document.getElementById('composerModal'));
+            attachmentPreviewModalInstance = new bootstrap.Modal(document.getElementById('attachmentPreviewModal'));
+
+            // Setup auto-save listener untuk draf composer
+            const inputs = ['composeTo', 'composeCc', 'composeBcc', 'composeSubject'];
+            inputs.forEach(id => {
+                document.getElementById(id)?.addEventListener('input', triggerAutoSave);
+            });
+            document.getElementById('composeEditor')?.addEventListener('input', triggerAutoSave);
         });
 
-        function openComposer(to = '', subject = '', body = '') {
-            document.getElementById('composeTo').value = to;
-            document.getElementById('composeSubject').value = subject;
-            document.getElementById('composeEditor').innerHTML = body;
+        function triggerAutoSave() {
+            clearTimeout(autoSaveTimer);
+            const statusEl = document.getElementById('draftSaveStatus');
+            if (statusEl) {
+                statusEl.innerHTML = '<span class="spinner-border spinner-border-sm me-1" style="width:0.7rem;height:0.7rem;"></span>Menyimpan draf...';
+            }
+            autoSaveTimer = setTimeout(saveDraftToStorage, 1000);
+        }
+
+        function saveDraftToStorage() {
+            const draftData = {
+                to: document.getElementById('composeTo').value,
+                cc: document.getElementById('composeCc').value,
+                bcc: document.getElementById('composeBcc').value,
+                subject: document.getElementById('composeSubject').value,
+                body: document.getElementById('composeEditor').innerHTML,
+                updatedAt: new Date().toLocaleTimeString()
+            };
+            localStorage.setItem('rahamail_draft', JSON.stringify(draftData));
+            const statusEl = document.getElementById('draftSaveStatus');
+            if (statusEl) {
+                statusEl.innerHTML = `<i class="bi bi-cloud-check text-success me-1"></i>Tersimpan lokal (${draftData.updatedAt})`;
+            }
+        }
+
+        function restoreDraftFromStorage() {
+            const saved = localStorage.getItem('rahamail_draft');
+            if (!saved) return false;
+            try {
+                const data = JSON.parse(saved);
+                if (data.to || data.subject || (data.body && data.body.trim() !== '')) {
+                    document.getElementById('composeTo').value = data.to || '';
+                    document.getElementById('composeCc').value = data.cc || '';
+                    document.getElementById('composeBcc').value = data.bcc || '';
+                    document.getElementById('composeSubject').value = data.subject || '';
+                    document.getElementById('composeEditor').innerHTML = data.body || '';
+                    if (data.cc || data.bcc) {
+                        document.getElementById('ccBccContainer').classList.remove('d-none');
+                    }
+                    const statusEl = document.getElementById('draftSaveStatus');
+                    if (statusEl) {
+                        statusEl.innerHTML = `<i class="bi bi-cloud-check text-success me-1"></i>Draf dipulihkan (${data.updatedAt || 'sebelumnya'})`;
+                    }
+                    return true;
+                }
+            } catch (err) {
+                console.error(err);
+            }
+            return false;
+        }
+
+        function clearDraft() {
+            localStorage.removeItem('rahamail_draft');
+            document.getElementById('composeTo').value = '';
             document.getElementById('composeCc').value = '';
             document.getElementById('composeBcc').value = '';
+            document.getElementById('composeSubject').value = '';
+            document.getElementById('composeEditor').innerHTML = '';
+            const statusEl = document.getElementById('draftSaveStatus');
+            if (statusEl) {
+                statusEl.innerHTML = '<i class="bi bi-check me-1"></i>Draf dibersihkan';
+            }
+        }
+
+        function openComposer(to = '', subject = '', body = '') {
             selectedAttachments = [];
             isScheduleMode = false;
             document.getElementById('scheduleTimeBox').classList.add('d-none');
             document.getElementById('btnSendMail').innerHTML = '<i class="bi bi-send-fill me-1"></i>Kirim Sekarang';
+
+            // Jika ada parameter eksplisit (misal dari reply/forward), gunakan itu
+            if (to || subject || body) {
+                document.getElementById('composeTo').value = to;
+                document.getElementById('composeSubject').value = subject;
+                document.getElementById('composeEditor').innerHTML = body;
+                document.getElementById('composeCc').value = '';
+                document.getElementById('composeBcc').value = '';
+            } else {
+                // Jika tulis email baru kosong, coba pulihkan draf lama
+                restoreDraftFromStorage();
+            }
+
             renderAttachmentChips();
             composerModalInstance.show();
         }
@@ -614,6 +755,7 @@
                     });
                     const data = await res.json();
                     if (res.ok && data.status === 'success') {
+                        localStorage.removeItem('rahamail_draft');
                         alert(data.message);
                         composerModalInstance.hide();
                         window.location.href = '/mail?folder=Scheduled';
@@ -643,6 +785,7 @@
 
                     const data = await res.json();
                     if (res.ok && data.status === 'success') {
+                        localStorage.removeItem('rahamail_draft');
                         alert('Email berhasil dikirim!');
                         composerModalInstance.hide();
                         location.reload();
@@ -709,14 +852,24 @@
                 attList.innerHTML = '';
                 if (content.attachments && content.attachments.length > 0) {
                     attArea.classList.remove('d-none');
-                    content.attachments.forEach(att => {
+                    content.attachments.forEach((att, idx) => {
                         const card = document.createElement('div');
-                        card.className = 'badge bg-light text-dark border p-2 d-flex align-items-center';
-                        card.innerHTML = `<i class="bi bi-file-earmark-arrow-down me-2 fs-6"></i> ${att.file_name} (${(att.size / 1024).toFixed(1)} KB)`;
+                        card.className = 'btn-group btn-group-sm';
+                        const sizeKB = (att.size / 1024).toFixed(1);
+                        card.innerHTML = `
+                            <button type="button" class="btn btn-outline-primary py-1" onclick="previewAttachment(${idx})">
+                                <i class="bi bi-eye me-1"></i>${att.file_name} (${sizeKB} KB)
+                            </button>
+                            <button type="button" class="btn btn-outline-primary py-1" onclick="downloadAttachment(${idx})">
+                                <i class="bi bi-download"></i>
+                            </button>
+                        `;
                         attList.appendChild(card);
                     });
+                    currentMailAttachments = content.attachments;
                 } else {
                     attArea.classList.add('d-none');
+                    currentMailAttachments = [];
                 }
 
                 const htmlFrame = document.getElementById('htmlContentFrame');
@@ -779,6 +932,76 @@
                 const text = item.textContent.toLowerCase();
                 item.style.display = text.includes(query) ? '' : 'none';
             });
+        }
+
+        function previewAttachment(idx) {
+            const att = currentMailAttachments[idx];
+            if (!att) return;
+
+            document.getElementById('attachmentPreviewTitle').innerHTML = `
+                <i class="bi bi-file-earmark-text text-primary me-2"></i>${att.file_name}
+            `;
+
+            const downloadBtn = document.getElementById('btnDownloadPreview');
+            const dataUri = `data:${att.content_type || 'application/octet-stream'};base64,${att.data_base64}`;
+            downloadBtn.href = dataUri;
+            downloadBtn.download = att.file_name;
+
+            const container = document.getElementById('attachmentPreviewContent');
+            container.innerHTML = '';
+
+            const ctype = (att.content_type || '').toLowerCase();
+            const fname = (att.file_name || '').toLowerCase();
+
+            if (ctype.startsWith('image/') || fname.endsWith('.png') || fname.endsWith('.jpg') || fname.endsWith('.jpeg') || fname.endsWith('.gif') || fname.endsWith('.webp')) {
+                // Image Preview
+                container.innerHTML = `<img src="${dataUri}" class="img-fluid rounded shadow-sm" style="max-height: 70vh; object-fit: contain;">`;
+            } else if (ctype === 'application/pdf' || fname.endsWith('.pdf')) {
+                // PDF Preview
+                container.innerHTML = `<iframe src="${dataUri}" style="width: 100%; height: 70vh; border: none; border-radius: 8px;"></iframe>`;
+            } else if (ctype.startsWith('text/') || fname.endsWith('.txt') || fname.endsWith('.log') || fname.endsWith('.json') || fname.endsWith('.csv')) {
+                // Text Preview
+                try {
+                    const textContent = atob(att.data_base64);
+                    container.innerHTML = `<pre class="text-start bg-light p-3 border rounded" style="max-height: 70vh; overflow: auto; white-space: pre-wrap;">${escapeHtml(textContent)}</pre>`;
+                } catch (e) {
+                    container.innerHTML = `<div class="alert alert-warning">Tidak dapat menampilkan isi teks. Silakan unduh file.</div>`;
+                }
+            } else {
+                // Binary File fallback
+                container.innerHTML = `
+                    <div class="py-5">
+                        <i class="bi bi-file-earmark-arrow-down fs-1 text-secondary mb-3 d-block"></i>
+                        <h5>Format file ini tidak mendukung live preview langsung</h5>
+                        <p class="text-secondary small">Ukuran file: ${(att.size / 1024).toFixed(1)} KB | Tipe: ${att.content_type || 'Binary'}</p>
+                        <a href="${dataUri}" download="${att.file_name}" class="btn btn-primary px-4 py-2 mt-2">
+                            <i class="bi bi-download me-1"></i>Unduh Berkas Sekarang
+                        </a>
+                    </div>
+                `;
+            }
+
+            attachmentPreviewModalInstance.show();
+        }
+
+        function downloadAttachment(idx) {
+            const att = currentMailAttachments[idx];
+            if (!att) return;
+            const a = document.createElement('a');
+            a.href = `data:${att.content_type || 'application/octet-stream'};base64,${att.data_base64}`;
+            a.download = att.file_name;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
         }
 
         function replyCurrentMail() {

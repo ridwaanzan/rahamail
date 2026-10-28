@@ -7,14 +7,13 @@ import (
 	"io"
 	"log"
 	"net"
-	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
 	"mail-server/internal/domain"
 	"mail-server/internal/repository"
 	"mail-server/internal/sse"
+	"mail-server/internal/storage"
 
 	"github.com/emersion/go-message/mail"
 	"github.com/emersion/go-sasl"
@@ -112,8 +111,11 @@ func (s *Session) Rcpt(to string, opts *smtp.RcptOptions) error {
 
 // Data menangani stream isi email (Headers + Body + Attachments)
 func (s *Session) Data(r io.Reader) error {
+	// Bungkus dengan SmugglingReader untuk mitigasi CVE-2023-51764 (Anti-Naked LF)
+	safeReader := NewSmugglingReader(r)
+
 	var buf bytes.Buffer
-	tee := io.TeeReader(r, &buf)
+	tee := io.TeeReader(safeReader, &buf)
 
 	// Parsing RFC 5322 MIME email headers
 	mr, err := mail.CreateReader(tee)
@@ -159,19 +161,17 @@ func (s *Session) Data(r io.Reader) error {
 
 	log.Printf("💾 [SMTP] Menerima pesan %d bytes | Subjek: %s", size, subject)
 
-	// Simpan ke storage Maildir lokal
-	storageDir := filepath.Join("var", "mail", "inbox")
-	os.MkdirAll(storageDir, 0755)
-	filename := fmt.Sprintf("%d_%s.eml", time.Now().UnixNano(), sanitizeFilename(messageID))
-	filePath := filepath.Join(storageDir, filename)
-	if err := os.WriteFile(filePath, rawBytes, 0644); err != nil {
-		log.Printf("❌ Gagal menyimpan file email: %v", err)
-	}
-
-	// Simpan metadata ke database untuk setiap penerima lokal
+	// Simpan metadata dan file ke storage aman untuk setiap penerima lokal
 	for _, recipient := range s.to {
 		var user domain.User
 		if err := repository.DB.Where("email = ?", recipient).First(&user).Error; err == nil {
+			// Simpan dengan path aman ter-hash per user
+			filePath, err := storage.SaveMailToFile("inbox", user.ID, messageID, rawBytes)
+			if err != nil {
+				log.Printf("❌ Gagal menyimpan file email secara aman: %v", err)
+				continue
+			}
+
 			msg := domain.Message{
 				UserID:      user.ID,
 				Mailbox:     "INBOX",
