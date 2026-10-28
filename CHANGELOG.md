@@ -1,65 +1,65 @@
 # CHANGELOG: RaHaMail
 
-Semua perubahan penting pada proyek **RaHaMail** akan dicatat dalam berkas ini. Format penulisan mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/) dan proyek ini mematuhi standar [Semantic Versioning](https://semver.org/).
+All notable changes to the **RaHaMail** project will be documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
 ## [1.0.0] - 2026-10-28
 
-### Ditambahkan (Added)
+### Added
 - **Core Mail Protocols**:
-  - Implementasi SMTP Inbound (Port 25) dengan proteksi anti open-relay.
-  - Implementasi SMTP Submission (Port 587/2525) dengan otentikasi SASL PLAIN/LOGIN via `bcrypt`.
-  - Implementasi server IMAP v4rev1 (Port 143/993) untuk mail client pihak ketiga.
-- **Outbound MTA & Kriptografi**:
-  - Mesin pengiriman langsung (outbound delivery) berbasis DNS MX Resolver otomatis.
-  - Pembuatan pasangan kunci RSA 2048-bit dan penandatanganan digital DKIM otomatis pada header email keluar.
-- **Frontend Murni Zero-Node.js**:
-  - Migrasi seluruh view antarmuka ke engine template bawaan Go (`.tmpl`) dengan sistem `//go:embed`.
-  - Integrasi aset CSS & JavaScript Bootstrap 5.3 langsung di dalam memori binary tanpa membutuhkan runtime Node.js.
-  - Embedding font Bootstrap Icons secara langsung ke dalam CSS via Base64 Data URI untuk memastikan ikon tampil 100% tanpa kendala CORS / MIME-type.
-  - Standarisasi antarmuka pengguna ke tema terang (*Light Mode*) yang bersih dan modern.
-- **Portal Webmail & Reader**:
-  - Tampilan split-view modern (daftar pesan di kiri, detail isi email di kanan).
-  - Navigasi folder lengkap: `Kotak Masuk`, `Terkirim`, `Terjadwal`, `Draf`, `Spam`, dan `Sampah`.
-  - Pembaca email aman anti-XSS dengan sandboxed iframe.
-  - Indikator keamanan bawaan: badge verifikasi `SPF: PASS`, `DKIM: PASS`, dan `DMARC: PASS`.
+  - Implementation of SMTP Inbound (Port 25) with strict anti-open-relay validation.
+  - Implementation of SMTP Submission (Port 587/2525) with SASL PLAIN/LOGIN authentication via `bcrypt`.
+  - Implementation of IMAP v4rev1 server (Port 143/993) for desktop and mobile mail clients.
+- **Outbound MTA & Cryptography**:
+  - Direct MTA outbound delivery engine backed by an automated DNS MX record resolver.
+  - Dynamic 2048-bit RSA key pair generation and automated DKIM digital header signing.
+- **Zero-Node.js Frontend Architecture**:
+  - Full migration of user interface views to native Go templates (`.tmpl`) with `//go:embed` memory compilation.
+  - Direct embedding of Bootstrap 5.3 CSS & JavaScript without requiring Node.js or npm runtimes.
+  - Inlined Bootstrap Icons WOFF2 font as Base64 Data URI inside the CSS stylesheet to ensure 100% icon rendering reliability regardless of CORS or MIME-type configurations.
+  - Standardized modern Light Mode UI across all web surfaces.
+- **Webmail Portal & Reader**:
+  - Split-view modern mailbox layout (message list pane on the left, reader detail pane on the right).
+  - Complete folder structure: `INBOX`, `Sent`, `Scheduled`, `Drafts`, `Spam`, and `Trash`.
+  - Anti-XSS sandboxed iframe email body renderer.
+  - Integrated authentication badges: `SPF: PASS`, `DKIM: PASS`, and `DMARC: PASS`.
 - **WYSIWYG Rich-Text Composer**:
-  - Modal tulis pesan baru dengan toolbar formatting teks ringan (Pure Vanilla JS).
-  - Kolom penerima `To`, serta toggle instan `Cc` dan `Bcc`.
-  - Sistem lampiran multi-file (*attachments*) dengan penampil chip ukuran file.
-  - Fitur Balas (*Reply*) dan Teruskan (*Forward*) dengan pengisian subjek dan kutipan pesan otomatis.
+  - Interactive modal composer with lightweight vanilla JavaScript text formatting toolbar.
+  - Multi-recipient inputs with toggleable `Cc` and `Bcc` fields.
+  - Multi-file attachment uploader with chip-based file size displays and item deletion triggers.
+  - One-click `Reply` and `Forward` actions with automatic subject formatting and original message quoting.
 - **Email Scheduler Engine**:
-  - Fitur penjadwalan pengiriman email masa depan langsung dari composer modal.
-  - Background ticker periodic worker (interval 15 detik) untuk mengeksekusi antrean email terjadwal secara otomatis.
-  - Tab folder khusus `⏰ Terjadwal` dengan opsi pembatalan jadwal kapan saja.
-- **Autentikasi & Registrasi Mandiri**:
-  - Halaman pendaftaran mailbox mandiri (`/register`) dengan dropdown domain aktif.
-  - Pengecekan ketersediaan username realtime via AJAX (`/api/v1/auth/check-username`).
-  - Tantangan keamanan anti-bot matematika (*Pure-Go Math Captcha*) tanpa Google reCAPTCHA.
-  - Sistem sesi berbasis cookie HMAC-SHA256 murni di Go.
-- **Admin & Monitoring**:
-  - Setup Wizard interaktif 4-tahap (`/setup`).
-  - Dashboard statistik real-time bertenaga Server-Sent Events (SSE).
-- **Deployment & Kontainerisasi**:
-  - Multi-stage `Dockerfile` dengan hasil image akhir berukuran ~51.3 MB.
-  - Konfigurasi produksi Traefik reverse proxy otomatis (`docker-compose.traefik.yml` dan `deploy.sh`).
-- **Skema Multi-Database**:
-  - Dukungan basis data SQLite WAL Mode murni Go (`glebarez/sqlite`) tanpa CGO.
-  - Dukungan basis data PostgreSQL untuk beban kerja tinggi.
+  - Native scheduled delivery feature integrated directly into the composer modal.
+  - Background periodic worker (15-second interval) automatically dispatching due scheduled emails.
+  - Dedicated `⏰ Scheduled` folder with the ability to cancel pending deliveries at any time.
+- **Authentication & Self-Service Registration**:
+  - Self-service mailbox registration portal (`/register`) with active domain selector dropdown.
+  - Real-time username availability validation via AJAX (`/api/v1/auth/check-username`).
+  - Pure-Go mathematical anti-bot challenge (Math Captcha) secured via HMAC-SHA256 signatures with zero third-party tracking.
+  - Secure session management based on HMAC-SHA256 HTTP-only cookies.
+- **Administration & Monitoring**:
+  - 4-step onboarding Setup Wizard (`/setup`).
+  - Live statistics dashboard powered by Server-Sent Events (SSE).
+- **Deployment & Containerization**:
+  - Ultra-small multi-stage `Dockerfile` with a final runtime footprint of ~51.3 MB.
+  - Production-ready Traefik reverse proxy configuration (`docker-compose.traefik.yml` and `deploy.sh`).
+- **Multi-Database Support**:
+  - Pure-Go SQLite WAL mode via `glebarez/sqlite` with zero CGO dependencies.
+  - Native PostgreSQL support for high-throughput enterprise workloads.
 
-### Diubah (Changed)
-- Mengganti seluruh referensi nama brand lama menjadi **RaHaMail**.
-- Menghilangkan switch tema ganda (dark/light toggle) dan menyelaraskan ke tema Light yang konsisten.
-- Mengoptimalkan pembacaan query daftar pesan di database dengan penambahan `.Limit(100)` untuk mencegah memory leak.
-- Menetapkan `GIN_MODE=release` secara default saat startup.
+### Changed
+- Rebranded the entire codebase, templates, and documentation to **RaHaMail**.
+- Removed the dark/light mode toggle in favor of a unified, clean, and accessible Light Theme.
+- Enhanced database query performance by enforcing a `.Limit(100)` clause on mailbox listings to prevent memory exhaustion.
+- Configured `GIN_MODE=release` as the default server runtime mode.
 
-### Dihapus (Removed)
-- Menghapus seluruh ketergantungan pada runtime Node.js, npm, webpack, dan node_modules dari codebase.
-- Menghapus seluruh referensi URL dan nama pihak ketiga yang tidak relevan agar repositori murni bersifat open-source.
+### Removed
+- Removed all dependencies on Node.js, npm, webpack, and `node_modules`.
+- Removed all external third-party domain references to maintain an open-source codebase.
 
 ---
 
-### Lisensi & Dukungan
-- Lisensi: **GPLv3** (Penggunaan Open Source / Non-Komersial).
-- Lisensi Komersial: Donasi PayPal ke **`ridwan.haqi@gmail.com`**.
+### Licensing & Support
+- **License**: **GPLv3** (Open-Source / Non-Commercial Use).
+- **Commercial Inquiries & Donations**: PayPal to **`ridwan.haqi@gmail.com`**.
