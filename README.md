@@ -1,21 +1,85 @@
 # RaHaMail (RaHa Mail Server)
 
-> Modern, ultra-lightweight, high-performance, single-binary Mail Server written in Go with Web GUI Dashboard, SMTP Inbound/Submission, IMAP Engine, Server-Sent Events (SSE), and embedded SQLite WAL storage.
+> Modern, ultra-lightweight, high-performance, single-binary Mail Server written in pure Go with Webmail Portal, Admin Dashboard, SMTP Inbound & Submission, IMAP4rev1 Server, Email Scheduler, Server-Sent Events (SSE), and embedded SQLite WAL storage.
+
+[![Release](https://img.shields.io/badge/release-v1.1.0-blue.svg)](RELEASE_NOTES.md)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+[![Go Report Card](https://img.shields.io/badge/Go-1.26+-00ADD8.svg)](https://go.dev/)
+[![Docker Image Size](https://img.shields.io/badge/docker%20image-~51MB-2496ED.svg)](Dockerfile)
+[![PayPal Donate](https://img.shields.io/badge/Donate-PayPal-00457C.svg)](https://www.paypal.com/paypalme)
 
 ---
 
 ## 🌟 Key Features
 
-- **True Single Static Binary**: Zero external daemon dependencies.
-- **Embedded Web GUI & Setup Wizard**: Step-by-step 4-step onboarding wizard at `/setup`.
-- **Pure-Go Architecture (Zero Node.js / Zero CGO)**: Web templates and Bootstrap assets embedded directly inside the binary via `go:embed`.
-- **Multi-Database Support**: High-performance SQLite with Write-Ahead Logging (WAL mode) and PostgreSQL compatibility.
-- **Protocols Supported**:
-  - SMTP Inbound (Port 25) with anti-open relay enforcement.
-  - SMTP Authenticated Submission (Port 587/465).
-  - IMAP4rev1 Server (Port 143/993) for Mozilla Thunderbird, Outlook, and Apple Mail.
-- **Automated DKIM & Security**: Dynamic 2048-bit RSA key generation and DKIM signing.
-- **Docker & Podman Ready**: Ultra-small image (~50 MB) optimized for Traefik reverse proxy.
+### 🚀 Architecture & Core Engine
+- **100% Pure Go Single Static Binary (Zero Node.js, Zero CGO)**: Webmail views (Go `.tmpl` templates), stylesheets, JavaScript, and font icons are embedded directly inside the binary via `//go:embed`. No Node.js runtime, npm, or external daemons required.
+- **Embedded Base64 Font Icons**: Bootstrap Icons are inlined directly into the CSS stylesheet via Base64 Data URI, guaranteeing 100% icon rendering reliability without CORS blocks or missing font assets.
+- **Unified Light Mode UI**: A clean, modern, and accessible Light Mode theme across all web interfaces (Webmail, Registration, Login, Dashboard, and Setup Wizard).
+- **Multi-Database Support**: Pure-Go SQLite with Write-Ahead Logging (WAL mode) and enterprise PostgreSQL compatibility.
+- **Ultra-Small Footprint**: Final container image is only **~51 MB** with an idle RAM footprint of **under 50 MB**.
+
+### 📬 Complete Mail Protocols & Outbound MTA
+- **SMTP Inbound (Port 25)**: Direct server-to-server mail ingestion with strict Anti-Open-Relay validation and automatic RFC 5322 MIME parsing.
+- **SMTP Submission (Port 587 / 2525)**: SASL `PLAIN` / `LOGIN` authenticated transmission powered by `bcrypt` for desktop and mobile clients (Thunderbird, Apple Mail, Outlook).
+- **IMAP Server (Port 143 / 993 / 1143)**: Bidirectional mailbox synchronization conforming to IMAP v4rev1 for `INBOX`, `Sent`, `Trash`, and `Spam` folders.
+- **Direct Outbound MTA Delivery**: Automated DNS MX record resolver sorting target MTAs by preference priority with automatic fallback to DNS A-records.
+- **DKIM RSA 2048-bit Signer**: Automatic generation of 2048-bit RSA key pairs upon domain creation, instant DNS TXT record export (`v=DKIM1; k=rsa; p=...`), and automated digital signing on outbound email headers.
+
+### 🛡️ Security Hardening
+- **SMTP Smuggling Defense (RFC 5321)**: Mitigates global vulnerabilities **CVE-2023-51764 & CVE-2023-51765** by enforcing canonical CRLF sequence validation and outright rejecting streams with naked LF (`\n` without `\r`).
+- **Backend HTML Sanitizer (Anti-Stored XSS)**: Strips malicious tags (`<script>`, `<iframe>`, `<object>`, `<embed>`, `<form>`, inline event handlers `on*`, and `javascript:` URIs) before delivering emails to the browser.
+- **Token Bucket Rate Limiting**: In-memory rate limiting powered by `golang.org/x/time/rate` defending against brute-force logins (5 req/min per IP), registration floods (3 req/hr per IP), and outbound spam abuse (30 emails/min per user).
+- **SHA-256 Hashed Storage Paths**: Eliminates directory traversal and Zip-Slip risks by persisting raw `.eml` Maildir files under isolated cryptographic paths: `var/mail/{folder}/{userID}/{sha256}.eml`.
+
+### 💻 Webmail & Productivity
+- **Split-View Mailbox Portal (`/mail`)**: Fastmail/Gmail-style split pane layout with real-time live search, unread badges, star flagging, and storage quota progress bars.
+- **Anti-XSS Sandboxed Reader**: Isolated iframe (`sandbox="allow-same-origin"`) for rendering HTML email bodies safely.
+- **Mailbox Pagination**: Dynamic query pagination (`?folder=...&page=1&limit=25`) with interactive Next/Previous navigation controls.
+- **WYSIWYG Rich-Text Composer**: Dedicated fields for `To`, toggleable `Cc` and `Bcc`, and a lightweight formatting bar (Bold, Italic, Underline, Lists, Link, Format Eraser).
+- **Composer Draft Auto-Save**: Real-time browser `localStorage` draft saving every second with automatic recovery and cleanup.
+- **In-Browser Attachment Live Previews**: Native modal preview for images (`.png`, `.jpg`, `.webp`, `.gif`), PDF documents, and text files (`.txt`, `.log`, `.csv`, `.json`) without requiring file downloads.
+- **Email Scheduler Engine**: Integrated date/time picker (`datetime-local`) in the composer with an internal 15-second background periodic worker and dedicated **⏰ Scheduled** tab with one-click cancellation.
+- **Self-Service Registration (`/register`)**: Clean registration portal with dynamic domain selection, real-time AJAX username availability checks, and a server-side Pure-Go Math Captcha (no Google tracking).
+- **Admin Setup Wizard (`/setup`)**: Guided 4-step wizard for database selection, initial domain registration, DKIM key generation, and Super Admin provisioning.
+- **Live SSE Stream (`/api/v1/sse`)**: Real-time push channel providing instant browser updates for server metrics and new incoming email notifications without page reloads.
+
+---
+
+## 🚀 Quick Start
+
+### 1. Run Locally from Source
+```bash
+# Clone repository
+git clone https://github.com/yourusername/rahamail.git
+cd rahamail
+
+# Build single static executable
+go build -o rahamail main.go
+
+# Start RaHaMail server
+./rahamail
+```
+Open **`http://localhost:8080/setup`** in your browser to complete the initial setup wizard.
+
+### 2. Deploy with Podman / Docker & Traefik
+```bash
+# Automated production deployment with Traefik reverse proxy
+chmod +x deploy.sh
+./deploy.sh
+```
+
+---
+
+## 🌐 Network Ports Reference
+
+| Port | Protocol | Purpose / Description |
+|---|---|---|
+| **8080** | HTTP | Webmail Portal, Admin Dashboard, REST API & Live SSE Stream |
+| **25** | SMTP | Core Inbound Mail Transfer (Server-to-Server MX) |
+| **587** | SMTP | Authenticated Mail Submission (Client-to-Server) |
+| **143** | IMAP | Mailbox Synchronization for IMAP Clients |
+| **993** | IMAPS | Direct SSL/TLS Encrypted IMAP |
 
 ---
 
@@ -36,15 +100,12 @@ For details on commercial licensing exemptions and how to donate:
 
 ---
 
-## 🚀 Quick Start
+## 📚 Documentation & Changelog
+- **Detailed Release Notes**: [`RELEASE_NOTES.md`](RELEASE_NOTES.md)
+- **Changelog History**: [`CHANGELOG.md`](CHANGELOG.md)
+- **Technical Feature Specification & Future Roadmap**: [`.dokumen/DOKUMENTASI_FITUR_DAN_ROADMAP.md`](.dokumen/DOKUMENTASI_FITUR_DAN_ROADMAP.md)
+- **Security & Enhancement Master Plan**: [`.dokumen/MASTER_PLAN_v1.1.0_ENHANCEMENT.md`](.dokumen/MASTER_PLAN_v1.1.0_ENHANCEMENT.md)
 
-### Run locally:
-```bash
-go run main.go
-```
-Open **`http://localhost:8080/setup`** in your browser.
+---
 
-### Deploy with Podman & Traefik:
-```bash
-./deploy.sh
-```
+*Crafted with ❤️ by Ridwan Haqi & RaHaMail Contributors.*
