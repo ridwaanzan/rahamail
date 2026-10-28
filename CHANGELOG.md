@@ -4,6 +4,21 @@ All notable changes to the **RaHaMail** project will be documented in this file.
 
 ---
 
+## [1.1.0] - 2026-10-28
+
+### Added
+- **Security Hardening**:
+  - Implementation of `SmugglingReader` stream wrapper rejecting naked LF characters to mitigate SMTP Smuggling vulnerabilities (**CVE-2023-51764 & CVE-2023-51765**).
+  - Implementation of pure-Go HTML sanitizer engine in `internal/sanitizer` to eliminate Stored XSS vectors (script tags, iframe embeds, object tags, on* event handlers, and javascript: protocols).
+  - Introduction of thread-safe Token Bucket Rate Limiting middleware (`internal/api/middleware/ratelimit.go`) for `/login`, `/register`, and `/send` endpoints with automatic IP cleanup.
+  - Hardened physical storage architecture (`internal/storage`) using randomized SHA-256 filenames and strict base-directory traversal validation.
+- **Webmail Usability**:
+  - Mailbox pagination engine with dynamic query parameters (`?folder=...&page=1&limit=25`) and responsive Prev/Next navigation controls.
+  - Composer draft auto-save engine synchronizing unsaved messages to `localStorage` every second with draft restoration and cleanup prompts.
+  - In-browser live preview modal for image attachments (`.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`), PDFs, and text files (`.txt`, `.log`, `.csv`, `.json`).
+
+---
+
 ## [1.0.0] - 2026-10-28
 
 ### Added
