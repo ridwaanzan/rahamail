@@ -82,24 +82,47 @@ func (mc *MailController) CompleteSetup(c *gin.Context) {
 	})
 }
 
-// RenderWebmail merender tampilan utama webmail user
+// RenderWebmail merender tampilan utama webmail user dengan dukungan pagination
 func (mc *MailController) RenderWebmail(c *gin.Context) {
 	val, _ := c.Get("user")
 	currentUser := val.(*domain.User)
 
 	folder := c.DefaultQuery("folder", "INBOX")
+
+	// Parsing parameter pagination: ?page=1&limit=25
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil || page < 1 {
+		page = 1
+	}
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "25"))
+	if err != nil || limit < 5 || limit > 100 {
+		limit = 25
+	}
+	offset := (page - 1) * limit
+
 	var messages []domain.Message
 	var scheduledMails []domain.ScheduledMail
+	var totalItems int64
 
 	if folder == "Scheduled" {
+		repository.DB.Model(&domain.ScheduledMail{}).
+			Where("user_id = ?", currentUser.ID).
+			Count(&totalItems)
+
 		repository.DB.Where("user_id = ?", currentUser.ID).
 			Order("scheduled_at desc").
-			Limit(100).
+			Offset(offset).
+			Limit(limit).
 			Find(&scheduledMails)
 	} else {
+		repository.DB.Model(&domain.Message{}).
+			Where("user_id = ? AND mailbox = ?", currentUser.ID, folder).
+			Count(&totalItems)
+
 		repository.DB.Where("user_id = ? AND mailbox = ?", currentUser.ID, folder).
 			Order("id desc").
-			Limit(100).
+			Offset(offset).
+			Limit(limit).
 			Find(&messages)
 	}
 
@@ -110,6 +133,21 @@ func (mc *MailController) RenderWebmail(c *gin.Context) {
 	quotaMB := currentUser.QuotaBytes / (1024 * 1024)
 	usedMB := currentUser.UsedBytes / (1024 * 1024)
 
+	// Hitung pagination info
+	totalPages := int((totalItems + int64(limit) - 1) / int64(limit))
+	if totalPages < 1 {
+		totalPages = 1
+	}
+
+	startItem := offset + 1
+	if totalItems == 0 {
+		startItem = 0
+	}
+	endItem := offset + limit
+	if int64(endItem) > totalItems {
+		endItem = int(totalItems)
+	}
+
 	c.HTML(http.StatusOK, "webmail.tmpl", gin.H{
 		"title":           "RaHaMail Webmail - " + currentUser.Email,
 		"current_user":    currentUser,
@@ -119,6 +157,16 @@ func (mc *MailController) RenderWebmail(c *gin.Context) {
 		"scheduled_count": scheduledCount,
 		"storage_used":    usedMB,
 		"storage_quota":   quotaMB,
+		"page":            page,
+		"limit":           limit,
+		"total_pages":     totalPages,
+		"total_items":     totalItems,
+		"start_item":      startItem,
+		"end_item":        endItem,
+		"has_prev":        page > 1,
+		"prev_page":       page - 1,
+		"has_next":        page < totalPages,
+		"next_page":       page + 1,
 	})
 }
 
