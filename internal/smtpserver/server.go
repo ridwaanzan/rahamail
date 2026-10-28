@@ -111,8 +111,11 @@ func (s *Session) Rcpt(to string, opts *smtp.RcptOptions) error {
 
 // Data menangani stream isi email (Headers + Body + Attachments)
 func (s *Session) Data(r io.Reader) error {
+	// Bungkus dengan SmugglingReader untuk mitigasi CVE-2023-51764 (Anti-Naked LF)
+	safeReader := NewSmugglingReader(r)
+
 	var buf bytes.Buffer
-	tee := io.TeeReader(r, &buf)
+	tee := io.TeeReader(safeReader, &buf)
 
 	// Parsing RFC 5322 MIME email headers
 	mr, err := mail.CreateReader(tee)

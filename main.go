@@ -89,20 +89,20 @@ func main() {
 	// 5. REST API & SSE Routes
 	api := r.Group("/api/v1")
 	{
-		// Public Auth API
+		// Public Auth API (Dilindungi Token Bucket Rate Limiter)
 		authAPI := api.Group("/auth")
 		{
 			authAPI.GET("/check-username", authCtrl.CheckUsername)
-			authAPI.POST("/register", authCtrl.Register)
-			authAPI.POST("/login", authCtrl.Login)
+			authAPI.POST("/register", middleware.RateLimitMiddleware(middleware.RegisterLimiter, "Batas pendaftaran tercapai. Silakan coba lagi nanti."), authCtrl.Register)
+			authAPI.POST("/login", middleware.RateLimitMiddleware(middleware.AuthLimiter, "Terlalu banyak percobaan masuk. Silakan tunggu 1 menit."), authCtrl.Login)
 			authAPI.POST("/logout", authCtrl.Logout)
 		}
 
-		// User Webmail API (Protected)
+		// User Webmail API (Protected & Outbound Throttled)
 		mailAPI := api.Group("/webmail", middleware.UserAuthMiddleware())
 		{
 			mailAPI.GET("/messages/:id", mailCtrl.GetMessageDetail)
-			mailAPI.POST("/send", mailCtrl.ComposeAndSendEmail)
+			mailAPI.POST("/send", middleware.UserRateLimitMiddleware(middleware.OutboundSendLimiter, "Batas pengiriman pesan terlampaui."), mailCtrl.ComposeAndSendEmail)
 			mailAPI.POST("/schedule", mailCtrl.ScheduleEmail)
 			mailAPI.POST("/schedule/:id/cancel", mailCtrl.CancelScheduledMail)
 			mailAPI.POST("/messages/move", mailCtrl.MoveMessage)
