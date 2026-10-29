@@ -60,7 +60,7 @@
 ### 1. Run Locally from Source
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/rahamail.git
+git clone https://github.com/ridwaanzan/rahamail.git
 cd rahamail
 
 # Build single static executable
