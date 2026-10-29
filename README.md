@@ -28,9 +28,9 @@
 - **DKIM RSA 2048-bit Signer**: Automatic generation of 2048-bit RSA key pairs upon domain creation, instant DNS TXT record export (`v=DKIM1; k=rsa; p=...`), and automated digital signing on outbound email headers.
 
 ### 🛡️ Security & Authentication Hardening
-- **Antivirus & Anti-Spam Filtering (ClamAV & Rspamd - v1.4.0)**: Real-time scan of incoming emails via ClamAV INSTREAM socket (blocking malware with `554 5.7.1`) and Rspamd HTTP checks routing spam to `Spam` folders.
-- **Inbound DMARC, SPF & DKIM Verification (RFC 7489 & RFC 8601 - v1.4.0)**: Strict policy enforcement (`p=reject` / `p=quarantine`) with automatic `Authentication-Results` header generation.
-- **Automated S3 Cloud Disaster Recovery (v1.4.0)**: Non-blocking atomic SQLite backups (`VACUUM INTO`) and Maildir archives encrypted client-side with **AES-256 GCM** and uploaded to AWS S3, Cloudflare R2, Wasabi, or MinIO.
+- **Antivirus & Anti-Spam Filtering (ClamAV & Rspamd - v1.2.0)**: Real-time scan of incoming emails via ClamAV INSTREAM socket (blocking malware with `554 5.7.1`) and Rspamd HTTP checks routing spam to `Spam` folders.
+- **Inbound DMARC, SPF & DKIM Verification (RFC 7489 & RFC 8601 - v1.2.0)**: Strict policy enforcement (`p=reject` / `p=quarantine`) with automatic `Authentication-Results` header generation.
+- **Automated S3 Cloud Disaster Recovery (v1.2.0)**: Non-blocking atomic SQLite backups (`VACUUM INTO`) and Maildir archives encrypted client-side with **AES-256 GCM** and uploaded to AWS S3, Cloudflare R2, Wasabi, or MinIO.
 - **Two-Factor Authentication (2FA / TOTP RFC 6238 - v1.2.0)**: Built-in TOTP support with standard `otpauth://` URI exchange, 6-digit dynamic window validation, and 8 one-time emergency backup recovery codes.
 - **Developer Transactional REST API (v1.2.0)**: Dedicated `POST /api/v1/send` endpoint with Bearer token authentication (`rhm_live_...`) to send transactional emails via JSON over HTTPS (an open-source alternative to SendGrid/Mailgun).
 - **SMTP Smuggling Defense (RFC 5321)**: Mitigates global vulnerabilities **CVE-2023-51764 & CVE-2023-51765** by enforcing canonical CRLF sequence validation and outright rejecting streams with naked LF (`\n` without `\r`).
