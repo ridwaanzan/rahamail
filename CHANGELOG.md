@@ -7,6 +7,13 @@ All notable changes to the **RaHaMail** project will be documented in this file.
 ## [1.4.0] - 2026-10-29
 
 ### Added
+- **Employee Phishing & Spam Awareness Simulation Platform**:
+  - Pure-Go human risk training and security awareness simulation engine in `internal/simulation`.
+  - Built-in phishing scenario presets (IT Password Reset Expiry, HR Payroll/Bonus, and Courier Package Delivery).
+  - Encrypted individual tracking link generator (`GET /sim/c/:code`) tracking employee interactions with IP and User-Agent capture.
+  - Interactive **Teachable Moment** educational landing page in `web/views/simulation_teachable.tmpl` (Status: **NOT PASSED** vs **PASSED** on Spam Report).
+  - Admin REST APIs for campaign creation, safe local mailbox delivery (`LaunchCampaign`), and live failure metrics (`/api/v1/admin/simulations`).
+  - Interactive SVG Donut & metrics analytics dashboard tab in the Admin Web Portal.
 - **Antivirus & Anti-Spam Filtering (ClamAV & Rspamd)**:
   - New pure-Go scanner package in `internal/antivirus` supporting ClamAV `INSTREAM` protocol (Unix/TCP socket) and HTTP-based Rspamd `/checkv2` API.
   - Inbound SMTP pipeline defense automatically rejecting virus-infected emails (`554 5.7.1`) and routing spam messages to the `Spam` mailbox with `[SPAM]` subject tags.
