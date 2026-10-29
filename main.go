@@ -173,6 +173,13 @@ func main() {
 		api.POST("/admin/backup/config", mailCtrl.SaveBackupConfig)
 		api.POST("/admin/backup/trigger", mailCtrl.TriggerManualBackup)
 
+		// Phishing & Spam Awareness Simulation Management (Admin)
+		api.GET("/admin/simulations/presets", simCtrl.ListPresets)
+		api.GET("/admin/simulations", simCtrl.ListCampaigns)
+		api.POST("/admin/simulations", simCtrl.CreateCampaign)
+		api.POST("/admin/simulations/:id/launch", simCtrl.LaunchCampaign)
+		api.GET("/admin/simulations/:id/stats", simCtrl.GetCampaignStats)
+
 		// Domain Management
 		api.GET("/domains", mailCtrl.ListDomains)
 		api.POST("/domains", mailCtrl.CreateDomain)
