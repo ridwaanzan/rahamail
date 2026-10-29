@@ -2,7 +2,7 @@
 
 > Modern, ultra-lightweight, high-performance, single-binary Mail Server written in pure Go with Webmail Portal, Admin Dashboard, SMTP Inbound & Submission, IMAP4rev1 Server, Email Scheduler, Server-Sent Events (SSE), and embedded SQLite WAL storage.
 
-[![Release](https://img.shields.io/badge/release-v1.1.0-blue.svg)](RELEASE_NOTES.md)
+[![Release](https://img.shields.io/badge/release-v1.2.0-blue.svg)](RELEASE_NOTES.md)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Go Report Card](https://img.shields.io/badge/Go-1.26+-00ADD8.svg)](https://go.dev/)
 [![Docker Image Size](https://img.shields.io/badge/docker%20image-~51MB-2496ED.svg)](Dockerfile)
@@ -21,18 +21,27 @@
 
 ### 📬 Complete Mail Protocols & Outbound MTA
 - **SMTP Inbound (Port 25)**: Direct server-to-server mail ingestion with strict Anti-Open-Relay validation and automatic RFC 5322 MIME parsing.
+- **Catch-All Mailboxes & Domain Aliases (v1.2.0)**: Route unmatched incoming emails (`*@domain.com`) directly to a designated administrative or support mailbox without triggering 550 bounces.
 - **SMTP Submission (Port 587 / 2525)**: SASL `PLAIN` / `LOGIN` authenticated transmission powered by `bcrypt` for desktop and mobile clients (Thunderbird, Apple Mail, Outlook).
 - **IMAP Server (Port 143 / 993 / 1143)**: Bidirectional mailbox synchronization conforming to IMAP v4rev1 for `INBOX`, `Sent`, `Trash`, and `Spam` folders.
 - **Direct Outbound MTA Delivery**: Automated DNS MX record resolver sorting target MTAs by preference priority with automatic fallback to DNS A-records.
 - **DKIM RSA 2048-bit Signer**: Automatic generation of 2048-bit RSA key pairs upon domain creation, instant DNS TXT record export (`v=DKIM1; k=rsa; p=...`), and automated digital signing on outbound email headers.
 
-### 🛡️ Security Hardening
+### 🛡️ Security & Authentication Hardening
+- **Antivirus & Anti-Spam Filtering (ClamAV & Rspamd - v1.4.0)**: Real-time scan of incoming emails via ClamAV INSTREAM socket (blocking malware with `554 5.7.1`) and Rspamd HTTP checks routing spam to `Spam` folders.
+- **Inbound DMARC, SPF & DKIM Verification (RFC 7489 & RFC 8601 - v1.4.0)**: Strict policy enforcement (`p=reject` / `p=quarantine`) with automatic `Authentication-Results` header generation.
+- **Automated S3 Cloud Disaster Recovery (v1.4.0)**: Non-blocking atomic SQLite backups (`VACUUM INTO`) and Maildir archives encrypted client-side with **AES-256 GCM** and uploaded to AWS S3, Cloudflare R2, Wasabi, or MinIO.
+- **Two-Factor Authentication (2FA / TOTP RFC 6238 - v1.2.0)**: Built-in TOTP support with standard `otpauth://` URI exchange, 6-digit dynamic window validation, and 8 one-time emergency backup recovery codes.
+- **Developer Transactional REST API (v1.2.0)**: Dedicated `POST /api/v1/send` endpoint with Bearer token authentication (`rhm_live_...`) to send transactional emails via JSON over HTTPS (an open-source alternative to SendGrid/Mailgun).
 - **SMTP Smuggling Defense (RFC 5321)**: Mitigates global vulnerabilities **CVE-2023-51764 & CVE-2023-51765** by enforcing canonical CRLF sequence validation and outright rejecting streams with naked LF (`\n` without `\r`).
 - **Backend HTML Sanitizer (Anti-Stored XSS)**: Strips malicious tags (`<script>`, `<iframe>`, `<object>`, `<embed>`, `<form>`, inline event handlers `on*`, and `javascript:` URIs) before delivering emails to the browser.
 - **Token Bucket Rate Limiting**: In-memory rate limiting powered by `golang.org/x/time/rate` defending against brute-force logins (5 req/min per IP), registration floods (3 req/hr per IP), and outbound spam abuse (30 emails/min per user).
 - **SHA-256 Hashed Storage Paths**: Eliminates directory traversal and Zip-Slip risks by persisting raw `.eml` Maildir files under isolated cryptographic paths: `var/mail/{folder}/{userID}/{sha256}.eml`.
 
 ### 💻 Webmail & Productivity
+- **Address Book & Contact Auto-Complete (v1.2.0)**: Integrated contact management portal with auto-suggest dropdowns in composer `To`/`Cc`/`Bcc` fields and background auto-harvesting from sent messages.
+- **Vacation Notice / Out-of-Office Responder (v1.2.0)**: Scheduled automated reply engine with anti-looping protection and a 24-hour rate limit per sender.
+- **Canned Responses & Quick Templates (v1.2.0)**: Reusable email snippets that can be inserted into the composer with one click.
 - **Split-View Mailbox Portal (`/mail`)**: Fastmail/Gmail-style split pane layout with real-time live search, unread badges, star flagging, and storage quota progress bars.
 - **Anti-XSS Sandboxed Reader**: Isolated iframe (`sandbox="allow-same-origin"`) for rendering HTML email bodies safely.
 - **Mailbox Pagination**: Dynamic query pagination (`?folder=...&page=1&limit=25`) with interactive Next/Previous navigation controls.
