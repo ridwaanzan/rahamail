@@ -25,6 +25,15 @@ All notable changes to the **RaHaMail** project will be documented in this file.
 ## [1.3.0] - 2026-10-29
 
 ### Added
+- **Inbound Trust & Unknown Domain Warning Banner**:
+  - Pure-Go sender reputation evaluation engine (`internal/trust`) with 5-stage trust assessment (Authentication status, local domain whitelist, contact address book check, prior message interaction history, and payload scanning).
+  - First-time external sender detection with risk level classification:
+    - 🚨 `danger`: SPF/DKIM/DMARC failure or sender spoofing.
+    - ⚠️ `warning`: Unknown external sender with file attachments or external URLs.
+    - ℹ️ `info`: Unknown external sender with plain text message.
+  - Interactive Webmail safety banner placed above the email body reader with visual warning badges.
+  - One-click **"Mark as Trusted / Add to Contacts"** remediation: Adds sender to personal address book and dismisses banner.
+  - One-click **"Move to Spam"** action: Relocates untrusted emails directly to the spam folder.
 - **Address Book & Contact Auto-Complete**:
   - Full CRUD contact management API (`/api/v1/webmail/contacts`) supporting name, email, company, and notes.
   - Interactive Address Book modal in the Webmail sidebar with real-time contact filtering.

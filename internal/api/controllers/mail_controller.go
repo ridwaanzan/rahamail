@@ -16,6 +16,7 @@ import (
 	"mail-server/internal/repository"
 	"mail-server/internal/sse"
 	"mail-server/internal/storage"
+	"mail-server/internal/trust"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -635,9 +636,22 @@ func (mc *MailController) GetMessageDetail(c *gin.Context) {
 		return
 	}
 
+	// Evaluasi Kepercayaan & Reputasi Pengirim (Smart Trust & Safety Alert)
+	alert := trust.EvaluateSender(
+		currentUser.ID,
+		msg.From,
+		parsed.BodyHTML,
+		parsed.BodyText,
+		len(parsed.Attachments),
+		msg.SPFStatus,
+		msg.DKIMStatus,
+		msg.DMARCStatus,
+	)
+
 	c.JSON(http.StatusOK, gin.H{
-		"message": msg,
-		"content": parsed,
+		"message":        msg,
+		"content":        parsed,
+		"security_alert": alert,
 	})
 }
 

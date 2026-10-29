@@ -407,6 +407,26 @@
                     <small class="fw-semibold text-secondary d-block mb-1"><i class="bi bi-paperclip me-1"></i>Lampiran File:</small>
                     <div id="attachmentList" class="d-flex flex-wrap gap-2"></div>
                 </div>
+
+                <!-- Security Trust & Warning Banner (Phase 2) -->
+                <div id="securityAlertBanner" class="alert d-none mt-3 mb-0 d-flex align-items-center justify-content-between p-3 border shadow-sm" role="alert" style="border-radius: 8px;">
+                    <div class="d-flex align-items-center">
+                        <div id="securityAlertIcon" class="me-3 fs-3"></div>
+                        <div>
+                            <div id="securityAlertTitle" class="fw-bold mb-1"></div>
+                            <div id="securityAlertDesc" class="small"></div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 ms-3 flex-shrink-0">
+                        <button type="button" id="btnTrustSender" class="btn btn-sm btn-light border fw-semibold shadow-sm text-nowrap" onclick="trustSenderQuickAction()">
+                            <i class="bi bi-person-check me-1 text-success"></i>Tandai Terpercaya
+                        </button>
+                        <button type="button" id="btnSpamSender" class="btn btn-sm btn-outline-danger fw-semibold shadow-sm text-nowrap" onclick="moveCurrentMail('Spam')">
+                            <i class="bi bi-shield-slash me-1"></i>Spam
+                        </button>
+                        <button type="button" class="btn-close ms-2" onclick="dismissSecurityBanner()" aria-label="Close"></button>
+                    </div>
+                </div>
             </div>
 
             <!-- Email Body Content (Sandboxed IFrame anti-XSS) -->
@@ -859,6 +879,7 @@
         let attachmentPreviewModalInstance = null;
         let selectedAttachments = [];
         let currentMailAttachments = [];
+        let currentSecurityAlert = null;
         let isScheduleMode = false;
         let autoSaveTimer = null;
 
@@ -1199,6 +1220,10 @@
                     currentMailAttachments = [];
                 }
 
+                // Render Security Alert Banner (Phase 2)
+                currentSecurityAlert = data.security_alert || null;
+                renderSecurityBanner(currentSecurityAlert);
+
                 const htmlFrame = document.getElementById('htmlContentFrame');
                 const textContainer = document.getElementById('textContentContainer');
 
@@ -1320,6 +1345,87 @@
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
+        }
+
+        // Security Warning Banner Handlers (Phase 2)
+        function renderSecurityBanner(alertData) {
+            const banner = document.getElementById('securityAlertBanner');
+            const icon = document.getElementById('securityAlertIcon');
+            const title = document.getElementById('securityAlertTitle');
+            const desc = document.getElementById('securityAlertDesc');
+            const btnTrust = document.getElementById('btnTrustSender');
+
+            if (!banner || !icon || !title || !desc || !btnTrust) return;
+
+            if (!alertData || alertData.level === 'none') {
+                banner.classList.add('d-none');
+                return;
+            }
+
+            banner.className = 'alert mt-3 mb-0 d-flex align-items-center justify-content-between p-3 border shadow-sm';
+            
+            if (alertData.level === 'danger') {
+                banner.classList.add('alert-danger', 'border-danger-subtle');
+                icon.innerHTML = '<i class="bi bi-shield-x text-danger"></i>';
+                btnTrust.classList.add('d-none'); // Don't encourage whitelisting outright spoofed emails
+            } else if (alertData.level === 'warning') {
+                banner.classList.add('alert-warning', 'border-warning-subtle');
+                icon.innerHTML = '<i class="bi bi-exclamation-triangle text-warning"></i>';
+                btnTrust.classList.remove('d-none');
+            } else if (alertData.level === 'info') {
+                banner.classList.add('alert-info', 'border-info-subtle');
+                icon.innerHTML = '<i class="bi bi-info-circle text-info"></i>';
+                btnTrust.classList.remove('d-none');
+            }
+
+            title.textContent = alertData.title || 'Peringatan Keamanan';
+            desc.textContent = alertData.description || 'Harap berhati-hati dalam berinteraksi dengan pesan ini.';
+            banner.classList.remove('d-none');
+        }
+
+        function dismissSecurityBanner() {
+            const banner = document.getElementById('securityAlertBanner');
+            if (banner) banner.classList.add('d-none');
+        }
+
+        async function trustSenderQuickAction() {
+            if (!currentSecurityAlert || !currentSecurityAlert.sender_email) {
+                alert('Informasi pengirim tidak tersedia.');
+                return;
+            }
+
+            const senderEmail = currentSecurityAlert.sender_email;
+            const fromDisplay = document.getElementById('readMailFrom')?.textContent || senderEmail;
+            
+            // Derive contact name if formatted like "Name <email>"
+            let contactName = senderEmail.split('@')[0];
+            const nameMatch = fromDisplay.match(/^([^<]+)<.+>$/);
+            if (nameMatch) {
+                contactName = nameMatch[1].trim().replace(/^["']|["']$/g, '');
+            }
+
+            try {
+                const res = await fetch('/api/v1/webmail/contacts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: contactName,
+                        email: senderEmail,
+                        company: 'Trusted Sender',
+                        notes: 'Ditandai terpercaya dari webmail reader'
+                    })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    dismissSecurityBanner();
+                    alert(`Alamat ${senderEmail} berhasil ditambahkan ke Kontak & ditandai Terpercaya!`);
+                    if (typeof loadContactsList === 'function') loadContactsList();
+                } else {
+                    alert(data.error || 'Gagal menambahkan ke daftar kontak terpercaya.');
+                }
+            } catch (err) {
+                alert('Gagal menghubungi server.');
+            }
         }
 
         function escapeHtml(text) {
