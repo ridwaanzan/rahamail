@@ -126,6 +126,11 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a href="#simulations" class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-simulations" onclick="loadSimulationsTab()">
+                    <i class="bi bi-shield-exclamation me-2"></i> Phishing Awareness
+                </a>
+            </li>
+            <li class="nav-item">
                 <a href="#logs" class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-logs">
                     <i class="bi bi-broadcast me-2"></i> Live SSE Stream
                 </a>
@@ -439,7 +444,147 @@
                 </div>
             </div>
 
-            <!-- TAB 5: LIVE SSE STREAM LOGS -->
+            <!-- TAB 5: PHISHING & SPAM AWARENESS SIMULATION (PHASE 3) -->
+            <div class="tab-pane fade" id="tab-simulations">
+                <!-- Top Metrics Bar -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <div class="card p-3 d-flex flex-row align-items-center">
+                            <div class="stat-icon bg-primary-subtle text-primary me-3">
+                                <i class="bi bi-people-fill"></i>
+                            </div>
+                            <div>
+                                <small class="text-secondary fw-semibold">TOTAL TARGET DIUJI</small>
+                                <h4 id="simStatTotalSent" class="fw-bold mb-0 text-dark">0</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card p-3 d-flex flex-row align-items-center">
+                            <div class="stat-icon bg-danger-subtle text-danger me-3">
+                                <i class="bi bi-shield-x"></i>
+                            </div>
+                            <div>
+                                <small class="text-secondary fw-semibold">GAGAL (KLIK LINK)</small>
+                                <h4 id="simStatTotalClicked" class="fw-bold mb-0 text-danger">0</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card p-3 d-flex flex-row align-items-center">
+                            <div class="stat-icon bg-success-subtle text-success me-3">
+                                <i class="bi bi-shield-check"></i>
+                            </div>
+                            <div>
+                                <small class="text-secondary fw-semibold">LOLOS (LAPOR SPAM)</small>
+                                <h4 id="simStatTotalReported" class="fw-bold mb-0 text-success">0</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card p-3 d-flex flex-row align-items-center">
+                            <div class="stat-icon bg-warning-subtle text-warning me-3">
+                                <i class="bi bi-graph-down-arrow"></i>
+                            </div>
+                            <div>
+                                <small class="text-secondary fw-semibold">FAILURE RATE (%)</small>
+                                <h4 id="simStatFailureRate" class="fw-bold mb-0 text-dark">0.0%</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Section: Visual Chart & Active Campaigns -->
+                <div class="row g-4 mb-4">
+                    <!-- Visual Result Ratio Card (SVG Donut Chart) -->
+                    <div class="col-lg-4">
+                        <div class="card p-4 h-100 shadow-sm text-center">
+                            <h6 class="fw-bold text-dark mb-3 text-start"><i class="bi bi-pie-chart-fill text-primary me-2"></i>Rasio Awareness Karyawan</h6>
+                            <div class="d-flex justify-content-center align-items-center py-2">
+                                <svg width="180" height="180" viewBox="0 0 42 42" class="donut">
+                                    <circle class="donut-ring" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#f1f5f9" stroke-width="5"></circle>
+                                    <circle id="donutSegmentLolos" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#22c55e" stroke-width="5" stroke-dasharray="0 100" stroke-dashoffset="25"></circle>
+                                    <circle id="donutSegmentGagal" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#ef4444" stroke-width="5" stroke-dasharray="0 100" stroke-dashoffset="25"></circle>
+                                    <g class="chart-text">
+                                        <text x="50%" y="46%" class="chart-number" text-anchor="middle" font-size="6" font-weight="bold" fill="#0f172a" id="donutCenterRate">0%</text>
+                                        <text x="50%" y="58%" class="chart-label" text-anchor="middle" font-size="2.6" fill="#64748b">Vulnerable</text>
+                                    </g>
+                                </svg>
+                            </div>
+                            <div class="d-flex justify-content-around mt-3 small">
+                                <div><span class="badge bg-success me-1">&nbsp;</span> Lolos: <strong id="lblLolos">0</strong></div>
+                                <div><span class="badge bg-danger me-1">&nbsp;</span> Gagal: <strong id="lblGagal">0</strong></div>
+                                <div><span class="badge bg-secondary me-1">&nbsp;</span> Diam: <strong id="lblDiam">0</strong></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Campaign Actions & List -->
+                    <div class="col-lg-8">
+                        <div class="card p-4 h-100 shadow-sm">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <h5 class="fw-bold mb-1"><i class="bi bi-shield-shaded text-primary me-2"></i>Kampanye Simulasi Phishing</h5>
+                                    <p class="text-secondary small mb-0">Uji ketahanan keamanan siber karyawan terhadap social engineering.</p>
+                                </div>
+                                <button class="btn btn-primary btn-sm fw-semibold" onclick="openNewCampaignModal()">
+                                    <i class="bi bi-plus-circle me-1"></i> Buat Simulasi Baru
+                                </button>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Judul Kampanye</th>
+                                            <th>Pengirim Uji Coba</th>
+                                            <th>Status</th>
+                                            <th>Target</th>
+                                            <th>Gagal (Klik)</th>
+                                            <th>Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="campaignsTableBody">
+                                        <tr>
+                                            <td colspan="6" class="text-center py-4 text-secondary">
+                                                <div class="spinner-border spinner-border-sm me-2" role="status"></div>Memuat data kampanye...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Target Breakdown Table -->
+                <div class="card p-4 shadow-sm">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold mb-0 text-dark" id="targetBreakdownTitle"><i class="bi bi-person-lines-fill text-primary me-2"></i>Rincian Status Karyawan Terpilih</h6>
+                        <span class="badge bg-light text-secondary border" id="badgeTargetCount">0 Karyawan</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Email Karyawan</th>
+                                    <th>Status Pelatihan</th>
+                                    <th>Waktu Terkirim</th>
+                                    <th>Waktu Klik (Gagal)</th>
+                                    <th>IP / Browser</th>
+                                </tr>
+                            </thead>
+                            <tbody id="simTargetsTableBody">
+                                <tr>
+                                    <td colspan="5" class="text-center py-3 text-muted">Pilih atau luncurkan kampanye untuk melihat daftar rincian status karyawan.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 6: LIVE SSE STREAM LOGS -->
             <div class="tab-pane fade" id="tab-logs">
                 <div class="card p-4 shadow-sm">
                     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -453,6 +598,56 @@
             </div>
         </div>
     </main>
+
+    <!-- MODAL CREATE SIMULATION CAMPAIGN -->
+    <div class="modal fade" id="modalNewCampaign" tabindex="-1" aria-labelledby="modalNewCampaignLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="modalNewCampaignLabel"><i class="bi bi-shield-plus text-primary me-2"></i>Rancang Kampanye Simulasi Phishing</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-secondary">PILIH DARI TEMPLATE PRESET BAWAAN</label>
+                        <select class="form-select" id="simPresetSelect" onchange="onSelectPresetChange()">
+                            <option value="">-- Pilih Skenario Phishing Siap Pakai --</option>
+                        </select>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">JUDUL KAMPANYE (INTERNAL)</label>
+                            <input type="text" class="form-control" id="simCampaignTitle" placeholder="Misal: Uji Coba Q4 HR Payroll" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">NAMA PENGIRIM PALSU (DISPLAY NAME)</label>
+                            <input type="text" class="form-control" id="simSenderName" placeholder="Misal: HR Support Service" required>
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">EMAIL PENGIRIM PALSU</label>
+                            <input type="email" class="form-control" id="simSenderEmail" placeholder="Misal: hr-support@company-portal.xyz" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">SUBJEK EMAIL</label>
+                            <input type="text" class="form-control" id="simSubject" placeholder="Misal: [PENTING] Verifikasi Rekening Anda" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-secondary">BODY EMAIL HTML (Gunakan <code>{{`{{.TrackingLink}}`}}</code> untuk link uji coba)</label>
+                        <textarea class="form-control font-monospace small" id="simTemplateBody" rows="7" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-primary btn-sm fw-semibold" id="btnSubmitCampaign" onclick="submitNewCampaign()">
+                        <i class="bi bi-save me-1"></i> Simpan Kampanye
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Bootstrap Bundle JS v5.3.8 (via npm install) -->
     <script src="/static/js/bootstrap.bundle.min.js"></script>
@@ -585,6 +780,226 @@
                 btn.disabled = false;
                 btn.innerHTML = '<i class="bi bi-send-fill me-1"></i> Kirim Sekarang';
             }
+        }
+
+        // ==========================================
+        // PHISHING AWARENESS SIMULATION (PHASE 3)
+        // ==========================================
+        let availablePresets = [];
+        let newCampaignModalInstance = null;
+
+        async function loadSimulationsTab() {
+            try {
+                const res = await fetch('/api/v1/admin/simulations');
+                const data = await res.json();
+                const tbody = document.getElementById('campaignsTableBody');
+                tbody.innerHTML = '';
+
+                let grandTotalSent = 0;
+                let grandTotalClicked = 0;
+                let grandTotalReported = 0;
+
+                if (!data.campaigns || data.campaigns.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-secondary">Belum ada kampanye simulasi. Silakan buat kampanye pertama Anda!</td></tr>';
+                } else {
+                    data.campaigns.forEach(c => {
+                        grandTotalSent += (c.total_sent || 0);
+                        grandTotalClicked += (c.total_clicked || 0);
+                        grandTotalReported += (c.total_reported || 0);
+
+                        const row = document.createElement('tr');
+                        const statusBadge = c.status === 'running' 
+                            ? '<span class="badge bg-success-subtle text-success border border-success-subtle">RUNNING</span>'
+                            : '<span class="badge bg-secondary-subtle text-secondary border">DRAFT</span>';
+
+                        row.innerHTML = `
+                            <td><strong>${escapeHtml(c.title)}</strong><br><small class="text-secondary">${escapeHtml(c.subject)}</small></td>
+                            <td><code>${escapeHtml(c.sender_email)}</code></td>
+                            <td>${statusBadge}</td>
+                            <td><span class="badge bg-light text-dark border">${c.total_sent || 0} orang</span></td>
+                            <td><span class="badge bg-danger-subtle text-danger border border-danger-subtle">${c.total_clicked || 0} (${c.total_sent ? Math.round((c.total_clicked / c.total_sent) * 100) : 0}%)</span></td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary me-1" onclick="viewCampaignDetail(${c.id})"><i class="bi bi-bar-chart"></i> Detail</button>
+                                ${c.status === 'draft' ? `<button class="btn btn-sm btn-primary" onclick="launchCampaignNow(${c.id})"><i class="bi bi-play-fill"></i> Luncurkan</button>` : ''}
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+
+                    // Auto-load details of the first campaign
+                    if (data.campaigns.length > 0) {
+                        viewCampaignDetail(data.campaigns[0].id);
+                    }
+                }
+
+                // Update Overall Summary Cards
+                document.getElementById('simStatTotalSent').innerText = grandTotalSent;
+                document.getElementById('simStatTotalClicked').innerText = grandTotalClicked;
+                document.getElementById('simStatTotalReported').innerText = grandTotalReported;
+
+                const overallFailureRate = grandTotalSent > 0 ? ((grandTotalClicked / grandTotalSent) * 100).toFixed(1) : "0.0";
+                document.getElementById('simStatFailureRate').innerText = overallFailureRate + "%";
+
+            } catch (err) {
+                console.error("Gagal memuat kampanye:", err);
+            }
+        }
+
+        async function viewCampaignDetail(id) {
+            try {
+                const res = await fetch(`/api/v1/admin/simulations/${id}/stats`);
+                const data = await res.json();
+                if (!res.ok) return;
+
+                document.getElementById('targetBreakdownTitle').innerHTML = `<i class="bi bi-person-lines-fill text-primary me-2"></i>Rincian Karyawan: <strong>${escapeHtml(data.title)}</strong>`;
+                document.getElementById('badgeTargetCount').innerText = `${data.total_sent} Karyawan`;
+
+                // Update Donut Chart
+                const total = data.total_sent || 1;
+                const lolosPct = Math.round((data.total_reported / total) * 100);
+                const gagalPct = Math.round((data.total_clicked / total) * 100);
+
+                document.getElementById('donutSegmentLolos').setAttribute('stroke-dasharray', `${lolosPct} ${100 - lolosPct}`);
+                document.getElementById('donutSegmentGagal').setAttribute('stroke-dasharray', `${gagalPct} ${100 - gagalPct}`);
+                document.getElementById('donutSegmentGagal').setAttribute('stroke-dashoffset', `${25 - lolosPct}`);
+                document.getElementById('donutCenterRate').textContent = data.failure_rate;
+
+                document.getElementById('lblLolos').innerText = data.total_reported;
+                document.getElementById('lblGagal').innerText = data.total_clicked;
+                document.getElementById('lblDiam').innerText = data.total_unresponsive;
+
+                // Render Targets Table
+                const tbody = document.getElementById('simTargetsTableBody');
+                tbody.innerHTML = '';
+                if (!data.targets || data.targets.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-muted">Belum ada target karyawan.</td></tr>';
+                    return;
+                }
+
+                data.targets.forEach(t => {
+                    const row = document.createElement('tr');
+                    let statusBadge = '<span class="badge bg-secondary-subtle text-secondary">Terkirim (Diam)</span>';
+                    if (t.status === 'clicked') {
+                        statusBadge = '<span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>NOT PASSED (Klik Link)</span>';
+                    } else if (t.status === 'reported') {
+                        statusBadge = '<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>PASSED (Lapor Spam)</span>';
+                    }
+
+                    const clickedTime = t.clicked_at ? new Date(t.clicked_at).toLocaleString() : '-';
+                    const ipAgent = t.ip_address ? `${t.ip_address} (${t.user_agent ? t.user_agent.substring(0, 24) + '...' : '-'})` : '-';
+
+                    row.innerHTML = `
+                        <td><strong>${escapeHtml(t.user ? t.user.email : 'User #' + t.user_id)}</strong></td>
+                        <td>${statusBadge}</td>
+                        <td>${new Date(t.sent_at).toLocaleTimeString()}</td>
+                        <td class="${t.clicked_at ? 'text-danger fw-semibold' : 'text-muted'}">${clickedTime}</td>
+                        <td class="small text-muted font-monospace">${escapeHtml(ipAgent)}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+            } catch (err) {
+                console.error("Gagal memuat detail kampanye:", err);
+            }
+        }
+
+        async function launchCampaignNow(id) {
+            if (!confirm('Luncurkan email simulasi ini sekarang ke seluruh karyawan target?')) return;
+            try {
+                const res = await fetch(`/api/v1/admin/simulations/${id}/launch`, { method: 'POST' });
+                const data = await res.json();
+                if (res.ok) {
+                    alert(data.message);
+                    loadSimulationsTab();
+                } else {
+                    alert('Gagal meluncurkan: ' + (data.error || 'Terjadi kesalahan'));
+                }
+            } catch (err) {
+                alert('Kesalahan jaringan: ' + err.message);
+            }
+        }
+
+        async function openNewCampaignModal() {
+            if (!newCampaignModalInstance) {
+                newCampaignModalInstance = new bootstrap.Modal(document.getElementById('modalNewCampaign'));
+            }
+
+            // Load presets jika belum ada
+            if (availablePresets.length === 0) {
+                try {
+                    const res = await fetch('/api/v1/admin/simulations/presets');
+                    const data = await res.json();
+                    availablePresets = data.presets || [];
+                    const select = document.getElementById('simPresetSelect');
+                    select.innerHTML = '<option value="">-- Pilih Skenario Phishing Siap Pakai --</option>';
+                    availablePresets.forEach((p, idx) => {
+                        select.innerHTML += `<option value="${idx}">${escapeHtml(p.title)}</option>`;
+                    });
+                } catch (e) {
+                    console.error("Gagal load presets:", e);
+                }
+            }
+
+            newCampaignModalInstance.show();
+        }
+
+        function onSelectPresetChange() {
+            const idx = document.getElementById('simPresetSelect').value;
+            if (idx === "") return;
+            const preset = availablePresets[idx];
+            if (!preset) return;
+
+            document.getElementById('simCampaignTitle').value = preset.title;
+            document.getElementById('simSenderName').value = preset.sender_name;
+            document.getElementById('simSenderEmail').value = preset.sender_email;
+            document.getElementById('simSubject').value = preset.subject;
+            document.getElementById('simTemplateBody').value = preset.template_html;
+        }
+
+        async function submitNewCampaign() {
+            const title = document.getElementById('simCampaignTitle').value.trim();
+            const sender_name = document.getElementById('simSenderName').value.trim();
+            const sender_email = document.getElementById('simSenderEmail').value.trim();
+            const subject = document.getElementById('simSubject').value.trim();
+            const template_body = document.getElementById('simTemplateBody').value.trim();
+
+            if (!title || !sender_name || !sender_email || !subject || !template_body) {
+                alert('Seluruh field form wajib diisi!');
+                return;
+            }
+
+            const btn = document.getElementById('btnSubmitCampaign');
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/v1/admin/simulations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, sender_name, sender_email, subject, template_body })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    newCampaignModalInstance.hide();
+                    alert('Kampanye simulasi berhasil dibuat!');
+                    loadSimulationsTab();
+                } else {
+                    alert('Gagal: ' + (data.error || 'Terjadi kesalahan sistem'));
+                }
+            } catch (err) {
+                alert('Kesalahan jaringan: ' + err.message);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return String(text)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
         }
 
         document.addEventListener('DOMContentLoaded', initSSE);

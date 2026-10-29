@@ -4,11 +4,19 @@ This document tracks all official releases of **RaHaMail**, highlighting new fea
 
 ---
 
-## 📦 Version 1.4.0 (October 29, 2026) — Enterprise Defenses, Inbound DMARC & Cloud Ops
+## 📦 Version 1.4.0 (October 29, 2026) — Security Awareness Simulation & Enterprise Threat Defenses
 
-Phase 3 release of the RaHaMail Enterprise Roadmap, adding ClamAV & Rspamd scanning, Inbound DMARC verification, and S3-compatible cloud disaster recovery.
+Release 1.4.0 introduces an internal Phishing & Spam Awareness Simulation engine for employee training, alongside ClamAV/Rspamd scanner milters, Inbound DMARC verification, and S3-compatible cloud disaster recovery.
 
 ### 🌟 Release Highlights
+- **Employee Phishing & Spam Awareness Simulation Platform**:
+  - Full-featured human risk management training platform integrated directly into the mail server.
+  - Skenario templates out-of-the-box: IT Password Expiration alerts, HR Bonus notifications, and Courier Delivery notices.
+  - Safe local distribution via internal queue without outbound internet footprint.
+  - Tracking URL dispatcher (`GET /sim/c/:code`) capturing click interactions, timestamps, IP addresses, and user-agents (**Status: NOT PASSED**).
+  - Teachable Moment educational landing page providing instant constructive feedback on overlooked red flags.
+  - Webmail Spam Report detection marking employees who report simulated emails as **PASSED**.
+  - Admin Analytics Dashboard with interactive SVG Donut charts, failure rate percentages, and individual employee compliance breakdown.
 - **Antivirus & Anti-Spam Filtering (ClamAV & Rspamd)**:
   - Real-time scanning of inbound email streams and attachments over ClamAV `INSTREAM` protocol (`127.0.0.1:3310` or Unix socket). Rejects infected messages with `554 5.7.1 Message rejected: Infected with [VirusName]`.
   - HTTP-based Rspamd milter scanning (`/checkv2`) with automatic classification, quarantine routing to the `Spam` folder, and subject tagging (`[SPAM]`).

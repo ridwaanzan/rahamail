@@ -2,7 +2,7 @@
 
 > Modern, ultra-lightweight, high-performance, single-binary Mail Server written in pure Go with Webmail Portal, Admin Dashboard, SMTP Inbound & Submission, IMAP4rev1 Server, Email Scheduler, Server-Sent Events (SSE), and embedded SQLite WAL storage.
 
-[![Release](https://img.shields.io/badge/release-v1.3.0-blue.svg)](RELEASE_NOTES.md)
+[![Release](https://img.shields.io/badge/release-v1.4.0-blue.svg)](RELEASE_NOTES.md)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Go Report Card](https://img.shields.io/badge/Go-1.26+-00ADD8.svg)](https://go.dev/)
 [![Docker Image Size](https://img.shields.io/badge/docker%20image-~51MB-2496ED.svg)](Dockerfile)
@@ -28,6 +28,7 @@
 - **Catch-All Mailboxes & Domain Aliases**: Route unmatched incoming emails (`*@domain.com`) directly to a designated administrative or support mailbox without triggering 550 bounces.
 
 ### 🛡️ Security & Authentication Hardening
+- **Employee Phishing & Spam Awareness Simulation (v1.4.0)**: Built-in human risk management training platform. Enables security administrators to dispatch controlled phishing simulations, inject encrypted tracking tokens (`/sim/c/:code`), record non-compliance (*NOT PASSED* vs *PASSED*), present instant educational landing pages (*Teachable Moments*), and view interactive failure rate analytics dashboards.
 - **Inbound Trust & Unknown Domain Warning Banner**: Automatic sender reputation analysis engine (`internal/trust`). Detects first-time external senders, scans payloads for suspicious URLs and attachments, and renders interactive warning banners in Webmail with one-click **"Mark as Trusted / Add to Contacts"** and **"Move to Spam"** actions.
 - **Antivirus & Anti-Spam Filtering (ClamAV & Rspamd)**: Real-time scan of incoming emails via ClamAV INSTREAM socket (blocking malware with `554 5.7.1`) and Rspamd HTTP checks routing spam to `Spam` folders.
 - **Inbound DMARC, SPF & DKIM Verification (RFC 7489 & RFC 8601)**: Strict policy enforcement (`p=reject` / `p=quarantine`) with automatic `Authentication-Results` header generation.
