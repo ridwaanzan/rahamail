@@ -443,18 +443,24 @@
         }
 
         async function launchCampaignNow(id) {
-            if (!confirm('Luncurkan email simulasi ini sekarang ke seluruh karyawan target?')) return;
+            const confirmed = await showModalConfirm({
+                title: 'Luncurkan Simulasi',
+                message: 'Luncurkan email simulasi ini sekarang ke seluruh karyawan target? Email edukasi akan dikirimkan otomatis.',
+                type: 'warning',
+                confirmText: 'Luncurkan Sekarang'
+            });
+            if (!confirmed) return;
             try {
                 const res = await fetch(`/api/v1/admin/simulations/${id}/launch`, { method: 'POST' });
                 const data = await res.json();
                 if (res.ok) {
-                    alert(data.message);
+                    showToast(data.message || 'Simulasi berhasil diluncurkan!', 'success');
                     loadSimulations();
                 } else {
-                    alert('Gagal meluncurkan: ' + (data.error || 'Terjadi kesalahan'));
+                    showModalAlert({ title: 'Gagal Meluncurkan', message: data.error || 'Terjadi kesalahan sistem', type: 'error' });
                 }
             } catch (err) {
-                alert('Kesalahan jaringan: ' + err.message);
+                showModalAlert({ title: 'Kesalahan Jaringan', message: err.message, type: 'error' });
             }
         }
 
@@ -504,7 +510,7 @@
             const template_body = document.getElementById('simTemplateBody').value.trim();
 
             if (!title || !sender_name || !sender_email || !subject || !template_body) {
-                alert('Seluruh field form wajib diisi!');
+                showModalAlert({ title: 'Validasi Form', message: 'Seluruh field form wajib diisi!', type: 'warning' });
                 return;
             }
 
@@ -520,13 +526,13 @@
                 const data = await res.json();
                 if (res.ok) {
                     closeNewCampaignModal();
-                    alert('Kampanye simulasi berhasil dibuat!');
+                    showToast('Kampanye simulasi berhasil dibuat!', 'success');
                     loadSimulations();
                 } else {
-                    alert('Gagal: ' + (data.error || 'Terjadi kesalahan sistem'));
+                    showModalAlert({ title: 'Gagal Membuat Kampanye', message: data.error || 'Terjadi kesalahan sistem', type: 'error' });
                 }
             } catch (err) {
-                alert('Kesalahan jaringan: ' + err.message);
+                showModalAlert({ title: 'Kesalahan Jaringan', message: err.message, type: 'error' });
             } finally {
                 btn.disabled = false;
             }

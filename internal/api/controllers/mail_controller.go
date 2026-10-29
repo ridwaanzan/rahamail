@@ -352,11 +352,17 @@ func (mc *MailController) CreateDomain(c *gin.Context) {
 		req.Selector = "mail"
 	}
 
+	privKey, pubTXT, err := delivery.GenerateRSAKeyPair()
+	if err != nil {
+		pubTXT = "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA..."
+	}
+
 	d := domain.Domain{
-		Name:          req.Name,
-		DKIMSelector:  req.Selector,
-		DKIMPublicKey: "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A...",
-		IsActive:      true,
+		Name:           req.Name,
+		DKIMSelector:   req.Selector,
+		DKIMPrivateKey: privKey,
+		DKIMPublicKey:  pubTXT,
+		IsActive:       true,
 	}
 
 	if err := repository.DB.Create(&d).Error; err != nil {

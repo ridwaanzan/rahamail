@@ -1,5 +1,6 @@
 import { initTheme, toggleTheme } from './theme.js';
 import { renderSplineTrafficChart, renderMiniSparkline } from './charts.js';
+import { initDialogs, showToast, showModalAlert, showModalConfirm, showDkimModal } from './dialog.js';
 
 // Global state
 let sseSource = null;
@@ -7,6 +8,7 @@ let trafficHistory = [40, 65, 80, 50, 95, 120, 160, 110, 145, 185, 210, 240];
 
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
+  initDialogs();
 
   // Initial Charts
   renderSplineTrafficChart('sseTrafficChart', trafficHistory);

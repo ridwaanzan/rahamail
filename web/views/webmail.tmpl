@@ -674,7 +674,7 @@
                         <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 block"><i class="bi bi-check-circle-fill mr-1"></i> API Key Baru Berhasil Dibuat:</span>
                         <div class="flex gap-2">
                             <input type="text" id="newKeyToken" class="flex-1 px-3 py-1.5 text-xs font-mono font-bold rounded-lg border border-light-border dark:border-dark-border bg-white dark:bg-dark-card text-light-text dark:text-white" readonly>
-                            <button onclick="navigator.clipboard.writeText(document.getElementById('newKeyToken').value); alert('Token disalin!');" class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-light-border dark:border-dark-border bg-slate-100 dark:bg-dark-header">Salin</button>
+                            <button onclick="navigator.clipboard.writeText(document.getElementById('newKeyToken').value); showToast('Token API Key berhasil disalin!', 'success');" class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-light-border dark:border-dark-border bg-slate-100 dark:bg-dark-header">Salin</button>
                         </div>
                     </div>
 
@@ -1078,7 +1078,7 @@
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
                 if (file.size > 15 * 1024 * 1024) {
-                    alert(`File ${file.name} melebihi batas 15MB.`);
+                    showModalAlert({ title: 'Ukuran Melebihi Batas', message: `Berkas ${file.name} melebihi batas maksimum 15MB.`, type: 'warning' });
                     continue;
                 }
                 const reader = new FileReader();
@@ -1126,11 +1126,11 @@
             const btn = document.getElementById('btnSendMail');
 
             if (!to) {
-                alert('Silakan masukkan alamat penerima email (To).');
+                showModalAlert({ title: 'Tujuan Kosong', message: 'Silakan masukkan alamat penerima email (To).', type: 'warning' });
                 return;
             }
             if (!subject) {
-                alert('Silakan masukkan subjek email.');
+                showModalAlert({ title: 'Subjek Kosong', message: 'Silakan masukkan subjek email.', type: 'warning' });
                 return;
             }
 
@@ -1139,7 +1139,7 @@
             if (isScheduleMode) {
                 const schedVal = document.getElementById('scheduleDatetimeInput').value;
                 if (!schedVal) {
-                    alert('Pilih tanggal dan jam pengiriman.');
+                    showModalAlert({ title: 'Waktu Belum Dipilih', message: 'Silakan pilih tanggal dan jam pengiriman email.', type: 'warning' });
                     btn.disabled = false;
                     return;
                 }
@@ -1159,14 +1159,14 @@
                     const data = await res.json();
                     if (res.ok && data.status === 'success') {
                         localStorage.removeItem('rahamail_draft');
-                        alert(data.message);
                         closeComposer();
-                        window.location.href = '/mail?folder=Scheduled';
+                        showToast(data.message || 'Email berhasil dijadwalkan!', 'success');
+                        setTimeout(() => { window.location.href = '/mail?folder=Scheduled'; }, 1000);
                     } else {
-                        alert('Gagal menjadwalkan: ' + (data.error || 'Terjadi kesalahan'));
+                        showModalAlert({ title: 'Gagal Menjadwalkan', message: data.error || 'Terjadi kesalahan sistem', type: 'error' });
                     }
                 } catch (err) {
-                    alert('Gagal menghubungi server.');
+                    showModalAlert({ title: 'Kesalahan Jaringan', message: 'Gagal menghubungi server.', type: 'error' });
                 } finally {
                     btn.disabled = false;
                     btn.innerHTML = '<i class="bi bi-clock-history mr-1"></i><span>Jadwalkan Pengiriman</span>';
@@ -1189,14 +1189,14 @@
                     const data = await res.json();
                     if (res.ok && data.status === 'success') {
                         localStorage.removeItem('rahamail_draft');
-                        alert('Email berhasil dikirim!');
                         closeComposer();
-                        location.reload();
+                        showToast('Email berhasil dikirim!', 'success');
+                        setTimeout(() => location.reload(), 1000);
                     } else {
-                        alert('Gagal mengirim email: ' + (data.error || 'Terjadi kesalahan'));
+                        showModalAlert({ title: 'Gagal Mengirim Email', message: data.error || 'Terjadi kesalahan pengiriman email', type: 'error' });
                     }
                 } catch (err) {
-                    alert('Gagal terhubung ke server saat mengirim email.');
+                    showModalAlert({ title: 'Kesalahan Jaringan', message: 'Gagal terhubung ke server saat mengirim email.', type: 'error' });
                 } finally {
                     btn.disabled = false;
                     btn.innerHTML = '<i class="bi bi-send-fill text-xs"></i><span>Kirim Sekarang</span>';
@@ -1205,18 +1205,24 @@
         }
 
         async function cancelSchedule(id) {
-            if (!confirm('Batalkan pengiriman email terjadwal ini?')) return;
+            const confirmed = await showModalConfirm({
+                title: 'Batalkan Jadwal',
+                message: 'Batalkan pengiriman email terjadwal ini?',
+                type: 'warning',
+                confirmText: 'Ya, Batalkan'
+            });
+            if (!confirmed) return;
             try {
                 const res = await fetch(`/api/v1/webmail/schedule/${id}/cancel`, { method: 'POST' });
                 const data = await res.json();
                 if (res.ok && data.status === 'success') {
-                    alert(data.message);
-                    location.reload();
+                    showToast(data.message || 'Jadwal email berhasil dibatalkan', 'success');
+                    setTimeout(() => location.reload(), 1000);
                 } else {
-                    alert('Gagal membatalkan: ' + (data.error || 'Terjadi kesalahan'));
+                    showModalAlert({ title: 'Gagal Membatalkan', message: data.error || 'Terjadi kesalahan sistem', type: 'error' });
                 }
             } catch (err) {
-                alert('Gagal terhubung ke server.');
+                showModalAlert({ title: 'Kesalahan Jaringan', message: 'Gagal terhubung ke server.', type: 'error' });
             }
         }
 
@@ -1292,7 +1298,7 @@
                     textContainer.textContent = content.body_text || msg.snippet;
                 }
             } catch (err) {
-                alert('Gagal mengambil konten email: ' + err.message);
+                showModalAlert({ title: 'Gagal Memuat Konten', message: 'Gagal mengambil konten email: ' + err.message, type: 'error' });
             }
         }
 
@@ -1314,7 +1320,13 @@
 
         async function moveCurrentMail(targetBox) {
             if (!currentLoadedMailId) return;
-            if (!confirm(`Pindahkan email ini ke ${targetBox}?`)) return;
+            const confirmed = await showModalConfirm({
+                title: 'Pindahkan Email',
+                message: `Pindahkan email ini ke folder ${targetBox}?`,
+                type: 'warning',
+                confirmText: 'Ya, Pindahkan'
+            });
+            if (!confirmed) return;
 
             try {
                 const res = await fetch('/api/v1/webmail/messages/move', {
@@ -1327,15 +1339,22 @@
                     document.getElementById('readerEmptyState').classList.remove('hidden');
                     document.getElementById('readerContainer').classList.add('hidden');
                     currentLoadedMailId = null;
+                    showToast(`Email berhasil dipindahkan ke ${targetBox}`, 'success');
                 }
             } catch (err) {
-                alert('Gagal memindahkan pesan');
+                showModalAlert({ title: 'Gagal Memindahkan', message: 'Gagal memindahkan pesan ke folder lain.', type: 'error' });
             }
         }
 
         async function deletePermanentCurrentMail() {
             if (!currentLoadedMailId) return;
-            if (!confirm('Hapus permanen email ini dari server? Tindakan ini tidak dapat dibatalkan.')) return;
+            const confirmed = await showModalConfirm({
+                title: 'Hapus Permanen Email',
+                message: 'Hapus permanen email ini dari server? Berkas di storage akan dihapus dan tindakan ini tidak dapat dibatalkan.',
+                type: 'danger',
+                confirmText: 'Hapus Permanen'
+            });
+            if (!confirmed) return;
 
             try {
                 const res = await fetch(`/api/v1/webmail/messages/${currentLoadedMailId}`, {
@@ -1347,17 +1366,23 @@
                     document.getElementById('readerEmptyState').classList.remove('hidden');
                     document.getElementById('readerContainer').classList.add('hidden');
                     currentLoadedMailId = null;
-                    alert('Email berhasil dihapus secara permanen.');
+                    showToast('Email berhasil dihapus secara permanen.', 'success');
                 } else {
-                    alert('Gagal menghapus: ' + (data.error || 'Terjadi kesalahan'));
+                    showModalAlert({ title: 'Gagal Menghapus', message: data.error || 'Terjadi kesalahan saat menghapus pesan.', type: 'error' });
                 }
             } catch (err) {
-                alert('Gagal menghubungi server.');
+                showModalAlert({ title: 'Kesalahan Jaringan', message: 'Gagal menghubungi server.', type: 'error' });
             }
         }
 
         async function emptyTrashFolder() {
-            if (!confirm('Kosongkan seluruh email di folder Trash secara permanen? Seluruh berkas akan dihapus dari server dan tidak dapat dikembalikan.')) return;
+            const confirmed = await showModalConfirm({
+                title: 'Kosongkan Folder Sampah',
+                message: 'Kosongkan seluruh email di folder Trash secara permanen? Seluruh berkas email akan dihapus dari server dan ruang penyimpanan Anda akan dipulihkan.',
+                type: 'danger',
+                confirmText: 'Kosongkan Sekarang'
+            });
+            if (!confirmed) return;
 
             try {
                 const res = await fetch('/api/v1/webmail/trash/empty', {
@@ -1365,13 +1390,13 @@
                 });
                 const data = await res.json();
                 if (res.ok) {
-                    alert(data.message || 'Folder Trash berhasil dikosongkan.');
-                    location.reload();
+                    showToast(data.message || 'Folder Trash berhasil dikosongkan.', 'success');
+                    setTimeout(() => location.reload(), 800);
                 } else {
-                    alert('Gagal mengosongkan Trash: ' + (data.error || 'Terjadi kesalahan'));
+                    showModalAlert({ title: 'Gagal Mengosongkan', message: data.error || 'Terjadi kesalahan sistem', type: 'error' });
                 }
             } catch (err) {
-                alert('Gagal menghubungi server.');
+                showModalAlert({ title: 'Kesalahan Jaringan', message: 'Gagal menghubungi server.', type: 'error' });
             }
         }
 
@@ -1482,7 +1507,7 @@
 
         async function trustSenderQuickAction() {
             if (!currentSecurityAlert || !currentSecurityAlert.sender_email) {
-                alert('Informasi pengirim tidak tersedia.');
+                showModalAlert({ title: 'Data Tidak Lengkap', message: 'Informasi pengirim tidak tersedia.', type: 'warning' });
                 return;
             }
 
@@ -1509,13 +1534,13 @@
                 const data = await res.json();
                 if (res.ok) {
                     dismissSecurityBanner();
-                    alert(`Alamat ${senderEmail} berhasil ditambahkan ke Kontak & ditandai Terpercaya!`);
+                    showToast(`Alamat ${senderEmail} berhasil ditambahkan ke Kontak & ditandai Terpercaya!`, 'success');
                     if (typeof loadContactsList === 'function') loadContactsList();
                 } else {
-                    alert(data.error || 'Gagal menambahkan ke daftar kontak terpercaya.');
+                    showModalAlert({ title: 'Gagal Menambahkan', message: data.error || 'Gagal menambahkan ke daftar kontak terpercaya.', type: 'error' });
                 }
             } catch (err) {
-                alert('Gagal menghubungi server.');
+                showModalAlert({ title: 'Kesalahan Jaringan', message: 'Gagal menghubungi server.', type: 'error' });
             }
         }
 
@@ -1552,10 +1577,10 @@
                     document.getElementById('setup2FASteps').classList.remove('hidden');
                     document.getElementById('btnStartSetup2FA').classList.add('hidden');
                 } else {
-                    alert(data.error || 'Gagal menyiapkan 2FA');
+                    showModalAlert({ title: 'Gagal Setup 2FA', message: data.error || 'Gagal menyiapkan 2FA', type: 'error' });
                 }
             } catch (err) {
-                alert('Gagal terhubung ke server');
+                showModalAlert({ title: 'Kesalahan Jaringan', message: 'Gagal terhubung ke server', type: 'error' });
             }
         }
 
@@ -1603,7 +1628,7 @@
                     alertBox.classList.remove('hidden');
                 }
             } catch (err) {
-                alert('Gagal terhubung ke server');
+                showModalAlert({ title: 'Kesalahan Jaringan', message: 'Gagal terhubung ke server', type: 'error' });
             }
         }
 
@@ -1614,7 +1639,7 @@
         async function submitDisable2FA() {
             const password = document.getElementById('disable2FAPassword').value;
             if (!password) {
-                alert('Masukkan kata sandi Anda');
+                showModalAlert({ title: 'Password Diperlukan', message: 'Masukkan kata sandi Anda untuk menonaktifkan 2FA.', type: 'warning' });
                 return;
             }
 
@@ -1626,13 +1651,13 @@
                 });
                 const data = await res.json();
                 if (res.ok && data.status === 'success') {
-                    alert(data.message);
-                    location.reload();
+                    showToast(data.message || '2FA berhasil dinonaktifkan', 'success');
+                    setTimeout(() => location.reload(), 1000);
                 } else {
-                    alert(data.error || 'Gagal menonaktifkan 2FA');
+                    showModalAlert({ title: 'Gagal', message: data.error || 'Gagal menonaktifkan 2FA', type: 'error' });
                 }
             } catch (err) {
-                alert('Gagal terhubung ke server');
+                showModalAlert({ title: 'Kesalahan Jaringan', message: 'Gagal terhubung ke server', type: 'error' });
             }
         }
 
@@ -1681,24 +1706,31 @@
                     document.getElementById('newKeyBanner').classList.remove('hidden');
                     loadAPIKeys();
                 } else {
-                    alert(data.error || 'Gagal membuat API key');
+                    showModalAlert({ title: 'Gagal Membuat Key', message: data.error || 'Gagal membuat API key', type: 'error' });
                 }
             } catch (err) {
-                alert('Gagal terhubung ke server');
+                showModalAlert({ title: 'Kesalahan Jaringan', message: 'Gagal terhubung ke server', type: 'error' });
             }
         }
 
         async function revokeAPIKey(id) {
-            if (!confirm('Apakah Anda yakin ingin mencabut API key ini?')) return;
+            const confirmed = await showModalConfirm({
+                title: 'Cabut API Key',
+                message: 'Apakah Anda yakin ingin mencabut API key ini? Aplikasi pihak ketiga yang menggunakannya tidak akan dapat mengakses lagi.',
+                type: 'danger',
+                confirmText: 'Cabut Sekarang'
+            });
+            if (!confirmed) return;
             try {
                 const res = await fetch(`/api/v1/api-keys/${id}`, { method: 'DELETE' });
                 if (res.ok) {
+                    showToast('API Key berhasil dicabut', 'success');
                     loadAPIKeys();
                 } else {
-                    alert('Gagal mencabut API key');
+                    showModalAlert({ title: 'Gagal Mencabut', message: 'Gagal mencabut API key', type: 'error' });
                 }
             } catch (err) {
-                alert('Gagal terhubung ke server');
+                showModalAlert({ title: 'Kesalahan Jaringan', message: 'Gagal terhubung ke server', type: 'error' });
             }
         }
 
@@ -1743,7 +1775,7 @@
             const notes = document.getElementById('newContactNotes').value.trim();
 
             if (!email) {
-                alert('Alamat email wajib diisi.');
+                showModalAlert({ title: 'Validasi', message: 'Alamat email kontak wajib diisi.', type: 'warning' });
                 return;
             }
 
@@ -1760,26 +1792,34 @@
                     document.getElementById('newContactNotes').value = '';
                     toggleAddContactForm();
                     loadContactsList();
+                    showToast('Kontak baru berhasil disimpan', 'success');
                 } else {
                     const data = await res.json();
-                    alert(data.error || 'Gagal menambahkan kontak.');
+                    showModalAlert({ title: 'Gagal Menambah Kontak', message: data.error || 'Gagal menambahkan kontak.', type: 'error' });
                 }
             } catch (err) {
-                alert('Gagal terhubung ke server.');
+                showModalAlert({ title: 'Kesalahan Jaringan', message: 'Gagal terhubung ke server.', type: 'error' });
             }
         }
 
         async function deleteContactItem(id) {
-            if (!confirm('Hapus kontak ini?')) return;
+            const confirmed = await showModalConfirm({
+                title: 'Hapus Kontak',
+                message: 'Apakah Anda yakin ingin menghapus kontak ini dari buku alamat?',
+                type: 'danger',
+                confirmText: 'Hapus'
+            });
+            if (!confirmed) return;
             try {
                 const res = await fetch(`/api/v1/webmail/contacts/${id}`, { method: 'DELETE' });
                 if (res.ok) {
+                    showToast('Kontak berhasil dihapus', 'success');
                     loadContactsList();
                 } else {
-                    alert('Gagal menghapus kontak.');
+                    showModalAlert({ title: 'Gagal', message: 'Gagal menghapus kontak.', type: 'error' });
                 }
             } catch (err) {
-                alert('Gagal terhubung ke server.');
+                showModalAlert({ title: 'Kesalahan Jaringan', message: 'Gagal terhubung ke server.', type: 'error' });
             }
         }
 
@@ -1873,14 +1913,14 @@
                     body: JSON.stringify(payload)
                 });
                 if (res.ok) {
-                    alert('Pengaturan balasan liburan otomatis berhasil disimpan.');
+                    showToast('Pengaturan balasan liburan otomatis berhasil disimpan.', 'success');
                     closeAutoResponderModal();
                 } else {
                     const data = await res.json();
-                    alert(data.error || 'Gagal menyimpan.');
+                    showModalAlert({ title: 'Gagal Menyimpan', message: data.error || 'Gagal menyimpan pengaturan auto-responder.', type: 'error' });
                 }
             } catch (err) {
-                alert('Gagal terhubung ke server.');
+                showModalAlert({ title: 'Kesalahan Jaringan', message: 'Gagal terhubung ke server.', type: 'error' });
             }
         }
 
@@ -1908,7 +1948,7 @@
                     `).join('') + `
                         <div class="border-t border-light-border dark:border-dark-border my-1"></div>
                         <button type="button" onclick="toggleTemplatesDropdown(); openCannedModal()" class="w-full text-left p-2 text-xs font-semibold text-cyan-600 dark:text-cyan-400 hover:bg-slate-100 dark:hover:bg-dark-header">
-                            <i class="bi bi-gear mr-1"></i> Kelola Template
+                                <i class="bi bi-gear mr-1"></i> Kelola Template
                         </button>
                     `;
                 }
@@ -1953,7 +1993,7 @@
             const title = document.getElementById('newTemplateTitle').value.trim();
             const content = document.getElementById('newTemplateContent').value.trim();
             if (!title || !content) {
-                alert('Judul dan isi template wajib diisi.');
+                showModalAlert({ title: 'Validasi', message: 'Judul dan isi template wajib diisi.', type: 'warning' });
                 return;
             }
 
@@ -1967,26 +2007,34 @@
                     document.getElementById('newTemplateTitle').value = '';
                     document.getElementById('newTemplateContent').value = '';
                     loadCannedList();
+                    showToast('Template berhasil dibuat', 'success');
                 } else {
                     const data = await res.json();
-                    alert(data.error || 'Gagal menyimpan template.');
+                    showModalAlert({ title: 'Gagal Menyimpan', message: data.error || 'Gagal menyimpan template.', type: 'error' });
                 }
             } catch (err) {
-                alert('Gagal terhubung ke server.');
+                showModalAlert({ title: 'Kesalahan Jaringan', message: 'Gagal terhubung ke server.', type: 'error' });
             }
         }
 
         async function deleteCannedItem(id) {
-            if (!confirm('Hapus template ini?')) return;
+            const confirmed = await showModalConfirm({
+                title: 'Hapus Template',
+                message: 'Apakah Anda yakin ingin menghapus template balasan ini?',
+                type: 'danger',
+                confirmText: 'Hapus'
+            });
+            if (!confirmed) return;
             try {
                 const res = await fetch(`/api/v1/webmail/templates/${id}`, { method: 'DELETE' });
                 if (res.ok) {
+                    showToast('Template berhasil dihapus', 'success');
                     loadCannedList();
                 } else {
-                    alert('Gagal menghapus template.');
+                    showModalAlert({ title: 'Gagal', message: 'Gagal menghapus template.', type: 'error' });
                 }
             } catch (err) {
-                alert('Gagal terhubung ke server.');
+                showModalAlert({ title: 'Kesalahan Jaringan', message: 'Gagal terhubung ke server.', type: 'error' });
             }
         }
 

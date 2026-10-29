@@ -151,12 +151,12 @@
                 });
                 const data = await res.json();
                 if (res.ok) {
-                    alert(data.message || 'Proses enkripsi dan backup cloud berhasil dijalankan!');
+                    showModalAlert({ title: 'Backup Cloud Berhasil', message: data.message || 'Proses enkripsi dan backup cloud berhasil dijalankan!', type: 'success' });
                 } else {
-                    alert('Gagal: ' + (data.error || 'Terjadi kesalahan sistem'));
+                    showModalAlert({ title: 'Gagal Backup', message: data.error || 'Terjadi kesalahan sistem saat menjalankan backup.', type: 'error' });
                 }
             } catch (err) {
-                alert('Gagal menghubungi server.');
+                showModalAlert({ title: 'Kesalahan Jaringan', message: 'Gagal menghubungi server.', type: 'error' });
             }
         }
     </script>
