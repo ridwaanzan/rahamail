@@ -75,11 +75,17 @@ func InitDB() *gorm.DB {
 	err = DB.AutoMigrate(
 		&domain.Domain{},
 		&domain.User{},
+		&domain.BackupCode{},
+		&domain.APIKey{},
 		&domain.Alias{},
 		&domain.Message{},
 		&domain.ScheduledMail{},
 		&domain.Attachment{},
 		&domain.Contact{},
+		&domain.AutoResponder{},
+		&domain.AutoResponderLog{},
+		&domain.CannedResponse{},
+		&domain.SystemConfig{},
 	)
 	if err != nil {
 		log.Fatalf("❌ Gagal migrasi database: %v", err)

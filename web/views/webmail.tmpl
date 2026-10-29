@@ -193,6 +193,15 @@
             <a href="/mail?folder=Trash" class="nav-folder-link {{ if eq .current_folder "Trash" }}active{{ end }}">
                 <span><i class="bi bi-trash-fill me-2"></i>Sampah</span>
             </a>
+
+            <div class="my-2 border-top"></div>
+
+            <a href="javascript:void(0)" class="nav-folder-link" onclick="openContactsModal()">
+                <span><i class="bi bi-person-lines-fill me-2 text-primary"></i>Buku Kontak</span>
+            </a>
+            <a href="javascript:void(0)" class="nav-folder-link" onclick="openAutoResponderModal()">
+                <span><i class="bi bi-calendar-event me-2 text-warning"></i>Balasan Liburan</span>
+            </a>
         </nav>
 
         <!-- Storage & User info -->
@@ -210,12 +219,23 @@
                     <i class="bi bi-person-circle fs-5 text-secondary me-2"></i>
                     <div class="text-truncate">
                         <div class="small fw-semibold text-dark text-truncate">{{ .current_user.Email }}</div>
-                        <div class="text-secondary" style="font-size: 0.68rem;">Mailbox User</div>
+                        <div class="text-secondary" style="font-size: 0.68rem;">
+                            {{ if .current_user.TwoFactorEnabled }}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size:0.6rem;"><i class="bi bi-shield-check me-1"></i>2FA Aktif</span>
+                            {{ else }}
+                            <span class="badge bg-secondary-subtle text-secondary" style="font-size:0.6rem;">2FA Nonaktif</span>
+                            {{ end }}
+                        </div>
                     </div>
                 </div>
-                <a href="/logout" class="btn btn-sm btn-outline-danger p-1 px-2" title="Keluar">
-                    <i class="bi bi-box-arrow-right"></i>
-                </a>
+                <div class="d-flex gap-1">
+                    <button class="btn btn-sm btn-outline-secondary p-1 px-2" onclick="openSecuritySettingsModal()" title="Keamanan Akun & 2FA / API Keys">
+                        <i class="bi bi-shield-lock"></i>
+                    </button>
+                    <a href="/logout" class="btn btn-sm btn-outline-danger p-1 px-2" title="Keluar">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </a>
+                </div>
             </div>
         </div>
     </aside>
@@ -410,27 +430,30 @@
                 <div class="modal-body p-3">
                     <form id="composeForm">
                         <!-- To -->
-                        <div class="mb-2">
+                        <div class="mb-2 position-relative">
                             <div class="input-group input-group-sm">
                                 <span class="input-group-text bg-light text-secondary" style="width: 75px;">Kepada:</span>
-                                <input type="text" id="composeTo" class="form-control" placeholder="penerima@domain.com" required>
+                                <input type="text" id="composeTo" class="form-control" placeholder="penerima@domain.com" required autocomplete="off" oninput="handleContactAutoComplete(this, 'toSug')">
                                 <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleCcBcc()">Cc / Bcc</button>
                             </div>
+                            <div id="toSug" class="list-group position-absolute w-100 shadow-sm d-none" style="z-index: 1055; top: 100%;"></div>
                         </div>
 
                         <!-- Cc & Bcc (Toggleable) -->
                         <div id="ccBccContainer" class="d-none">
-                            <div class="mb-2">
+                            <div class="mb-2 position-relative">
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text bg-light text-secondary" style="width: 75px;">Cc:</span>
-                                    <input type="text" id="composeCc" class="form-control" placeholder="cc1@domain.com, cc2@domain.com">
+                                    <input type="text" id="composeCc" class="form-control" placeholder="cc1@domain.com, cc2@domain.com" autocomplete="off" oninput="handleContactAutoComplete(this, 'ccSug')">
                                 </div>
+                                <div id="ccSug" class="list-group position-absolute w-100 shadow-sm d-none" style="z-index: 1055; top: 100%;"></div>
                             </div>
-                            <div class="mb-2">
+                            <div class="mb-2 position-relative">
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text bg-light text-secondary" style="width: 75px;">Bcc:</span>
-                                    <input type="text" id="composeBcc" class="form-control" placeholder="bcc@domain.com">
+                                    <input type="text" id="composeBcc" class="form-control" placeholder="bcc@domain.com" autocomplete="off" oninput="handleContactAutoComplete(this, 'bccSug')">
                                 </div>
+                                <div id="bccSug" class="list-group position-absolute w-100 shadow-sm d-none" style="z-index: 1055; top: 100%;"></div>
                             </div>
                         </div>
 
@@ -443,16 +466,26 @@
                         </div>
 
                         <!-- Rich Text WYSIWYG Toolbar -->
-                        <div class="composer-editor-toolbar">
-                            <button type="button" onclick="formatDoc('bold')" title="Tebal (Ctrl+B)"><i class="bi bi-type-bold"></i></button>
-                            <button type="button" onclick="formatDoc('italic')" title="Miring (Ctrl+I)"><i class="bi bi-type-italic"></i></button>
-                            <button type="button" onclick="formatDoc('underline')" title="Garis Bawah (Ctrl+U)"><i class="bi bi-type-underline"></i></button>
-                            <div class="vr my-1 bg-secondary opacity-25"></div>
-                            <button type="button" onclick="formatDoc('insertUnorderedList')" title="Daftar Bullet"><i class="bi bi-list-ul"></i></button>
-                            <button type="button" onclick="formatDoc('insertOrderedList')" title="Daftar Angka"><i class="bi bi-list-ol"></i></button>
-                            <div class="vr my-1 bg-secondary opacity-25"></div>
-                            <button type="button" onclick="insertLinkPrompt()" title="Sisipkan Tautan"><i class="bi bi-link-45deg"></i></button>
-                            <button type="button" onclick="formatDoc('removeFormat')" title="Hapus Format"><i class="bi bi-eraser"></i></button>
+                        <div class="composer-editor-toolbar d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-1">
+                                <button type="button" onclick="formatDoc('bold')" title="Tebal (Ctrl+B)"><i class="bi bi-type-bold"></i></button>
+                                <button type="button" onclick="formatDoc('italic')" title="Miring (Ctrl+I)"><i class="bi bi-type-italic"></i></button>
+                                <button type="button" onclick="formatDoc('underline')" title="Garis Bawah (Ctrl+U)"><i class="bi bi-type-underline"></i></button>
+                                <div class="vr my-1 bg-secondary opacity-25"></div>
+                                <button type="button" onclick="formatDoc('insertUnorderedList')" title="Daftar Bullet"><i class="bi bi-list-ul"></i></button>
+                                <button type="button" onclick="formatDoc('insertOrderedList')" title="Daftar Angka"><i class="bi bi-list-ol"></i></button>
+                                <div class="vr my-1 bg-secondary opacity-25"></div>
+                                <button type="button" onclick="insertLinkPrompt()" title="Sisipkan Tautan"><i class="bi bi-link-45deg"></i></button>
+                                <button type="button" onclick="formatDoc('removeFormat')" title="Hapus Format"><i class="bi bi-eraser"></i></button>
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-xs btn-outline-secondary dropdown-toggle py-0 px-2" type="button" data-bs-toggle="dropdown" aria-expanded="false" onclick="loadTemplatesDropdown()">
+                                    <i class="bi bi-file-text me-1"></i>Template
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow-sm small" id="cannedTemplatesDropdown">
+                                    <li><span class="dropdown-item-text text-muted small">Memuat template...</span></li>
+                                </ul>
+                            </div>
                         </div>
 
                         <!-- Editable Content Area -->
@@ -520,6 +553,300 @@
                 </div>
                 <div class="modal-body p-3 text-center" style="min-height: 450px; max-height: 80vh; overflow: auto;" id="attachmentPreviewContent">
                     <!-- Dynamic preview rendered here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. SECURITY & 2FA / API KEYS MODAL (PHASE 1 - v1.2.0) -->
+    <div class="modal fade" id="securitySettingsModal" tabindex="-1" aria-labelledby="securitySettingsTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content bg-white text-dark shadow-lg">
+                <div class="modal-header border-bottom py-2">
+                    <h6 class="modal-title fw-bold" id="securitySettingsTitle">
+                        <i class="bi bi-shield-lock-fill text-primary me-2"></i>Keamanan Akun, 2FA & API Keys
+                    </h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <ul class="nav nav-tabs mb-3" id="securityTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active fw-semibold" id="tab2fa-btn" data-bs-toggle="tab" data-bs-target="#tab2fa-pane" type="button" role="tab">
+                                <i class="bi bi-shield-check me-1"></i>Otentikasi Dua Faktor (2FA)
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-semibold" id="tabApiKeys-btn" data-bs-toggle="tab" data-bs-target="#tabApiKeys-pane" type="button" role="tab" onclick="loadAPIKeys()">
+                                <i class="bi bi-code-square me-1"></i>Developer API Keys
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="securityTabContent">
+                        <!-- Panel 2FA -->
+                        <div class="tab-pane fade show active" id="tab2fa-pane" role="tabpanel">
+                            <div id="twoFAAlert" class="alert d-none py-2 px-3 small mb-3"></div>
+
+                            {{ if .current_user.TwoFactorEnabled }}
+                            <div class="p-3 bg-light rounded border border-success-subtle mb-3">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <h6 class="fw-bold text-success mb-1"><i class="bi bi-check-circle-fill me-2"></i>2FA Sedang Aktif</h6>
+                                        <p class="small text-secondary mb-0">Akun Anda dilindungi dengan enkripsi TOTP RFC 6238.</p>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="toggleDisable2FASection()">
+                                        <i class="bi bi-x-circle me-1"></i>Nonaktifkan 2FA
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div id="disable2FASection" class="d-none border rounded p-3 bg-light-subtle">
+                                <h6 class="small fw-bold text-danger mb-2">Konfirmasi Penonaktifan 2FA</h6>
+                                <p class="small text-secondary mb-2">Masukkan kata sandi Anda untuk memverifikasi tindakan ini:</p>
+                                <div class="input-group input-group-sm mb-2" style="max-width: 320px;">
+                                    <input type="password" id="disable2FAPassword" class="form-control" placeholder="Kata sandi saat ini">
+                                    <button class="btn btn-danger" onclick="submitDisable2FA()">Nonaktifkan</button>
+                                </div>
+                            </div>
+                            {{ else }}
+                            <div class="p-3 bg-light rounded border mb-3">
+                                <h6 class="fw-bold mb-1"><i class="bi bi-shield-plus text-primary me-2"></i>Aktifkan Autentikasi Dua Langkah</h6>
+                                <p class="small text-secondary mb-3">Gunakan aplikasi seperti Google Authenticator, Microsoft Authenticator, atau Bitwarden untuk menghasilkan token 6 digit.</p>
+
+                                <div id="setup2FASteps" class="d-none">
+                                    <div class="p-3 bg-white rounded border mb-3">
+                                        <div class="small fw-bold text-secondary mb-2">1. Pindai URI atau masukkan Secret secara manual:</div>
+                                        <div class="input-group input-group-sm mb-2">
+                                            <span class="input-group-text bg-light font-monospace">Secret Key</span>
+                                            <input type="text" id="twoFASecretInput" class="form-control font-monospace fw-bold" readonly>
+                                        </div>
+                                        <div class="small text-muted mb-2">Atau salin tautan <code>otpauth://</code> berikut:</div>
+                                        <textarea id="twoFAUriInput" class="form-control form-control-sm font-monospace text-muted mb-3" rows="2" readonly></textarea>
+                                    </div>
+
+                                    <div class="p-3 bg-white rounded border mb-3">
+                                        <div class="small fw-bold text-secondary mb-2">2. Masukkan 6 digit kode dari aplikasi Authenticator Anda:</div>
+                                        <div class="d-flex gap-2" style="max-width: 340px;">
+                                            <input type="text" id="twoFAVerifyCode" class="form-control form-control-sm text-center fw-bold letter-spacing-2" placeholder="123456" maxlength="6">
+                                            <button class="btn btn-sm btn-primary text-nowrap fw-semibold px-3" onclick="submitEnable2FA()">
+                                                <i class="bi bi-check-lg me-1"></i>Verifikasi & Aktifkan
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="backupCodesDisplay" class="d-none p-3 bg-warning-subtle border border-warning rounded mb-3">
+                                    <h6 class="fw-bold text-warning-emphasis mb-1"><i class="bi bi-key-fill me-1"></i>Simpan Kode Pemulihan Cadangan Anda!</h6>
+                                    <p class="small text-secondary mb-2">Gunakan salah satu kode ini jika Anda kehilangan akses ke perangkat autentikasi. Setiap kode hanya dapat digunakan 1 kali:</p>
+                                    <div id="backupCodesList" class="row row-cols-2 g-2 font-monospace fw-bold small text-dark p-2 bg-white rounded border"></div>
+                                </div>
+
+                                <button id="btnStartSetup2FA" class="btn btn-sm btn-primary fw-semibold" onclick="startSetup2FA()">
+                                    <i class="bi bi-qr-code me-1"></i>Mulai Konfigurasi 2FA
+                                </button>
+                            </div>
+                            {{ end }}
+                        </div>
+
+                        <!-- Panel API Keys -->
+                        <div class="tab-pane fade" id="tabApiKeys-pane" role="tabpanel">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <div>
+                                    <h6 class="fw-bold mb-0">Transactional REST API Tokens</h6>
+                                    <p class="small text-secondary mb-0">Kirim email langsung dari aplikasi web/backend eksternal via JSON HTTPS.</p>
+                                </div>
+                                <button class="btn btn-sm btn-primary fw-semibold" onclick="promptCreateAPIKey()">
+                                    <i class="bi bi-plus-lg me-1"></i>Buat API Key Baru
+                                </button>
+                            </div>
+
+                            <div id="newKeyBanner" class="d-none alert alert-success py-2 px-3 small mb-3">
+                                <div class="fw-bold mb-1"><i class="bi bi-check-circle-fill me-1"></i>API Key Baru Berhasil Dibuat!</div>
+                                <div class="text-secondary mb-2">Simpan token ini sekarang di tempat aman. Demi alasan keamanan, token tidak dapat ditampilkan lagi:</div>
+                                <div class="input-group input-group-sm">
+                                    <input type="text" id="newKeyToken" class="form-control font-monospace fw-bold text-dark bg-white" readonly>
+                                    <button class="btn btn-outline-secondary" onclick="navigator.clipboard.writeText(document.getElementById('newKeyToken').value); alert('Token disalin!');">
+                                        <i class="bi bi-clipboard me-1"></i>Salin
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive border rounded">
+                                <table class="table table-hover table-sm align-middle mb-0" style="font-size: 0.85rem;">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Nama Token</th>
+                                            <th>Prefix</th>
+                                            <th>Dibuat</th>
+                                            <th>Terakhir Digunakan</th>
+                                            <th class="text-end">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="apiKeysTableBody">
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted py-3">Memuat daftar API key...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="mt-3 p-3 bg-light rounded border">
+                                <div class="small fw-bold text-secondary mb-1">Contoh Permintaan HTTP (cURL):</div>
+                                <pre class="p-2 bg-white rounded border small font-monospace mb-0 text-dark" style="font-size:0.75rem;">curl -X POST https://yourdomain.com/api/v1/send \
+  -H "Authorization: Bearer rhm_live_xxxxxxxx..." \
+  -H "Content-Type: application/json" \
+  -d '{"to": ["user@example.com"], "subject": "Hello World", "html": "&lt;h1&gt;Hi!&lt;/h1&gt;"}'</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 7. CONTACTS (ADDRESS BOOK) MODAL (PHASE 2 - v1.3.0) -->
+    <div class="modal fade" id="contactsModal" tabindex="-1" aria-labelledby="contactsModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content bg-white text-dark shadow-lg">
+                <div class="modal-header border-bottom py-2">
+                    <h6 class="modal-title fw-bold" id="contactsModalTitle">
+                        <i class="bi bi-person-lines-fill text-primary me-2"></i>Buku Kontak (Address Book)
+                    </h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-3">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="input-group input-group-sm" style="max-width: 300px;">
+                            <span class="input-group-text bg-white"><i class="bi bi-search text-secondary"></i></span>
+                            <input type="text" id="contactSearchInput" class="form-control" placeholder="Cari kontak..." onkeyup="loadContactsList(this.value)">
+                        </div>
+                        <button class="btn btn-sm btn-primary fw-semibold" onclick="toggleAddContactForm()">
+                            <i class="bi bi-person-plus-fill me-1"></i>Tambah Kontak
+                        </button>
+                    </div>
+
+                    <!-- Form Tambah Kontak Baru -->
+                    <div id="addContactCard" class="card p-3 mb-3 bg-light-subtle d-none">
+                        <h6 class="fw-bold small mb-2 text-primary"><i class="bi bi-plus-circle me-1"></i>Tambah Kontak Baru</h6>
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-6">
+                                <input type="text" id="newContactName" class="form-control form-control-sm" placeholder="Nama Lengkap">
+                            </div>
+                            <div class="col-md-6">
+                                <input type="email" id="newContactEmail" class="form-control form-control-sm" placeholder="alamat@domain.com" required>
+                            </div>
+                            <div class="col-md-6">
+                                <input type="text" id="newContactCompany" class="form-control form-control-sm" placeholder="Perusahaan / Organisasi (Opsional)">
+                            </div>
+                            <div class="col-md-6">
+                                <input type="text" id="newContactNotes" class="form-control form-control-sm" placeholder="Catatan tambahan (Opsional)">
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-end gap-2">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="toggleAddContactForm()">Batal</button>
+                            <button class="btn btn-sm btn-primary" onclick="submitCreateContact()">Simpan Kontak</button>
+                        </div>
+                    </div>
+
+                    <!-- Tabel Daftar Kontak -->
+                    <div class="table-responsive border rounded" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-hover table-sm align-middle mb-0" style="font-size: 0.85rem;">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th>Nama</th>
+                                    <th>Email</th>
+                                    <th>Perusahaan</th>
+                                    <th class="text-end">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="contactsTableBody">
+                                <tr><td colspan="4" class="text-center text-muted py-3">Memuat kontak...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 8. VACATION AUTO-RESPONDER MODAL (PHASE 2 - v1.3.0) -->
+    <div class="modal fade" id="autoResponderModal" tabindex="-1" aria-labelledby="autoResponderTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-white text-dark shadow-lg">
+                <div class="modal-header border-bottom py-2">
+                    <h6 class="modal-title fw-bold" id="autoResponderTitle">
+                        <i class="bi bi-calendar-event text-warning me-2"></i>Pesan Balasan Liburan (Out of Office)
+                    </h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-3">
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" role="switch" id="arEnabled" onchange="toggleAREnabledState()">
+                        <label class="form-check-label fw-bold small" for="arEnabled">Aktifkan Balasan Otomatis</label>
+                    </div>
+
+                    <div id="arConfigSection">
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="small text-secondary fw-semibold">Tanggal Mulai:</label>
+                                <input type="datetime-local" id="arStartTime" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-6">
+                                <label class="small text-secondary fw-semibold">Tanggal Selesai:</label>
+                                <input type="datetime-local" id="arEndTime" class="form-control form-control-sm">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="small text-secondary fw-semibold">Subjek Pesan Balasan:</label>
+                            <input type="text" id="arSubject" class="form-control form-control-sm" placeholder="Out of Office: Sedang Cuti">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="small text-secondary fw-semibold">Isi Pesan Balasan:</label>
+                            <textarea id="arBodyText" class="form-control form-control-sm" rows="5" placeholder="Tuliskan pesan balasan otomatis Anda..."></textarea>
+                            <div class="form-text small text-muted">Setiap pengirim hanya akan menerima maksimal 1 balasan otomatis per 24 jam.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top py-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
+                    <button type="button" class="btn btn-sm btn-primary fw-semibold" onclick="submitSaveAutoResponder()">
+                        <i class="bi bi-save me-1"></i>Simpan Pengaturan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 9. CANNED TEMPLATES MODAL (PHASE 2 - v1.3.0) -->
+    <div class="modal fade" id="cannedModal" tabindex="-1" aria-labelledby="cannedModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content bg-white text-dark shadow-lg">
+                <div class="modal-header border-bottom py-2">
+                    <h6 class="modal-title fw-bold" id="cannedModalTitle">
+                        <i class="bi bi-file-text text-primary me-2"></i>Kelola Template Email (Canned Responses)
+                    </h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-3">
+                    <div class="p-3 bg-light rounded border mb-3">
+                        <h6 class="small fw-bold text-primary mb-2">Buat Template Baru</h6>
+                        <div class="mb-2">
+                            <input type="text" id="newTemplateTitle" class="form-control form-control-sm" placeholder="Judul Template (misal: Konfirmasi Terima, Penawaran)">
+                        </div>
+                        <div class="mb-2">
+                            <textarea id="newTemplateContent" class="form-control form-control-sm" rows="3" placeholder="Isi pesan template..."></textarea>
+                        </div>
+                        <div class="d-flex justify-content-end">
+                            <button class="btn btn-sm btn-primary" onclick="submitCreateTemplate()">Simpan Template</button>
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold small text-secondary mb-2">Daftar Template Tersimpan:</h6>
+                    <div class="list-group list-group-flush border rounded" id="cannedModalList" style="max-height: 250px; overflow-y: auto;">
+                        <div class="list-group-item text-center text-muted small py-3">Memuat template...</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1015,6 +1342,488 @@
             const subject = document.getElementById('readMailSubject').textContent;
             const fwdSubject = subject.startsWith('Fwd:') ? subject : `Fwd: ${subject}`;
             openComposer('', fwdSubject, `<br><br><blockquote>--- Pesan Diteruskan ---<br></blockquote>`);
+        }
+
+        // Security & 2FA / API Keys Handlers
+        let securityModalInstance = null;
+        function openSecuritySettingsModal() {
+            if (!securityModalInstance) {
+                securityModalInstance = new bootstrap.Modal(document.getElementById('securitySettingsModal'));
+            }
+            securityModalInstance.show();
+        }
+
+        async function startSetup2FA() {
+            try {
+                const res = await fetch('/api/v1/2fa/setup');
+                const data = await res.json();
+                if (res.ok && data.secret) {
+                    document.getElementById('twoFASecretInput').value = data.secret;
+                    document.getElementById('twoFAUriInput').value = data.otpauth;
+                    document.getElementById('setup2FASteps').classList.remove('d-none');
+                    document.getElementById('btnStartSetup2FA').classList.add('d-none');
+                } else {
+                    alert(data.error || 'Gagal menyiapkan 2FA');
+                }
+            } catch (err) {
+                alert('Gagal terhubung ke server');
+            }
+        }
+
+        async function submitEnable2FA() {
+            const secret = document.getElementById('twoFASecretInput').value;
+            const code = document.getElementById('twoFAVerifyCode').value.trim();
+            const alertBox = document.getElementById('twoFAAlert');
+
+            if (!code || code.length !== 6) {
+                alertBox.className = 'alert alert-danger py-2 px-3 small';
+                alertBox.textContent = 'Masukkan 6 digit kode dari aplikasi Authenticator';
+                alertBox.classList.remove('d-none');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/v1/2fa/enable', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ secret, code })
+                });
+                const data = await res.json();
+                if (res.ok && data.status === 'success') {
+                    alertBox.className = 'alert alert-success py-2 px-3 small';
+                    alertBox.textContent = data.message;
+                    alertBox.classList.remove('d-none');
+
+                    document.getElementById('setup2FASteps').classList.add('d-none');
+                    const backupContainer = document.getElementById('backupCodesDisplay');
+                    const backupList = document.getElementById('backupCodesList');
+                    backupList.innerHTML = '';
+                    if (data.backup_codes) {
+                        data.backup_codes.forEach(c => {
+                            const col = document.createElement('div');
+                            col.className = 'col text-center p-1 border rounded bg-light';
+                            col.textContent = c;
+                            backupList.appendChild(col);
+                        });
+                        backupContainer.classList.remove('d-none');
+                    }
+                    setTimeout(() => { location.reload(); }, 3500);
+                } else {
+                    alertBox.className = 'alert alert-danger py-2 px-3 small';
+                    alertBox.textContent = data.error || 'Verifikasi kode gagal';
+                    alertBox.classList.remove('d-none');
+                }
+            } catch (err) {
+                alert('Gagal terhubung ke server');
+            }
+        }
+
+        function toggleDisable2FASection() {
+            const sec = document.getElementById('disable2FASection');
+            sec.classList.toggle('d-none');
+        }
+
+        async function submitDisable2FA() {
+            const password = document.getElementById('disable2FAPassword').value;
+            if (!password) {
+                alert('Masukkan kata sandi Anda');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/v1/2fa/disable', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+                const data = await res.json();
+                if (res.ok && data.status === 'success') {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert(data.error || 'Gagal menonaktifkan 2FA');
+                }
+            } catch (err) {
+                alert('Gagal terhubung ke server');
+            }
+        }
+
+        // Developer API Keys JS
+        async function loadAPIKeys() {
+            const tbody = document.getElementById('apiKeysTableBody');
+            try {
+                const res = await fetch('/api/v1/api-keys');
+                const data = await res.json();
+                if (res.ok && data.keys) {
+                    if (data.keys.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Belum ada API key yang dibuat.</td></tr>';
+                        return;
+                    }
+                    tbody.innerHTML = data.keys.map(k => `
+                        <tr>
+                            <td class="fw-semibold text-dark">${escapeHtml(k.name)}</td>
+                            <td><code>${k.prefix}••••••••</code></td>
+                            <td class="text-secondary small">${new Date(k.created_at).toLocaleDateString()}</td>
+                            <td class="text-secondary small">${k.last_used_at ? new Date(k.last_used_at).toLocaleString() : '<span class="text-muted">Belum pernah</span>'}</td>
+                            <td class="text-end">
+                                <button class="btn btn-xs btn-outline-danger py-0 px-2" onclick="revokeAPIKey(${k.id})" title="Cabut API Key">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (err) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger py-3">Gagal memuat API keys.</td></tr>';
+            }
+        }
+
+        async function promptCreateAPIKey() {
+            const name = prompt('Masukkan nama deskriptif untuk API key ini (contoh: Website Backend, Staging Server):');
+            if (!name || name.trim() === '') return;
+
+            try {
+                const res = await fetch('/api/v1/api-keys', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: name.trim() })
+                });
+                const data = await res.json();
+                if (res.ok && data.api_key) {
+                    document.getElementById('newKeyToken').value = data.api_key;
+                    document.getElementById('newKeyBanner').classList.remove('d-none');
+                    loadAPIKeys();
+                } else {
+                    alert(data.error || 'Gagal membuat API key');
+                }
+            } catch (err) {
+                alert('Gagal terhubung ke server');
+            }
+        }
+
+        async function revokeAPIKey(id) {
+            if (!confirm('Apakah Anda yakin ingin mencabut API key ini? Aplikasi yang menggunakan token ini tidak akan dapat mengirim email lagi.')) return;
+            try {
+                const res = await fetch(`/api/v1/api-keys/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (res.ok) {
+                    loadAPIKeys();
+                } else {
+                    alert(data.error || 'Gagal mencabut API key');
+                }
+            } catch (err) {
+                alert('Gagal terhubung ke server');
+            }
+        }
+
+        // Phase 2: Contacts, Auto-Complete, Vacation Responder & Canned Responses
+        let contactsModalInstance = null;
+        let autoResponderModalInstance = null;
+        let cannedModalInstance = null;
+        let autoHarvestTimeout = null;
+
+        function openContactsModal() {
+            if (!contactsModalInstance) {
+                contactsModalInstance = new bootstrap.Modal(document.getElementById('contactsModal'));
+            }
+            loadContactsList();
+            contactsModalInstance.show();
+        }
+
+        function toggleAddContactForm() {
+            const card = document.getElementById('addContactCard');
+            card.classList.toggle('d-none');
+        }
+
+        async function loadContactsList(query = '') {
+            const tbody = document.getElementById('contactsTableBody');
+            try {
+                const res = await fetch('/api/v1/webmail/contacts?q=' + encodeURIComponent(query));
+                const data = await res.json();
+                if (res.ok && Array.isArray(data)) {
+                    if (data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">Tidak ada kontak ditemukan.</td></tr>';
+                        return;
+                    }
+                    tbody.innerHTML = data.map(c => `
+                        <tr>
+                            <td class="fw-semibold text-dark">${escapeHtml(c.name || '-')}</td>
+                            <td><a href="javascript:void(0)" onclick="openComposer('${c.email}', '', '')" class="text-decoration-none">${escapeHtml(c.email)}</a></td>
+                            <td class="text-secondary small">${escapeHtml(c.company || '-')}</td>
+                            <td class="text-end">
+                                <button class="btn btn-xs btn-outline-primary py-0 px-2 me-1" onclick="openComposer('${c.email}', '', '')" title="Kirim Email"><i class="bi bi-envelope"></i></button>
+                                <button class="btn btn-xs btn-outline-danger py-0 px-2" onclick="deleteContactItem(${c.id})" title="Hapus"><i class="bi bi-trash"></i></button>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (err) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger py-3">Gagal memuat kontak.</td></tr>';
+            }
+        }
+
+        async function submitCreateContact() {
+            const name = document.getElementById('newContactName').value.trim();
+            const email = document.getElementById('newContactEmail').value.trim();
+            const company = document.getElementById('newContactCompany').value.trim();
+            const notes = document.getElementById('newContactNotes').value.trim();
+
+            if (!email) {
+                alert('Alamat email wajib diisi.');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/v1/webmail/contacts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, company, notes })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    document.getElementById('newContactName').value = '';
+                    document.getElementById('newContactEmail').value = '';
+                    document.getElementById('newContactCompany').value = '';
+                    document.getElementById('newContactNotes').value = '';
+                    toggleAddContactForm();
+                    loadContactsList();
+                } else {
+                    alert(data.error || 'Gagal menambahkan kontak.');
+                }
+            } catch (err) {
+                alert('Gagal terhubung ke server.');
+            }
+        }
+
+        async function deleteContactItem(id) {
+            if (!confirm('Hapus kontak ini?')) return;
+            try {
+                const res = await fetch(`/api/v1/webmail/contacts/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    loadContactsList();
+                } else {
+                    alert('Gagal menghapus kontak.');
+                }
+            } catch (err) {
+                alert('Gagal terhubung ke server.');
+            }
+        }
+
+        // Contact Auto-Complete for Composer
+        function handleContactAutoComplete(input, targetSugId) {
+            clearTimeout(autoHarvestTimeout);
+            const val = input.value;
+            const container = document.getElementById(targetSugId);
+            const lastToken = val.split(',').pop().trim();
+
+            if (!lastToken || lastToken.length < 1) {
+                container.classList.add('d-none');
+                container.innerHTML = '';
+                return;
+            }
+
+            autoHarvestTimeout = setTimeout(async () => {
+                try {
+                    const res = await fetch('/api/v1/webmail/contacts?q=' + encodeURIComponent(lastToken));
+                    const data = await res.json();
+                    if (res.ok && Array.isArray(data) && data.length > 0) {
+                        container.innerHTML = data.slice(0, 5).map(c => `
+                            <button type="button" class="list-group-item list-group-item-action py-1 px-2 d-flex justify-content-between align-items-center" onclick="selectAutoCompleteContact('${input.id}', '${targetSugId}', '${c.email}')">
+                                <div>
+                                    <div class="small fw-semibold text-dark">${escapeHtml(c.name)}</div>
+                                    <div class="text-secondary" style="font-size:0.75rem;">${escapeHtml(c.email)}</div>
+                                </div>
+                                <span class="badge bg-light text-secondary border small">Kontak</span>
+                            </button>
+                        `).join('');
+                        container.classList.remove('d-none');
+                    } else {
+                        container.classList.add('d-none');
+                    }
+                } catch (e) {
+                    container.classList.add('d-none');
+                }
+            }, 150);
+        }
+
+        function selectAutoCompleteContact(inputId, targetSugId, email) {
+            const input = document.getElementById(inputId);
+            const parts = input.value.split(',');
+            parts.pop();
+            parts.push(' ' + email);
+            input.value = parts.join(',').trim();
+            if (input.value.startsWith(',')) input.value = input.value.substring(1).trim();
+            document.getElementById(targetSugId).classList.add('d-none');
+            input.focus();
+        }
+
+        // Vacation Auto-Responder
+        function openAutoResponderModal() {
+            if (!autoResponderModalInstance) {
+                autoResponderModalInstance = new bootstrap.Modal(document.getElementById('autoResponderModal'));
+            }
+            loadAutoResponderData();
+            autoResponderModalInstance.show();
+        }
+
+        async function loadAutoResponderData() {
+            try {
+                const res = await fetch('/api/v1/webmail/auto-responder');
+                const data = await res.json();
+                if (res.ok && data) {
+                    document.getElementById('arEnabled').checked = data.enabled;
+                    document.getElementById('arSubject').value = data.subject || '';
+                    document.getElementById('arBodyText').value = data.body_text || '';
+                    if (data.start_time) {
+                        document.getElementById('arStartTime').value = new Date(data.start_time).toISOString().slice(0, 16);
+                    }
+                    if (data.end_time) {
+                        document.getElementById('arEndTime').value = new Date(data.end_time).toISOString().slice(0, 16);
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function submitSaveAutoResponder() {
+            const enabled = document.getElementById('arEnabled').checked;
+            const subject = document.getElementById('arSubject').value.trim();
+            const body_text = document.getElementById('arBodyText').value;
+            const startVal = document.getElementById('arStartTime').value;
+            const endVal = document.getElementById('arEndTime').value;
+
+            const payload = {
+                enabled,
+                subject,
+                body_text,
+                start_time: startVal ? new Date(startVal).toISOString() : null,
+                end_time: endVal ? new Date(endVal).toISOString() : null
+            };
+
+            try {
+                const res = await fetch('/api/v1/webmail/auto-responder', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    alert('Pengaturan balasan liburan otomatis berhasil disimpan.');
+                    autoResponderModalInstance.hide();
+                } else {
+                    alert(data.error || 'Gagal menyimpan.');
+                }
+            } catch (err) {
+                alert('Gagal terhubung ke server.');
+            }
+        }
+
+        // Canned Responses / Templates
+        async function loadTemplatesDropdown() {
+            const menu = document.getElementById('cannedTemplatesDropdown');
+            try {
+                const res = await fetch('/api/v1/webmail/templates');
+                const data = await res.json();
+                if (res.ok && Array.isArray(data)) {
+                    if (data.length === 0) {
+                        menu.innerHTML = `
+                            <li><span class="dropdown-item-text text-muted small">Belum ada template</span></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item small text-primary" href="javascript:void(0)" onclick="openCannedModal()"><i class="bi bi-gear me-1"></i>Kelola Template</a></li>
+                        `;
+                        return;
+                    }
+                    menu.innerHTML = data.map(t => `
+                        <li><a class="dropdown-item small" href="javascript:void(0)" onclick="insertCannedTemplate('${escapeHtml(t.content).replace(/'/g, "\\'")}')">${escapeHtml(t.title)}</a></li>
+                    `).join('') + `
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item small text-primary" href="javascript:void(0)" onclick="openCannedModal()"><i class="bi bi-gear me-1"></i>Kelola Template</a></li>
+                    `;
+                }
+            } catch (err) {
+                menu.innerHTML = '<li><span class="dropdown-item-text text-danger small">Gagal memuat</span></li>';
+            }
+        }
+
+        function insertCannedTemplate(content) {
+            const editor = document.getElementById('composeEditor');
+            editor.innerHTML += '<p>' + content.replace(/\n/g, '<br>') + '</p>';
+            triggerAutoSave();
+        }
+
+        function openCannedModal() {
+            if (!cannedModalInstance) {
+                cannedModalInstance = new bootstrap.Modal(document.getElementById('cannedModal'));
+            }
+            loadCannedList();
+            cannedModalInstance.show();
+        }
+
+        async function loadCannedList() {
+            const list = document.getElementById('cannedModalList');
+            try {
+                const res = await fetch('/api/v1/webmail/templates');
+                const data = await res.json();
+                if (res.ok && Array.isArray(data)) {
+                    if (data.length === 0) {
+                        list.innerHTML = '<div class="list-group-item text-center text-muted small py-3">Belum ada template dibuat.</div>';
+                        return;
+                    }
+                    list.innerHTML = data.map(t => `
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="fw-bold mb-1 small text-dark">${escapeHtml(t.title)}</h6>
+                                <p class="small text-secondary mb-0 text-truncate" style="max-width: 480px;">${escapeHtml(t.content)}</p>
+                            </div>
+                            <button class="btn btn-xs btn-outline-danger py-0 px-2" onclick="deleteCannedItem(${t.id})"><i class="bi bi-trash"></i></button>
+                        </div>
+                    `).join('');
+                }
+            } catch (err) {
+                list.innerHTML = '<div class="list-group-item text-center text-danger small py-3">Gagal memuat.</div>';
+            }
+        }
+
+        async function submitCreateTemplate() {
+            const title = document.getElementById('newTemplateTitle').value.trim();
+            const content = document.getElementById('newTemplateContent').value.trim();
+            if (!title || !content) {
+                alert('Judul dan isi template wajib diisi.');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/v1/webmail/templates', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, content })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    document.getElementById('newTemplateTitle').value = '';
+                    document.getElementById('newTemplateContent').value = '';
+                    loadCannedList();
+                } else {
+                    alert(data.error || 'Gagal menyimpan template.');
+                }
+            } catch (err) {
+                alert('Gagal terhubung ke server.');
+            }
+        }
+
+        async function deleteCannedItem(id) {
+            if (!confirm('Hapus template ini?')) return;
+            try {
+                const res = await fetch(`/api/v1/webmail/templates/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    loadCannedList();
+                } else {
+                    alert('Gagal menghapus template.');
+                }
+            } catch (err) {
+                alert('Gagal terhubung ke server.');
+            }
         }
 
         // Live Real-Time SSE Listener

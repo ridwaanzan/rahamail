@@ -4,6 +4,64 @@ All notable changes to the **RaHaMail** project will be documented in this file.
 
 ---
 
+## [1.4.0] - 2026-10-29
+
+### Added
+- **Antivirus & Anti-Spam Filtering (ClamAV & Rspamd)**:
+  - New pure-Go scanner package in `internal/antivirus` supporting ClamAV `INSTREAM` protocol (Unix/TCP socket) and HTTP-based Rspamd `/checkv2` API.
+  - Inbound SMTP pipeline defense automatically rejecting virus-infected emails (`554 5.7.1`) and routing spam messages to the `Spam` mailbox with `[SPAM]` subject tags.
+  - Graceful fail-open capability ensuring zero email loss if scanning services are temporarily unreachable.
+- **Inbound DMARC, SPF & DKIM Protocol Verification**:
+  - New verification engine in `internal/dmarc` checking SPF DNS records, cryptographic DKIM signatures, and evaluating domain DMARC policies (`p=none`, `p=quarantine`, `p=reject`).
+  - Automatic injection of RFC 8601 compliant `Authentication-Results` headers into stored `.eml` files.
+- **Automated S3-Compatible Cloud Backups**:
+  - New cloud disaster recovery package in `internal/backup` creating non-blocking SQLite database snapshots (`VACUUM INTO`) and tar.gz compressed Maildir archives.
+  - End-to-end client-side encryption using **AES-256 GCM**.
+  - Object storage upload integration supporting AWS S3, Cloudflare R2, MinIO, and Wasabi.
+  - Admin management API endpoints (`/api/v1/admin/backup/config` and `/api/v1/admin/backup/trigger`).
+
+---
+
+## [1.3.0] - 2026-10-29
+
+### Added
+- **Address Book & Contact Auto-Complete**:
+  - Full CRUD contact management API (`/api/v1/webmail/contacts`) supporting name, email, company, and notes.
+  - Interactive Address Book modal in the Webmail sidebar with real-time contact filtering.
+  - Composer recipient auto-complete dropdown for `To`, `Cc`, and `Bcc` inputs with 150ms debounce.
+  - Background auto-harvesting function automatically adding unique recipient addresses from sent emails into the user's personal address book.
+- **Vacation Notice / Out-of-Office Auto-Responder**:
+  - Out-of-office scheduling engine (`auto_responders` table) with customizable start/end dates, subject, and text body.
+  - Dedicated configuration modal in the Webmail client.
+  - Anti-looping defense and frequency throttling ensuring senders receive at most 1 automated reply per 24 hours (`auto_responder_logs` table).
+- **Canned Responses & Quick Templates**:
+  - Pre-written email snippet repository (`canned_responses` table) with management modal and one-click insertion into the WYSIWYG composer editor.
+  - Quick-insert dropdown in the composer toolbar.
+
+---
+
+## [1.2.0] - 2026-10-29
+
+### Added
+- **Two-Factor Authentication (2FA / TOTP RFC 6238)**:
+  - New pure-Go TOTP implementation in `internal/totp` with Base32 secret generation, HMAC-SHA1 algorithm, dynamic truncation, and time-skew window validation.
+  - Recovery backup code generator (`internal/totp/GenerateBackupCodes`) producing 8 one-time emergency codes stored with `bcrypt` hashes in `backup_codes` table.
+  - Interactive Security & 2FA modal in Webmail UI with secret key display and standard `otpauth://` URI export.
+  - Two-step authentication flow on `/login`: step 1 (Email + Password) $\rightarrow$ step 2 (TOTP verification prompt via `/api/v1/auth/verify-2fa`).
+  - Account security settings in Webmail sidebar allowing self-service 2FA setup, verification, and password-protected deactivation.
+- **Developer Transactional REST API**:
+  - New API key generator and verifier in `internal/apikey` creating cryptographically random tokens prefixed with `rhm_live_` and hashed with SHA-256 for secure storage.
+  - `APIKeyAuthMiddleware` enforcing `Authorization: Bearer rhm_live_...` authentication and asynchronous `last_used_at` telemetry tracking.
+  - REST API endpoint `POST /api/v1/send` enabling programmatic email delivery via JSON over HTTPS with DKIM signing and automatic local/outbound routing.
+  - Management API endpoints for listing, creating, and revoking API keys (`/api/v1/api-keys`).
+  - Interactive "Developer API Keys" dashboard tab in the Webmail Security modal.
+- **Catch-All Mailboxes & Domain Aliases**:
+  - Domain-level `catch_all_user_id` field enabling automatic redirection of unmatched recipient addresses (`*@domain.com`) to a designated mailbox.
+  - Inbound SMTP pipeline enhancement in `internal/smtpserver/server.go` delivering unmatched recipient emails to the active Catch-All user rather than rejecting with `550 Mailbox Not Found`.
+  - Admin API endpoint `POST /api/v1/domains/:id/catch-all` to configure or remove Catch-All mailboxes.
+
+---
+
 ## [1.1.0] - 2026-10-28
 
 ### Added

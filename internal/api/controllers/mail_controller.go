@@ -1,11 +1,13 @@
 package controllers
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
+	"mail-server/internal/backup"
 	"mail-server/internal/delivery"
 	"mail-server/internal/domain"
 	"mail-server/internal/mailbuilder"
@@ -214,8 +216,47 @@ func (mc *MailController) GetStats(c *gin.Context) {
 // ListDomains mengambil daftar domain
 func (mc *MailController) ListDomains(c *gin.Context) {
 	var domains []domain.Domain
-	repository.DB.Find(&domains)
+	repository.DB.Preload("CatchAllUser").Find(&domains)
 	c.JSON(http.StatusOK, domains)
+}
+
+// SetCatchAll mengonfigurasi atau menghapus user Catch-All untuk sebuah domain
+func (mc *MailController) SetCatchAll(c *gin.Context) {
+	domainID := c.Param("id")
+	var req struct {
+		UserID *uint `json:"user_id"` // null untuk menonaktifkan catch-all
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Payload tidak valid: " + err.Error()})
+		return
+	}
+
+	var dom domain.Domain
+	if err := repository.DB.First(&dom, domainID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Domain tidak ditemukan."})
+		return
+	}
+
+	if req.UserID != nil {
+		var user domain.User
+		if err := repository.DB.First(&user, *req.UserID).Error; err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Target user Catch-All tidak ditemukan."})
+			return
+		}
+	}
+
+	if err := repository.DB.Model(&dom).Update("catch_all_user_id", req.UserID).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal memperbarui konfigurasi Catch-All: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":             "success",
+		"message":            "Pengaturan Catch-All domain berhasil diperbarui.",
+		"domain_id":          dom.ID,
+		"catch_all_user_id": req.UserID,
+	})
 }
 
 // CreateDomain mendaftarkan domain baru
@@ -544,6 +585,9 @@ func (mc *MailController) ComposeAndSendEmail(c *gin.Context) {
 		}(rec)
 	}
 
+	// Auto-harvest kontak: Simpan otomatis alamat penerima baru ke daftar kontak pribadi user
+	go autoHarvestContacts(currentUser.ID, allRecipients)
+
 	c.JSON(http.StatusOK, gin.H{
 		"status":     "success",
 		"message":    "Email berhasil dikirim!",
@@ -715,5 +759,506 @@ func (mc *MailController) SendEmail(c *gin.Context) {
 		"status":  "queued",
 		"message": "Email berhasil dimasukkan ke antrean MTA",
 		"data":    msg,
+	})
+}
+
+// SendTransactionalMail menangani pengiriman email transaksional developer via REST API menggunakan API Key
+func (mc *MailController) SendTransactionalMail(c *gin.Context) {
+	val, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized API token."})
+		return
+	}
+	currentUser := val.(*domain.User)
+
+	var req struct {
+		To          []string `json:"to" binding:"required"`
+		Cc          []string `json:"cc"`
+		Bcc         []string `json:"bcc"`
+		Subject     string   `json:"subject" binding:"required"`
+		HTML        string   `json:"html"`
+		Text        string   `json:"text"`
+		SenderName  string   `json:"from_name"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Payload JSON tidak valid: " + err.Error()})
+		return
+	}
+
+	if len(req.To) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Field 'to' harus memiliki minimal 1 alamat penerima."})
+		return
+	}
+
+	fromHeader := currentUser.Email
+	if req.SenderName != "" {
+		fromHeader = req.SenderName + " <" + currentUser.Email + ">"
+	}
+
+	mailData := mailbuilder.OutgoingEmail{
+		From:     fromHeader,
+		To:       req.To,
+		Cc:       req.Cc,
+		Bcc:      req.Bcc,
+		Subject:  req.Subject,
+		BodyHTML: req.HTML,
+		BodyText: req.Text,
+	}
+
+	rawBytes, messageID, err := mailbuilder.BuildRFC5322Message(mailData)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menyusun pesan RFC 5322: " + err.Error()})
+		return
+	}
+
+	// Sign DKIM jika domain memiliki kunci
+	fromDomain := ""
+	parts := strings.Split(currentUser.Email, "@")
+	if len(parts) == 2 {
+		fromDomain = parts[1]
+	}
+
+	var dom domain.Domain
+	if err := repository.DB.Where("name = ?", fromDomain).First(&dom).Error; err == nil && dom.DKIMPrivateKey != "" {
+		if signed, err := delivery.SignDKIM(rawBytes, dom.Name, dom.DKIMSelector, dom.DKIMPrivateKey); err == nil {
+			rawBytes = signed
+		}
+	}
+
+	// Simpan ke storage Maildir sent secara aman
+	filePath, err := storage.SaveMailToFile("sent", currentUser.ID, messageID, rawBytes)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menyimpan file sent: " + err.Error()})
+		return
+	}
+
+	snippet := req.Text
+	if snippet == "" && req.HTML != "" {
+		snippet = "(Transactional HTML)"
+	}
+	if len(snippet) > 200 {
+		snippet = snippet[:197] + "..."
+	}
+
+	sentMsg := domain.Message{
+		UserID:      currentUser.ID,
+		Mailbox:     "Sent",
+		MessageID:   messageID,
+		From:        currentUser.Email,
+		To:          strings.Join(req.To, ", "),
+		Subject:     req.Subject,
+		Snippet:     snippet,
+		Size:        int64(len(rawBytes)),
+		StoragePath: filePath,
+		IsSeen:      true,
+		SPFStatus:   "pass",
+		DKIMStatus:  "pass",
+		DMARCStatus: "pass",
+		ReceivedAt:  time.Now(),
+	}
+	repository.DB.Create(&sentMsg)
+
+	// Kirim langsung ke setiap penerima (inbound lokal atau outbound MTA)
+	allRecipients := append(req.To, req.Cc...)
+	allRecipients = append(allRecipients, req.Bcc...)
+
+	go func(recipients []string, b []byte, s domain.Message) {
+		for _, recipient := range recipients {
+			rec := strings.TrimSpace(recipient)
+			if rec == "" {
+				continue
+			}
+
+			// Cek apakah lokal
+			var localUser domain.User
+			if err := repository.DB.Where("email = ?", rec).First(&localUser).Error; err == nil {
+				inboxPath, err := storage.SaveMailToFile("inbox", localUser.ID, s.MessageID, b)
+				if err == nil {
+					inboxMsg := domain.Message{
+						UserID:      localUser.ID,
+						Mailbox:     "INBOX",
+						MessageID:   s.MessageID,
+						From:        s.From,
+						To:          rec,
+						Subject:     s.Subject,
+						Snippet:     s.Snippet,
+						Size:        s.Size,
+						StoragePath: inboxPath,
+						SPFStatus:   "pass",
+						DKIMStatus:  "pass",
+						DMARCStatus: "pass",
+						ReceivedAt:  time.Now(),
+					}
+					repository.DB.Create(&inboxMsg)
+					sse.GlobalHub.Broadcast("new_email", inboxMsg)
+				}
+			} else {
+				// Outbound eksternal ke internet via MTA
+				_ = delivery.DeliverOutbound(s.From, rec, b)
+			}
+		}
+	}(allRecipients, rawBytes, sentMsg)
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":     "sent",
+		"message":    "Transactional email accepted and dispatched.",
+		"message_id": messageID,
+		"recipients": len(allRecipients),
+	})
+}
+
+// autoHarvestContacts mengekstrak alamat email unik dan menyimpannya secara otomatis ke buku kontak user jika belum ada
+func autoHarvestContacts(userID uint, rawAddresses []string) {
+	for _, raw := range rawAddresses {
+		email := strings.TrimSpace(strings.ToLower(raw))
+		if email == "" || !strings.Contains(email, "@") {
+			continue
+		}
+		var count int64
+		repository.DB.Model(&domain.Contact{}).Where("user_id = ? AND email = ?", userID, email).Count(&count)
+		if count == 0 {
+			name := strings.Split(email, "@")[0]
+			repository.DB.Create(&domain.Contact{
+				UserID: userID,
+				Name:   strings.Title(name),
+				Email:  email,
+			})
+		}
+	}
+}
+
+// ListContacts mengambil daftar kontak milik user yang sedang login
+func (mc *MailController) ListContacts(c *gin.Context) {
+	val, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Autentikasi diperlukan."})
+		return
+	}
+	user := val.(*domain.User)
+
+	query := strings.TrimSpace(c.Query("q"))
+	dbQuery := repository.DB.Where("user_id = ?", user.ID)
+	if query != "" {
+		likePattern := "%" + query + "%"
+		dbQuery = dbQuery.Where("name LIKE ? OR email LIKE ? OR company LIKE ?", likePattern, likePattern, likePattern)
+	}
+
+	var contacts []domain.Contact
+	dbQuery.Order("name asc, email asc").Find(&contacts)
+
+	c.JSON(http.StatusOK, contacts)
+}
+
+// CreateContact membuat kontak baru di buku alamat user
+func (mc *MailController) CreateContact(c *gin.Context) {
+	val, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Autentikasi diperlukan."})
+		return
+	}
+	user := val.(*domain.User)
+
+	var req struct {
+		Name    string `json:"name"`
+		Email   string `json:"email" binding:"required"`
+		Company string `json:"company"`
+		Notes   string `json:"notes"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Alamat email wajib diisi."})
+		return
+	}
+
+	email := strings.TrimSpace(strings.ToLower(req.Email))
+	if !strings.Contains(email, "@") {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Format alamat email tidak valid."})
+		return
+	}
+
+	name := strings.TrimSpace(req.Name)
+	if name == "" {
+		name = strings.Split(email, "@")[0]
+	}
+
+	var existing domain.Contact
+	if err := repository.DB.Where("user_id = ? AND email = ?", user.ID, email).First(&existing).Error; err == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Kontak dengan email ini sudah ada."})
+		return
+	}
+
+	contact := domain.Contact{
+		UserID:  user.ID,
+		Name:    name,
+		Email:   email,
+		Company: strings.TrimSpace(req.Company),
+		Notes:   strings.TrimSpace(req.Notes),
+	}
+
+	if err := repository.DB.Create(&contact).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menyimpan kontak: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Kontak berhasil ditambahkan.",
+		"contact": contact,
+	})
+}
+
+// DeleteContact menghapus kontak dari buku alamat
+func (mc *MailController) DeleteContact(c *gin.Context) {
+	val, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Autentikasi diperlukan."})
+		return
+	}
+	user := val.(*domain.User)
+	contactID := c.Param("id")
+
+	res := repository.DB.Where("id = ? AND user_id = ?", contactID, user.ID).Delete(&domain.Contact{})
+	if res.Error != nil || res.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Kontak tidak ditemukan."})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Kontak berhasil dihapus.",
+	})
+}
+
+// GetAutoResponder mengambil konfigurasi Out-of-Office / Vacation Responder user
+func (mc *MailController) GetAutoResponder(c *gin.Context) {
+	val, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Autentikasi diperlukan."})
+		return
+	}
+	user := val.(*domain.User)
+
+	var ar domain.AutoResponder
+	if err := repository.DB.Where("user_id = ?", user.ID).First(&ar).Error; err != nil {
+		ar = domain.AutoResponder{
+			UserID:   user.ID,
+			Enabled:  false,
+			Subject:  "Out of Office: " + user.Email,
+			BodyText: "Halo,\n\nSaat ini saya sedang tidak berada di tempat dan memiliki akses email yang terbatas. Saya akan membalas pesan Anda setelah kembali.\n\nTerima kasih.",
+		}
+	}
+
+	c.JSON(http.StatusOK, ar)
+}
+
+// SaveAutoResponder menyimpan pengaturan balasan liburan otomatis
+func (mc *MailController) SaveAutoResponder(c *gin.Context) {
+	val, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Autentikasi diperlukan."})
+		return
+	}
+	user := val.(*domain.User)
+
+	var req struct {
+		Enabled   bool       `json:"enabled"`
+		StartTime *time.Time `json:"start_time"`
+		EndTime   *time.Time `json:"end_time"`
+		Subject   string     `json:"subject"`
+		BodyHTML  string     `json:"body_html"`
+		BodyText  string     `json:"body_text"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Payload tidak valid: " + err.Error()})
+		return
+	}
+
+	var ar domain.AutoResponder
+	err := repository.DB.Where("user_id = ?", user.ID).First(&ar).Error
+	if err != nil {
+		ar = domain.AutoResponder{
+			UserID:    user.ID,
+			Enabled:   req.Enabled,
+			StartTime: req.StartTime,
+			EndTime:   req.EndTime,
+			Subject:   strings.TrimSpace(req.Subject),
+			BodyHTML:  req.BodyHTML,
+			BodyText:  req.BodyText,
+		}
+		if err := repository.DB.Create(&ar).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menyimpan auto responder: " + err.Error()})
+			return
+		}
+	} else {
+		ar.Enabled = req.Enabled
+		ar.StartTime = req.StartTime
+		ar.EndTime = req.EndTime
+		ar.Subject = strings.TrimSpace(req.Subject)
+		ar.BodyHTML = req.BodyHTML
+		ar.BodyText = req.BodyText
+		if err := repository.DB.Save(&ar).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal memperbarui auto responder: " + err.Error()})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Pengaturan Vacation Auto-Responder berhasil disimpan.",
+		"data":    ar,
+	})
+}
+
+// ListCannedResponses mengambil daftar template email siap pakai (snippets)
+func (mc *MailController) ListCannedResponses(c *gin.Context) {
+	val, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Autentikasi diperlukan."})
+		return
+	}
+	user := val.(*domain.User)
+
+	var responses []domain.CannedResponse
+	repository.DB.Where("user_id = ?", user.ID).Order("created_at desc").Find(&responses)
+
+	c.JSON(http.StatusOK, responses)
+}
+
+// CreateCannedResponse membuat template snippet email baru
+func (mc *MailController) CreateCannedResponse(c *gin.Context) {
+	val, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Autentikasi diperlukan."})
+		return
+	}
+	user := val.(*domain.User)
+
+	var req struct {
+		Title   string `json:"title" binding:"required"`
+		Content string `json:"content" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Judul dan isi template harus diisi."})
+		return
+	}
+
+	template := domain.CannedResponse{
+		UserID:  user.ID,
+		Title:   strings.TrimSpace(req.Title),
+		Content: req.Content,
+	}
+
+	if err := repository.DB.Create(&template).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal membuat template: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":   "success",
+		"message":  "Template email berhasil dibuat.",
+		"template": template,
+	})
+}
+
+// DeleteCannedResponse menghapus template snippet
+func (mc *MailController) DeleteCannedResponse(c *gin.Context) {
+	val, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Autentikasi diperlukan."})
+		return
+	}
+	user := val.(*domain.User)
+	templateID := c.Param("id")
+
+	res := repository.DB.Where("id = ? AND user_id = ?", templateID, user.ID).Delete(&domain.CannedResponse{})
+	if res.Error != nil || res.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Template tidak ditemukan."})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Template berhasil dihapus.",
+	})
+}
+
+// GetBackupConfig mengambil konfigurasi S3 cloud backup
+func (mc *MailController) GetBackupConfig(c *gin.Context) {
+	var cfg domain.SystemConfig
+	err := repository.DB.Where("key = ?", "s3_backup").First(&cfg).Error
+	if err != nil {
+		c.JSON(http.StatusOK, backup.S3Config{
+			Region:        "us-east-1",
+			UseSSL:        true,
+			RetentionDays: 30,
+		})
+		return
+	}
+	c.Data(http.StatusOK, "application/json", []byte(cfg.Value))
+}
+
+// SaveBackupConfig menyimpan konfigurasi cloud backup
+func (mc *MailController) SaveBackupConfig(c *gin.Context) {
+	var s3Cfg backup.S3Config
+	if err := c.ShouldBindJSON(&s3Cfg); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Payload konfigurasi S3 tidak valid: " + err.Error()})
+		return
+	}
+
+	rawBytes, _ := json.Marshal(s3Cfg)
+	var sysCfg domain.SystemConfig
+	err := repository.DB.Where("key = ?", "s3_backup").First(&sysCfg).Error
+	if err != nil {
+		sysCfg = domain.SystemConfig{
+			Key:   "s3_backup",
+			Value: string(rawBytes),
+		}
+		repository.DB.Create(&sysCfg)
+	} else {
+		sysCfg.Value = string(rawBytes)
+		repository.DB.Save(&sysCfg)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Konfigurasi S3 Cloud Backup berhasil disimpan.",
+		"data":    s3Cfg,
+	})
+}
+
+// TriggerManualBackup menjalankan snapshot backup saat ini juga
+func (mc *MailController) TriggerManualBackup(c *gin.Context) {
+	var s3Cfg backup.S3Config
+	var sysCfg domain.SystemConfig
+	if err := repository.DB.Where("key = ?", "s3_backup").First(&sysCfg).Error; err == nil {
+		_ = json.Unmarshal([]byte(sysCfg.Value), &s3Cfg)
+	}
+
+	filename, size, err := backup.PerformBackup(s3Cfg)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "failed",
+			"error":   err.Error(),
+			"file":    filename,
+			"size":    size,
+		})
+		return
+	}
+
+	now := time.Now()
+	s3Cfg.LastBackupTime = &now
+	s3Cfg.LastBackupStatus = "success"
+	updatedRaw, _ := json.Marshal(s3Cfg)
+	repository.DB.Model(&domain.SystemConfig{}).Where("key = ?", "s3_backup").Update("value", string(updatedRaw))
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":   "success",
+		"message":  "Backup database dan Maildir berhasil dibuat.",
+		"filename": filename,
+		"size":     size,
+		"time":     now,
 	})
 }

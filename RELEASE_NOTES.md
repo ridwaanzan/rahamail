@@ -4,6 +4,67 @@ This document tracks all official releases of **RaHaMail**, highlighting new fea
 
 ---
 
+## 📦 Version 1.4.0 (October 29, 2026) — Enterprise Defenses, Inbound DMARC & Cloud Ops
+
+Phase 3 release of the RaHaMail Enterprise Roadmap, adding ClamAV & Rspamd scanning, Inbound DMARC verification, and S3-compatible cloud disaster recovery.
+
+### 🌟 Release Highlights
+- **Antivirus & Anti-Spam Filtering (ClamAV & Rspamd)**:
+  - Real-time scanning of inbound email streams and attachments over ClamAV `INSTREAM` protocol (`127.0.0.1:3310` or Unix socket). Rejects infected messages with `554 5.7.1 Message rejected: Infected with [VirusName]`.
+  - HTTP-based Rspamd milter scanning (`/checkv2`) with automatic classification, quarantine routing to the `Spam` folder, and subject tagging (`[SPAM]`).
+  - Graceful fail-open bypass: Incoming email flow remains completely uninterrupted if scanner daemons are temporarily offline.
+- **Inbound DMARC, SPF & DKIM Protocol Verification (RFC 7489 & RFC 8601)**:
+  - Automated DNS TXT record lookups verifying SPF sender identity and DKIM cryptographic signatures on Port 25.
+  - Strict enforcement of sender DMARC policies (`p=reject` drops unauthenticated mail with `550 5.7.1`; `p=quarantine` routes to the user's `Spam` folder).
+  - Prepends standard RFC 8601 `Authentication-Results: rahamail; spf=...; dkim=...; dmarc=...` headers to stored messages.
+- **Automated S3-Compatible Cloud Backups**:
+  - Pure-Go backup engine creating atomic SQLite snapshots via `VACUUM INTO` and tar.gz compressed Maildir archives.
+  - End-to-end client-side encryption using **AES-256 GCM** before cloud dispatch.
+  - S3 object storage upload pipeline supporting AWS S3, Cloudflare R2, Wasabi, and MinIO.
+  - Admin management API endpoints (`/api/v1/admin/backup/config` and `/api/v1/admin/backup/trigger`).
+
+---
+
+## 📦 Version 1.3.0 (October 29, 2026) — Webmail Productivity & Usability Release
+
+Phase 2 release of the RaHaMail Enterprise Roadmap, adding Address Book management, Contact Auto-Complete, Vacation Notice (Out of Office) Auto-Responder, and Canned Email Templates.
+
+### 🌟 Release Highlights
+- **Address Book & Contact Auto-Complete**:
+  - Full-featured contact management portal (`/mail` sidebar modal) supporting contact name, email address, company name, and notes.
+  - Interactive auto-suggest dropdown in the composer for `To`, `Cc`, and `Bcc` inputs with 150ms debounce and keyboard navigation.
+  - Background auto-harvesting engine: Automatically saves recipient email addresses from sent messages to the user's personal address book if not already present.
+- **Vacation Notice / Out-of-Office Auto-Responder**:
+  - Configurable automated replies with start/end scheduling, custom subject, and message body.
+  - Anti-looping defense: Automatic suppression for bounces, system daemons (`mailer-daemon`, `<>`), and `noreply` addresses.
+  - Frequency throttling: Enforces a strict 1 auto-reply per sender per 24 hours limit backed by `auto_responder_logs`.
+- **Canned Responses & Quick Templates**:
+  - Pre-written email snippet repository enabling one-click insertion directly into the WYSIWYG composer editor.
+  - Full CRUD management interface directly accessible from the composer toolbar dropdown.
+
+---
+
+## 📦 Version 1.2.0 (October 29, 2026) — Security, Identity & Developer APIs
+
+Phase 1 release of the RaHaMail Enterprise Roadmap, adding Two-Factor Authentication (2FA), a Developer Transactional REST API, and domain-level Catch-All routing.
+
+### 🌟 Release Highlights
+- **Two-Factor Authentication (2FA / TOTP — RFC 6238)**:
+  - Time-based One-Time Password verification for webmail and admin accounts with zero external dependencies.
+  - Interactive setup modal with standard `otpauth://` key generation and Base32 secret exchange compatible with Google Authenticator, Microsoft Authenticator, and Bitwarden.
+  - 8 emergency one-time recovery backup codes hashed with `bcrypt`.
+  - Two-step login flow with dedicated modal prompting for OTP or emergency recovery code.
+- **Developer Transactional REST API**:
+  - Outbound email dispatch endpoint `POST /api/v1/send` authenticated via Bearer token (`rhm_live_...`).
+  - Send transactional emails directly via JSON payloads over HTTPS without needing local SMTP client configurations.
+  - Full support for `to`, `cc`, `bcc`, `html`, and `text` with automatic RFC 5322 MIME compilation, DKIM digital signing, and dual local/MTA outbound delivery.
+  - Dedicated API Keys management panel in Webmail settings to generate, label, track usage, and revoke tokens.
+- **Catch-All Mailboxes & Domain Aliases**:
+  - Configurable `catch_all_user_id` per domain to route all unassigned inbound emails (`*@domain.com`) to a designated mailbox without generating SMTP 550 Mailbox Not Found bounces.
+  - Management API endpoint `POST /api/v1/domains/:id/catch-all`.
+
+---
+
 ## 📦 Version 1.1.0 (October 28, 2026) — Security Hardening & Usability Release
 
 A comprehensive security, reliability, and usability upgrade for **RaHaMail**, delivering all enhancement opportunities identified in the v1.0.0 roadmap.

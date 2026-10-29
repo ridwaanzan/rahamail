@@ -10,7 +10,11 @@ import (
 	"strings"
 	"time"
 
+	"mail-server/internal/antivirus"
+	"mail-server/internal/delivery"
+	"mail-server/internal/dmarc"
 	"mail-server/internal/domain"
+	"mail-server/internal/mailbuilder"
 	"mail-server/internal/repository"
 	"mail-server/internal/sse"
 	"mail-server/internal/storage"
@@ -161,20 +165,73 @@ func (s *Session) Data(r io.Reader) error {
 
 	log.Printf("💾 [SMTP] Menerima pesan %d bytes | Subjek: %s", size, subject)
 
+	// Phase 3: Antivirus & Anti-Spam Scanning (ClamAV & Rspamd)
+	scanRes := antivirus.ScanIncomingMessage(rawBytes)
+	if scanRes.IsInfected {
+		log.Printf("☣️ [ANTIVIRUS REJECT] Pesan ditolak karena mengandung malware/virus: %s", scanRes.VirusName)
+		return fmt.Errorf("554 5.7.1 Message rejected: Infected with %s", scanRes.VirusName)
+	}
+
+	// Phase 3: Inbound DMARC, SPF & DKIM Verification
+	senderHost, _, _ := net.SplitHostPort(s.remoteIP)
+	if senderHost == "" {
+		senderHost = s.remoteIP
+	}
+	authResults := dmarc.VerifyInboundAuth(senderHost, s.from, rawBytes)
+	log.Printf("🛡️ [AUTH RESULTS] SPF=%s | DKIM=%s | DMARC=%s (Policy: %s)", authResults.SPFStatus, authResults.DKIMStatus, authResults.DMARCStatus, authResults.DMARCPolicy)
+
+	// Jika DMARC gagal dan policy pengirim adalah reject
+	if authResults.DMARCStatus == "fail" && authResults.DMARCPolicy == "reject" {
+		log.Printf("⛔ [DMARC REJECT] Pesan ditolak sesuai kebijakan DMARC p=reject pengirim: %s", s.from)
+		return errors.New("550 5.7.1 Message rejected due to sender's DMARC policy")
+	}
+
+	targetMailbox := "INBOX"
+	if scanRes.IsSpam || (authResults.DMARCStatus == "fail" && authResults.DMARCPolicy == "quarantine") {
+		targetMailbox = "Spam"
+		if scanRes.IsSpam && !strings.HasPrefix(strings.ToUpper(subject), "[SPAM]") {
+			subject = "[SPAM] " + subject
+		}
+	}
+
 	// Simpan metadata dan file ke storage aman untuk setiap penerima lokal
 	for _, recipient := range s.to {
 		var user domain.User
-		if err := repository.DB.Where("email = ?", recipient).First(&user).Error; err == nil {
+		err := repository.DB.Where("email = ?", recipient).First(&user).Error
+
+		// Jika penerima spesifik tidak ditemukan, cek apakah domain memiliki Catch-All mailbox
+		if err != nil {
+			parts := strings.Split(recipient, "@")
+			if len(parts) == 2 {
+				domainPart := parts[1]
+				var dom domain.Domain
+				if domErr := repository.DB.Where("name = ? AND is_active = true", domainPart).First(&dom).Error; domErr == nil && dom.CatchAllUserID != nil {
+					var catchAllUser domain.User
+					if caErr := repository.DB.First(&catchAllUser, *dom.CatchAllUserID).Error; caErr == nil && catchAllUser.IsActive {
+						user = catchAllUser
+						err = nil
+						log.Printf("📥 [SMTP-CATCHALL] Mengarahkan email tak terdaftar '%s' ke Catch-All mailbox: %s (User ID: %d)", recipient, user.Email, user.ID)
+					}
+				}
+			}
+		}
+
+		if err == nil {
 			// Simpan dengan path aman ter-hash per user
-			filePath, err := storage.SaveMailToFile("inbox", user.ID, messageID, rawBytes)
+			filePath, err := storage.SaveMailToFile(strings.ToLower(targetMailbox), user.ID, messageID, rawBytes)
 			if err != nil {
 				log.Printf("❌ Gagal menyimpan file email secara aman: %v", err)
 				continue
 			}
 
+			virusStatus := "clean"
+			if scanRes.IsInfected {
+				virusStatus = scanRes.VirusName
+			}
+
 			msg := domain.Message{
 				UserID:      user.ID,
-				Mailbox:     "INBOX",
+				Mailbox:     targetMailbox,
 				MessageID:   messageID,
 				From:        s.from,
 				To:          recipient,
@@ -182,9 +239,11 @@ func (s *Session) Data(r io.Reader) error {
 				Snippet:     snippet,
 				Size:        size,
 				StoragePath: filePath,
-				SPFStatus:   "pass",
-				DKIMStatus:  "pass",
-				DMARCStatus: "pass",
+				SPFStatus:   authResults.SPFStatus,
+				DKIMStatus:  authResults.DKIMStatus,
+				DMARCStatus: authResults.DMARCStatus,
+				VirusStatus: virusStatus,
+				SpamScore:   scanRes.SpamScore,
 				ReceivedAt:  date,
 				IsSeen:      false,
 			}
@@ -192,7 +251,12 @@ func (s *Session) Data(r io.Reader) error {
 
 			// Siarkan langsung event real-time ke Dashboard Web melalui SSE
 			sse.GlobalHub.Broadcast("new_email", msg)
-			log.Printf("🚀 [SSE BROADCAST] Email baru berhasil disiarkan ke dashboard untuk user: %s", recipient)
+			log.Printf("🚀 [SSE BROADCAST] Email baru berhasil disiarkan ke dashboard untuk user: %s (Folder: %s)", recipient, targetMailbox)
+
+			// Cek apakah user mengaktifkan Vacation Auto-Responder (hanya untuk email yang masuk ke INBOX)
+			if targetMailbox == "INBOX" {
+				go processAutoResponder(user, s.from, subject)
+			}
 		}
 	}
 
@@ -216,6 +280,101 @@ func (s *Session) Reset() {
 func (s *Session) Logout() error {
 	log.Printf("👋 [SMTP] Client disconnect: %s", s.remoteIP)
 	return nil
+}
+
+// processAutoResponder mengirim balasan liburan otomatis jika dikonfigurasi dan aktif
+func processAutoResponder(user domain.User, senderEmail, incomingSubject string) {
+	senderEmail = strings.TrimSpace(strings.ToLower(senderEmail))
+	if senderEmail == "" || senderEmail == "<>" {
+		return
+	}
+
+	// Anti-looping: Jangan balas email daemon atau sistem
+	if strings.Contains(senderEmail, "mailer-daemon") || strings.Contains(senderEmail, "noreply") || strings.Contains(senderEmail, "no-reply") {
+		return
+	}
+
+	var ar domain.AutoResponder
+	if err := repository.DB.Where("user_id = ? AND enabled = true", user.ID).First(&ar).Error; err != nil {
+		return
+	}
+
+	now := time.Now()
+	if ar.StartTime != nil && now.Before(*ar.StartTime) {
+		return
+	}
+	if ar.EndTime != nil && now.After(*ar.EndTime) {
+		return
+	}
+
+	// Cek pembatasan 1 balasan per sender per 24 jam
+	var logEntry domain.AutoResponderLog
+	twentyFourHoursAgo := now.Add(-24 * time.Hour)
+	err := repository.DB.Where("auto_responder_id = ? AND recipient_email = ? AND last_sent_at > ?", ar.ID, senderEmail, twentyFourHoursAgo).First(&logEntry).Error
+	if err == nil {
+		log.Printf("⏳ [AUTO-RESPONDER] Balasan otomatis untuk %s ditahan (sudah dikirim dalam 24 jam terakhir)", senderEmail)
+		return
+	}
+
+	// Kirim pesan balasan
+	replySubject := ar.Subject
+	if replySubject == "" {
+		replySubject = "Re: " + incomingSubject
+	}
+
+	mailData := mailbuilder.OutgoingEmail{
+		From:     user.Email,
+		To:       []string{senderEmail},
+		Subject:  replySubject,
+		BodyHTML: ar.BodyHTML,
+		BodyText: ar.BodyText,
+	}
+
+	rawBytes, messageID, err := mailbuilder.BuildRFC5322Message(mailData)
+	if err != nil {
+		log.Printf("❌ [AUTO-RESPONDER] Gagal menyusun pesan RFC 5322: %v", err)
+		return
+	}
+
+	// Catat log pengiriman
+	if logEntry.ID != 0 {
+		repository.DB.Model(&logEntry).Update("last_sent_at", now)
+	} else {
+		repository.DB.Create(&domain.AutoResponderLog{
+			AutoResponderID: ar.ID,
+			RecipientEmail:  senderEmail,
+			LastSentAt:      now,
+		})
+	}
+
+	// Kirim pesan (jika lokal atau via outbound)
+	var targetUser domain.User
+	if err := repository.DB.Where("email = ?", senderEmail).First(&targetUser).Error; err == nil {
+		inboxPath, err := storage.SaveMailToFile("inbox", targetUser.ID, messageID, rawBytes)
+		if err == nil {
+			msg := domain.Message{
+				UserID:      targetUser.ID,
+				Mailbox:     "INBOX",
+				MessageID:   messageID,
+				From:        user.Email,
+				To:          senderEmail,
+				Subject:     replySubject,
+				Snippet:     ar.BodyText,
+				Size:        int64(len(rawBytes)),
+				StoragePath: inboxPath,
+				SPFStatus:   "pass",
+				DKIMStatus:  "pass",
+				DMARCStatus: "pass",
+				ReceivedAt:  now,
+			}
+			repository.DB.Create(&msg)
+			sse.GlobalHub.Broadcast("new_email", msg)
+		}
+	} else {
+		_ = delivery.DeliverOutbound(user.Email, senderEmail, rawBytes)
+	}
+
+	log.Printf("🌴 [AUTO-RESPONDER] Berhasil mengirimkan balasan otomatis ke: %s", senderEmail)
 }
 
 func sanitizeFilename(s string) string {

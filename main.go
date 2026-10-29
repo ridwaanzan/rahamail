@@ -95,8 +95,28 @@ func main() {
 			authAPI.GET("/check-username", authCtrl.CheckUsername)
 			authAPI.POST("/register", middleware.RateLimitMiddleware(middleware.RegisterLimiter, "Batas pendaftaran tercapai. Silakan coba lagi nanti."), authCtrl.Register)
 			authAPI.POST("/login", middleware.RateLimitMiddleware(middleware.AuthLimiter, "Terlalu banyak percobaan masuk. Silakan tunggu 1 menit."), authCtrl.Login)
+			authAPI.POST("/verify-2fa", middleware.RateLimitMiddleware(middleware.AuthLimiter, "Terlalu banyak percobaan verifikasi 2FA."), authCtrl.Verify2FA)
 			authAPI.POST("/logout", authCtrl.Logout)
 		}
+
+		// 2FA Management API (Protected by User Session)
+		twoFA := api.Group("/2fa", middleware.UserAuthMiddleware())
+		{
+			twoFA.GET("/setup", authCtrl.Setup2FA)
+			twoFA.POST("/enable", authCtrl.Enable2FA)
+			twoFA.POST("/disable", authCtrl.Disable2FA)
+		}
+
+		// Developer API Keys Management (Protected by User Session)
+		apiKeys := api.Group("/api-keys", middleware.UserAuthMiddleware())
+		{
+			apiKeys.GET("", authCtrl.ListAPIKeys)
+			apiKeys.POST("", authCtrl.CreateAPIKey)
+			apiKeys.DELETE("/:id", authCtrl.RevokeAPIKey)
+		}
+
+		// Developer Transactional Sending API (Protected by Bearer rhm_live_... API Key)
+		api.POST("/send", middleware.APIKeyAuthMiddleware(), mailCtrl.SendTransactionalMail)
 
 		// User Webmail API (Protected & Outbound Throttled)
 		mailAPI := api.Group("/webmail", middleware.UserAuthMiddleware())
@@ -108,6 +128,20 @@ func main() {
 			mailAPI.POST("/messages/move", mailCtrl.MoveMessage)
 			mailAPI.POST("/messages/:id/star", mailCtrl.ToggleStarMessage)
 			mailAPI.DELETE("/messages/:id", mailCtrl.DeleteMessage)
+
+			// Contacts / Address Book API
+			mailAPI.GET("/contacts", mailCtrl.ListContacts)
+			mailAPI.POST("/contacts", mailCtrl.CreateContact)
+			mailAPI.DELETE("/contacts/:id", mailCtrl.DeleteContact)
+
+			// Out-of-Office / Vacation Responder API
+			mailAPI.GET("/auto-responder", mailCtrl.GetAutoResponder)
+			mailAPI.POST("/auto-responder", mailCtrl.SaveAutoResponder)
+
+			// Canned Responses / Templates API
+			mailAPI.GET("/templates", mailCtrl.ListCannedResponses)
+			mailAPI.POST("/templates", mailCtrl.CreateCannedResponse)
+			mailAPI.DELETE("/templates/:id", mailCtrl.DeleteCannedResponse)
 		}
 
 		// SSE live stream endpoint
@@ -130,9 +164,15 @@ func main() {
 		// Setup Wizard API
 		api.POST("/setup/complete", mailCtrl.CompleteSetup)
 
+		// Cloud Backup & S3 API (Super Admin)
+		api.GET("/admin/backup/config", mailCtrl.GetBackupConfig)
+		api.POST("/admin/backup/config", mailCtrl.SaveBackupConfig)
+		api.POST("/admin/backup/trigger", mailCtrl.TriggerManualBackup)
+
 		// Domain Management
 		api.GET("/domains", mailCtrl.ListDomains)
 		api.POST("/domains", mailCtrl.CreateDomain)
+		api.POST("/domains/:id/catch-all", mailCtrl.SetCatchAll)
 
 		// User/Mailbox Management
 		api.GET("/users", mailCtrl.ListUsers)

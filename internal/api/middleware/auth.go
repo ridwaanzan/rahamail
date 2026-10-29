@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"mail-server/internal/apikey"
 	"mail-server/internal/domain"
 	"mail-server/internal/repository"
 
@@ -113,6 +114,10 @@ func UserAuthMiddleware() gin.HandlerFunc {
 	}
 }
 
+
+
+
+
 // AdminAuthMiddleware memastikan pengguna adalah admin
 func AdminAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -137,3 +142,106 @@ func AdminAuthMiddleware() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+// Generate2FAPendingToken membuat token sementara berdurasi pendek (5 menit) untuk tahap verifikasi 2FA
+func Generate2FAPendingToken(userID uint) string {
+	ts := time.Now().Unix()
+	payload := fmt.Sprintf("2fa_pending:%d:%d", userID, ts)
+	mac := hmac.New(sha256.New, sessionSecret)
+	mac.Write([]byte(payload))
+	sig := hex.EncodeToString(mac.Sum(nil))
+	return fmt.Sprintf("%s:%s", payload, sig)
+}
+
+// Validate2FAPendingToken memvalidasi token pending 2FA (maksimal 5 menit)
+func Validate2FAPendingToken(token string) (uint, bool) {
+	parts := strings.Split(token, ":")
+	if len(parts) != 4 || parts[0] != "2fa_pending" {
+		return 0, false
+	}
+
+	payload := fmt.Sprintf("%s:%s:%s", parts[0], parts[1], parts[2])
+	sig := parts[3]
+
+	mac := hmac.New(sha256.New, sessionSecret)
+	mac.Write([]byte(payload))
+	expectedSig := hex.EncodeToString(mac.Sum(nil))
+
+	if !hmac.Equal([]byte(sig), []byte(expectedSig)) {
+		return 0, false
+	}
+
+	ts, err := strconv.ParseInt(parts[2], 10, 64)
+	if err != nil || time.Now().Unix()-ts > 300 { // 5 menit
+		return 0, false
+	}
+
+	uid, err := strconv.ParseUint(parts[1], 10, 64)
+	if err != nil {
+		return 0, false
+	}
+
+	return uint(uid), true
+}
+
+// APIKeyAuthMiddleware memvalidasi token transaksi developer `Bearer rhm_live_...`
+func APIKeyAuthMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header is required (Bearer rhm_live_...)"})
+			c.Abort()
+			return
+		}
+
+		parts := strings.SplitN(authHeader, " ", 2)
+		if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid Authorization header format. Format: Bearer <token>"})
+			c.Abort()
+			return
+		}
+
+		rawToken := strings.TrimSpace(parts[1])
+		if !apikey.ValidateFormat(rawToken) {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid API key format. Must start with rhm_live_ followed by 64 hex characters."})
+			c.Abort()
+			return
+		}
+
+		tokenHash := apikey.HashToken(rawToken)
+
+		var key domain.APIKey
+		if err := repository.DB.Preload("User").Preload("User.Domain").Where("token_hash = ? AND is_active = true", tokenHash).First(&key).Error; err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "API key is invalid, inactive, or revoked."})
+			c.Abort()
+			return
+		}
+
+		if key.ExpiresAt != nil && key.ExpiresAt.Before(time.Now()) {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "API key has expired."})
+			c.Abort()
+			return
+		}
+
+		if !key.User.IsActive {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Associated mailbox account has been disabled."})
+			c.Abort()
+			return
+		}
+
+		// Update last_used_at secara asynchronous
+		now := time.Now()
+		go func(id uint) {
+			repository.DB.Model(&domain.APIKey{}).Where("id = ?", id).Update("last_used_at", now)
+		}(key.ID)
+
+		c.Set("user", key.User)
+		c.Set("user_id", key.UserID)
+		c.Set("api_key", &key)
+		c.Next()
+	}
+}
+
+
+
+

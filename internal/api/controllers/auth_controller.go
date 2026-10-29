@@ -14,11 +14,14 @@ import (
 	"time"
 
 	"mail-server/internal/api/middleware"
+	"mail-server/internal/apikey"
 	"mail-server/internal/domain"
 	"mail-server/internal/repository"
+	"mail-server/internal/totp"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 type AuthController struct{}
@@ -273,6 +276,17 @@ func (ac *AuthController) Login(c *gin.Context) {
 		return
 	}
 
+	// Cek apakah akun memiliki 2FA aktif
+	if user.TwoFactorEnabled && user.TwoFactorSecret != "" {
+		pendingToken := middleware.Generate2FAPendingToken(user.ID)
+		c.JSON(http.StatusOK, gin.H{
+			"status":        "2fa_required",
+			"message":       "Verifikasi 2FA diperlukan.",
+			"pending_token": pendingToken,
+		})
+		return
+	}
+
 	// Sukses, buat cookie session
 	token := middleware.GenerateSessionToken(user.ID)
 	c.SetCookie("rahamail_session", token, 7*86400, "/", "", false, true)
@@ -294,4 +308,295 @@ func (ac *AuthController) Login(c *gin.Context) {
 func (ac *AuthController) Logout(c *gin.Context) {
 	c.SetCookie("rahamail_session", "", -1, "/", "", false, true)
 	c.Redirect(http.StatusFound, "/login")
+}
+
+// Verify2FA memproses verifikasi kode TOTP atau Backup Code dari step login kedua
+func (ac *AuthController) Verify2FA(c *gin.Context) {
+	var req struct {
+		PendingToken string `json:"pending_token" binding:"required"`
+		Code         string `json:"code" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Pending token dan kode 2FA harus diisi."})
+		return
+	}
+
+	userID, ok := middleware.Validate2FAPendingToken(req.PendingToken)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Sesi verifikasi 2FA telah kedaluwarsa. Silakan login kembali."})
+		return
+	}
+
+	var user domain.User
+	if err := repository.DB.First(&user, userID).Error; err != nil || !user.IsActive {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Pengguna tidak ditemukan."})
+		return
+	}
+
+	cleanCode := strings.TrimSpace(req.Code)
+	isValid := false
+
+	// 1. Coba verifikasi dengan TOTP 6 digit
+	if len(cleanCode) == 6 && totp.ValidateCode(user.TwoFactorSecret, cleanCode, time.Now()) {
+		isValid = true
+	}
+
+	// 2. Jika bukan TOTP atau salah, periksa apakah merupakan Backup Code
+	if !isValid {
+		var backupCodes []domain.BackupCode
+		repository.DB.Where("user_id = ? AND used_at IS NULL", user.ID).Find(&backupCodes)
+		for _, bc := range backupCodes {
+			if err := bcrypt.CompareHashAndPassword([]byte(bc.CodeHash), []byte(cleanCode)); err == nil {
+				now := time.Now()
+				repository.DB.Model(&bc).Update("used_at", &now)
+				isValid = true
+				break
+			}
+		}
+	}
+
+	if !isValid {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Kode autentikasi 2FA atau kode pemulihan salah."})
+		return
+	}
+
+	// Buat cookie sesi resmi
+	token := middleware.GenerateSessionToken(user.ID)
+	c.SetCookie("rahamail_session", token, 7*86400, "/", "", false, true)
+
+	redirectURL := "/mail"
+	if user.IsAdmin {
+		redirectURL = "/"
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":   "success",
+		"message":  "Autentikasi dua faktor berhasil!",
+		"is_admin": user.IsAdmin,
+		"redirect": redirectURL,
+	})
+}
+
+// Setup2FA menginisialisasi pendaftaran 2FA untuk user yang sedang login
+func (ac *AuthController) Setup2FA(c *gin.Context) {
+	val, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Autentikasi diperlukan."})
+		return
+	}
+	user := val.(*domain.User)
+
+	secret, err := totp.GenerateSecret()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menghasilkan secret 2FA: " + err.Error()})
+		return
+	}
+
+	keyURI := totp.GenerateKeyURI("RaHaMail", user.Email, secret)
+
+	c.JSON(http.StatusOK, gin.H{
+		"secret":   secret,
+		"otpauth":  keyURI,
+		"issuer":   "RaHaMail",
+		"account":  user.Email,
+		"is_ready": true,
+	})
+}
+
+// Enable2FA memvalidasi kode pertama kali dan mengaktifkan 2FA beserta pembuatan 8 Backup Codes
+func (ac *AuthController) Enable2FA(c *gin.Context) {
+	val, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Autentikasi diperlukan."})
+		return
+	}
+	user := val.(*domain.User)
+
+	var req struct {
+		Secret string `json:"secret" binding:"required"`
+		Code   string `json:"code" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Secret dan kode verifikasi harus diisi."})
+		return
+	}
+
+	if !totp.ValidateCode(req.Secret, req.Code, time.Now()) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Kode verifikasi 2FA tidak valid atau waktu perangkat tidak sinkron."})
+		return
+	}
+
+	// Generate 8 backup recovery codes
+	rawBackupCodes, err := totp.GenerateBackupCodes(8)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal membuat kode pemulihan cadangan."})
+		return
+	}
+
+	// Simpan ke database
+	err = repository.DB.Transaction(func(tx *gorm.DB) error {
+		// Hapus kode backup lama jika ada
+		tx.Where("user_id = ?", user.ID).Delete(&domain.BackupCode{})
+
+		for _, code := range rawBackupCodes {
+			hash, err := bcrypt.GenerateFromPassword([]byte(code), bcrypt.DefaultCost)
+			if err != nil {
+				return err
+			}
+			bc := domain.BackupCode{
+				UserID:   user.ID,
+				CodeHash: string(hash),
+			}
+			if err := tx.Create(&bc).Error; err != nil {
+				return err
+			}
+		}
+
+		return tx.Model(&domain.User{}).Where("id = ?", user.ID).Updates(map[string]interface{}{
+			"two_factor_enabled": true,
+			"two_factor_secret":  strings.ToUpper(strings.TrimSpace(req.Secret)),
+		}).Error
+	})
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menyimpan konfigurasi 2FA: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":       "success",
+		"message":      "Autentikasi Dua Faktor (2FA) berhasil diaktifkan!",
+		"backup_codes": rawBackupCodes,
+	})
+}
+
+// Disable2FA menonaktifkan 2FA setelah verifikasi password
+func (ac *AuthController) Disable2FA(c *gin.Context) {
+	val, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Autentikasi diperlukan."})
+		return
+	}
+	user := val.(*domain.User)
+
+	var req struct {
+		Password string `json:"password" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Kata sandi diperlukan untuk konfirmasi."})
+		return
+	}
+
+	var freshUser domain.User
+	if err := repository.DB.First(&freshUser, user.ID).Error; err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Pengguna tidak ditemukan."})
+		return
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(freshUser.PasswordHash), []byte(req.Password)); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Kata sandi salah."})
+		return
+	}
+
+	_ = repository.DB.Transaction(func(tx *gorm.DB) error {
+		tx.Where("user_id = ?", user.ID).Delete(&domain.BackupCode{})
+		return tx.Model(&domain.User{}).Where("id = ?", user.ID).Updates(map[string]interface{}{
+			"two_factor_enabled": false,
+			"two_factor_secret":  "",
+		}).Error
+	})
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Autentikasi Dua Faktor (2FA) telah dinonaktifkan.",
+	})
+}
+
+// ListAPIKeys menampilkan daftar API Key milik user yang aktif
+func (ac *AuthController) ListAPIKeys(c *gin.Context) {
+	val, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Autentikasi diperlukan."})
+		return
+	}
+	user := val.(*domain.User)
+
+	var keys []domain.APIKey
+	repository.DB.Where("user_id = ?", user.ID).Order("created_at desc").Find(&keys)
+
+	c.JSON(http.StatusOK, gin.H{
+		"keys": keys,
+	})
+}
+
+// CreateAPIKey membuat token API baru untuk user
+func (ac *AuthController) CreateAPIKey(c *gin.Context) {
+	val, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Autentikasi diperlukan."})
+		return
+	}
+	user := val.(*domain.User)
+
+	var req struct {
+		Name string `json:"name" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Nama API key harus diisi."})
+		return
+	}
+
+	rawToken, prefix, tokenHash, err := apikey.GenerateAPIKey()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menghasilkan API key: " + err.Error()})
+		return
+	}
+
+	newKey := domain.APIKey{
+		UserID:    user.ID,
+		Name:      strings.TrimSpace(req.Name),
+		Prefix:    prefix,
+		TokenHash: tokenHash,
+		IsActive:  true,
+	}
+
+	if err := repository.DB.Create(&newKey).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menyimpan API key: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":    "success",
+		"message":   "API Key berhasil dibuat. Simpan token ini karena tidak akan ditampilkan lagi!",
+		"api_key":   rawToken,
+		"prefix":    prefix,
+		"name":      newKey.Name,
+		"key_id":    newKey.ID,
+		"created_at": newKey.CreatedAt,
+	})
+}
+
+// RevokeAPIKey mencabut atau menghapus API key
+func (ac *AuthController) RevokeAPIKey(c *gin.Context) {
+	val, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Autentikasi diperlukan."})
+		return
+	}
+	user := val.(*domain.User)
+	keyID := c.Param("id")
+
+	res := repository.DB.Where("id = ? AND user_id = ?", keyID, user.ID).Delete(&domain.APIKey{})
+	if res.Error != nil || res.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "API Key tidak ditemukan atau sudah dihapus."})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "API Key berhasil dicabut.",
+	})
 }
