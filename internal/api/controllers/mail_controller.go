@@ -133,6 +133,34 @@ func (mc *MailController) RenderWebmail(c *gin.Context) {
 	var scheduledCount int64
 	repository.DB.Model(&domain.ScheduledMail{}).Where("user_id = ? AND status = 'pending'", currentUser.ID).Count(&scheduledCount)
 
+	// Hitung total email per folder untuk badge counter di sidebar
+	var inboxCount, sentCount, draftsCount, spamCount, trashCount int64
+	type folderCountResult struct {
+		Mailbox string
+		Count   int64
+	}
+	var folderResults []folderCountResult
+	repository.DB.Model(&domain.Message{}).
+		Select("mailbox, count(*) as count").
+		Where("user_id = ?", currentUser.ID).
+		Group("mailbox").
+		Scan(&folderResults)
+
+	for _, fr := range folderResults {
+		switch fr.Mailbox {
+		case "INBOX":
+			inboxCount = fr.Count
+		case "Sent":
+			sentCount = fr.Count
+		case "Drafts":
+			draftsCount = fr.Count
+		case "Spam":
+			spamCount = fr.Count
+		case "Trash":
+			trashCount = fr.Count
+		}
+	}
+
 	// Format kuota
 	quotaMB := currentUser.QuotaBytes / (1024 * 1024)
 	usedMB := currentUser.UsedBytes / (1024 * 1024)
@@ -159,6 +187,11 @@ func (mc *MailController) RenderWebmail(c *gin.Context) {
 		"messages":        messages,
 		"scheduled_mails": scheduledMails,
 		"scheduled_count": scheduledCount,
+		"inbox_count":     inboxCount,
+		"sent_count":      sentCount,
+		"drafts_count":    draftsCount,
+		"spam_count":      spamCount,
+		"trash_count":     trashCount,
 		"storage_used":    usedMB,
 		"storage_quota":   quotaMB,
 		"page":            page,

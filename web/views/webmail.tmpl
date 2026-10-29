@@ -88,7 +88,9 @@
                                 <i class="bi bi-inbox-fill text-sm"></i>
                                 <span>Inbox</span>
                             </div>
-                            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold {{ if eq .current_folder "INBOX" }}bg-cyan-500 text-white{{ else }}bg-slate-200 dark:bg-dark-border text-light-muted dark:text-dark-muted{{ end }}" id="inboxCountBadge">{{ len .messages }}</span>
+                            {{ if gt .inbox_count 0 }}
+                            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold {{ if eq .current_folder "INBOX" }}bg-cyan-500 text-white{{ else }}bg-slate-200 dark:bg-dark-border text-light-muted dark:text-dark-muted{{ end }}" id="inboxCountBadge">{{ .inbox_count }}</span>
+                            {{ end }}
                         </a>
 
                         <a href="/mail?folder=Sent" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all {{ if eq .current_folder "Sent" }}bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-semibold border border-cyan-500/20{{ else }}text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card{{ end }}">
@@ -96,6 +98,9 @@
                                 <i class="bi bi-send-fill text-sm"></i>
                                 <span>Sent</span>
                             </div>
+                            {{ if gt .sent_count 0 }}
+                            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold {{ if eq .current_folder "Sent" }}bg-cyan-500 text-white{{ else }}bg-slate-200 dark:bg-dark-border text-light-muted dark:text-dark-muted{{ end }}">{{ .sent_count }}</span>
+                            {{ end }}
                         </a>
 
                         <a href="/mail?folder=Scheduled" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all {{ if eq .current_folder "Scheduled" }}bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-semibold border border-cyan-500/20{{ else }}text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card{{ end }}">
@@ -113,6 +118,9 @@
                                 <i class="bi bi-file-earmark-text-fill text-sm"></i>
                                 <span>Drafts</span>
                             </div>
+                            {{ if gt .drafts_count 0 }}
+                            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold {{ if eq .current_folder "Drafts" }}bg-cyan-500 text-white{{ else }}bg-slate-200 dark:bg-dark-border text-light-muted dark:text-dark-muted{{ end }}">{{ .drafts_count }}</span>
+                            {{ end }}
                         </a>
 
                         <a href="/mail?folder=Spam" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all {{ if eq .current_folder "Spam" }}bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-semibold border border-cyan-500/20{{ else }}text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card{{ end }}">
@@ -120,6 +128,9 @@
                                 <i class="bi bi-shield-slash-fill text-sm text-rose-500"></i>
                                 <span>Spam</span>
                             </div>
+                            {{ if gt .spam_count 0 }}
+                            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-500 border border-rose-500/30">{{ .spam_count }}</span>
+                            {{ end }}
                         </a>
 
                         <a href="/mail?folder=Trash" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all {{ if eq .current_folder "Trash" }}bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-semibold border border-cyan-500/20{{ else }}text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card{{ end }}">
@@ -127,6 +138,9 @@
                                 <i class="bi bi-trash-fill text-sm"></i>
                                 <span>Trash</span>
                             </div>
+                            {{ if gt .trash_count 0 }}
+                            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold {{ if eq .current_folder "Trash" }}bg-cyan-500 text-white{{ else }}bg-slate-200 dark:bg-dark-border text-light-muted dark:text-dark-muted{{ end }}">{{ .trash_count }}</span>
+                            {{ end }}
                         </a>
                     </nav>
                 </div>
