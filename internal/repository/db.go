@@ -86,6 +86,8 @@ func InitDB() *gorm.DB {
 		&domain.AutoResponderLog{},
 		&domain.CannedResponse{},
 		&domain.SystemConfig{},
+		&domain.PhishingCampaign{},
+		&domain.PhishingTarget{},
 	)
 	if err != nil {
 		log.Fatalf("❌ Gagal migrasi database: %v", err)

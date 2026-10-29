@@ -14,6 +14,7 @@ import (
 	"mail-server/internal/mailreader"
 	"mail-server/internal/queue"
 	"mail-server/internal/repository"
+	"mail-server/internal/simulation"
 	"mail-server/internal/sse"
 	"mail-server/internal/storage"
 	"mail-server/internal/trust"
@@ -676,6 +677,13 @@ func (mc *MailController) MoveMessage(c *gin.Context) {
 	}
 
 	repository.DB.Model(&msg).Update("mailbox", req.TargetBox)
+
+	// Jika dipindahkan ke Spam, periksa apakah email ini merupakan bagian dari simulasi phishing yang aktif
+	if strings.EqualFold(req.TargetBox, "Spam") {
+		senderAddr := trust.ExtractEmailAddress(msg.From)
+		_, _ = simulation.RecordReport(currentUser.ID, senderAddr)
+	}
+
 	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "Email berhasil dipindahkan ke " + req.TargetBox})
 }
 

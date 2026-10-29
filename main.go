@@ -70,11 +70,15 @@ func main() {
 	// Controller
 	mailCtrl := controllers.NewMailController()
 	authCtrl := controllers.NewAuthController()
+	simCtrl := controllers.NewSimulationController()
 
 	// Public Auth & Webmail Routes
 	r.GET("/register", authCtrl.RenderRegister)
 	r.GET("/login", authCtrl.RenderLogin)
 	r.GET("/logout", authCtrl.Logout)
+
+	// Phishing & Spam Awareness Simulation Public Tracking Route
+	r.GET("/sim/c/:code", simCtrl.HandleTrackingClick)
 
 	// User Webmail (Protected by Session Auth Middleware)
 	webmail := r.Group("/mail", middleware.UserAuthMiddleware())

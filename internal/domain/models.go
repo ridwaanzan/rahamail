@@ -198,3 +198,46 @@ type SystemConfig struct {
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 }
+
+// PhishingCampaign merepresentasikan program simulasi uji coba phishing / spam internal perusahaan
+type PhishingCampaign struct {
+	ID             uint             `gorm:"primaryKey" json:"id"`
+	Title          string           `gorm:"size:255;not null" json:"title"` // misal: "Simulasi Q4: Pembaruan Kebijakan HR"
+	SenderName     string           `gorm:"size:128;not null" json:"sender_name"` // misal: "HR Support Portal"
+	SenderEmail    string           `gorm:"size:255;not null" json:"sender_email"` // misal: "hr-support@company-portal.xyz"
+	Subject        string           `gorm:"size:255;not null" json:"subject"` // misal: "[PENTING] Verifikasi Data Karyawan 2026"
+	TemplateBody   string           `gorm:"type:text;not null" json:"template_body"` // HTML Template dengan placeholder {{.TrackingLink}}
+	TargetDomainID *uint            `gorm:"index" json:"target_domain_id,omitempty"` // Filter domain karyawan tertentu
+	Status         string           `gorm:"size:32;default:'draft';index" json:"status"` // draft, scheduled, running, completed
+	ScheduledAt    *time.Time       `json:"scheduled_at,omitempty"`
+	CompletedAt    *time.Time       `json:"completed_at,omitempty"`
+	TotalSent      int              `gorm:"default:0" json:"total_sent"`
+	TotalClicked   int              `gorm:"default:0" json:"total_clicked"`
+	TotalReported  int              `gorm:"default:0" json:"total_reported"`
+	CreatedAt      time.Time        `json:"created_at"`
+	UpdatedAt      time.Time        `json:"updated_at"`
+	DeletedAt      gorm.DeletedAt   `gorm:"index" json:"-"`
+
+	Targets        []PhishingTarget `gorm:"foreignKey:CampaignID" json:"targets,omitempty"`
+}
+
+// PhishingTarget merepresentasikan partisipan/karyawan target dari simulasi phishing
+type PhishingTarget struct {
+	ID           uint              `gorm:"primaryKey" json:"id"`
+	CampaignID   uint              `gorm:"not null;index" json:"campaign_id"`
+	UserID       uint              `gorm:"not null;index" json:"user_id"`
+	TrackingCode string            `gorm:"size:64;not null;uniqueIndex" json:"tracking_code"` // Token acak unik
+	Status       string            `gorm:"size:32;default:'sent';index" json:"status"` // sent, opened, clicked, reported
+	SentAt       time.Time         `json:"sent_at"`
+	OpenedAt     *time.Time        `json:"opened_at,omitempty"`
+	ClickedAt    *time.Time        `json:"clicked_at,omitempty"` // Waktu karyawan mengklik link (Not Passed)
+	ReportedAt   *time.Time        `json:"reported_at,omitempty"` // Waktu karyawan menandai spam (Passed)
+	IPAddress    string            `gorm:"size:64" json:"ip_address,omitempty"`
+	UserAgent    string            `gorm:"size:255" json:"user_agent,omitempty"`
+	CreatedAt    time.Time         `json:"created_at"`
+	UpdatedAt    time.Time         `json:"updated_at"`
+	DeletedAt    gorm.DeletedAt    `gorm:"index" json:"-"`
+
+	User         *User             `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	Campaign     *PhishingCampaign `gorm:"foreignKey:CampaignID" json:"campaign,omitempty"`
+}
