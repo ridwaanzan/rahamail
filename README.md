@@ -2,7 +2,7 @@
 
 > Modern, ultra-lightweight, high-performance, single-binary Mail Server written in pure Go with Webmail Portal, Admin Dashboard, SMTP Inbound & Submission, IMAP4rev1 Server, Email Scheduler, Server-Sent Events (SSE), and embedded SQLite WAL storage.
 
-[![Release](https://img.shields.io/badge/release-v1.2.0-blue.svg)](RELEASE_NOTES.md)
+[![Release](https://img.shields.io/badge/release-v1.3.0-blue.svg)](RELEASE_NOTES.md)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Go Report Card](https://img.shields.io/badge/Go-1.26+-00ADD8.svg)](https://go.dev/)
 [![Docker Image Size](https://img.shields.io/badge/docker%20image-~51MB-2496ED.svg)](Dockerfile)
@@ -28,6 +28,7 @@
 - **DKIM RSA 2048-bit Signer**: Automatic generation of 2048-bit RSA key pairs upon domain creation, instant DNS TXT record export (`v=DKIM1; k=rsa; p=...`), and automated digital signing on outbound email headers.
 
 ### 🛡️ Security & Authentication Hardening
+- **Inbound Trust & Unknown Domain Warning Banner (v1.3.0)**: Automatic sender reputation analysis engine (`internal/trust`). Detects first-time external senders, scans payloads for suspicious URLs and attachments, and renders interactive warning banners in Webmail with one-click **"Mark as Trusted / Add to Contacts"** and **"Move to Spam"** actions.
 - **Antivirus & Anti-Spam Filtering (ClamAV & Rspamd - v1.2.0)**: Real-time scan of incoming emails via ClamAV INSTREAM socket (blocking malware with `554 5.7.1`) and Rspamd HTTP checks routing spam to `Spam` folders.
 - **Inbound DMARC, SPF & DKIM Verification (RFC 7489 & RFC 8601 - v1.2.0)**: Strict policy enforcement (`p=reject` / `p=quarantine`) with automatic `Authentication-Results` header generation.
 - **Automated S3 Cloud Disaster Recovery (v1.2.0)**: Non-blocking atomic SQLite backups (`VACUUM INTO`) and Maildir archives encrypted client-side with **AES-256 GCM** and uploaded to AWS S3, Cloudflare R2, Wasabi, or MinIO.

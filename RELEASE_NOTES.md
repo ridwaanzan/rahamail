@@ -25,11 +25,20 @@ Phase 3 release of the RaHaMail Enterprise Roadmap, adding ClamAV & Rspamd scann
 
 ---
 
-## 📦 Version 1.3.0 (October 29, 2026) — Webmail Productivity & Usability Release
+## 📦 Version 1.3.0 (October 29, 2026) — Trust & Safety Warning Banner & Webmail Productivity
 
-Phase 2 release of the RaHaMail Enterprise Roadmap, adding Address Book management, Contact Auto-Complete, Vacation Notice (Out of Office) Auto-Responder, and Canned Email Templates.
+Release 1.3.0 brings intelligent inbound trust and reputation evaluation, warning banners for unknown external senders, Address Book management, Contact Auto-Complete, Vacation Notice Auto-Responder, and Canned Email Templates.
 
 ### 🌟 Release Highlights
+- **Inbound Trust & Unknown Domain Warning Banner**:
+  - Pure-Go sender reputation evaluation engine (`internal/trust`) with 5-stage trust analysis:
+    1. **Authentication Verification**: Identifies spoofing via SPF, DKIM, and DMARC failures (`danger` alert level).
+    2. **Local Domain Whitelist**: Checks active domains configured on the server.
+    3. **Address Book Matching**: Verifies whether sender is already listed in user contacts.
+    4. **Interaction History Analysis**: Detects prior message exchanges or past outgoing replies.
+    5. **Threat & Risk Payload Scan**: Evaluates presence of external URLs (`http://`, `https://`) and attachments for first-time external senders (`warning` alert level).
+  - Webmail Interactive Banner: Prominently displayed above the email content with dynamic color coding (Danger/Warning/Info).
+  - Quick Remediation Actions: One-click **"Mark as Trusted / Add to Contacts"** to whitelist the sender immediately, and **"Move to Spam"** to isolate malicious emails.
 - **Address Book & Contact Auto-Complete**:
   - Full-featured contact management portal (`/mail` sidebar modal) supporting contact name, email address, company name, and notes.
   - Interactive auto-suggest dropdown in the composer for `To`, `Cc`, and `Bcc` inputs with 150ms debounce and keyboard navigation.
