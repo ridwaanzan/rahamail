@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RaHaMail Server — High-Performance Pure-Go Mail Server & Webmail</title>
+    <meta name="description" content="RaHaMail is an enterprise-grade, single-binary, pure-Go mail server featuring built-in SMTP, IMAP4rev1, Webmail, Antivirus, DKIM/SPF/DMARC, TOTP 2FA, and Phishing Simulation.">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            bg: '#0a0e17',
+                            card: '#0f172a',
+                            header: '#1e293b',
+                            border: '#1e293b',
+                            text: '#f8fafc',
+                            muted: '#94a3b8'
+                        },
+                        light: {
+                            bg: '#f8fafc',
+                            card: '#ffffff',
+                            header: '#f1f5f9',
+                            border: '#e2e8f0',
+                            text: '#0f172a',
+                            muted: '#64748b'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        .gradient-text {
+            background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .glow-cyan {
+            box-shadow: 0 0 50px -10px rgba(6, 182, 212, 0.25);
+        }
+        pre {
+            scrollbar-width: thin;
+        }
+    </style>
+</head>
+<body class="bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text transition-colors duration-200 antialiased font-sans">
+
+    <!-- NAVBAR -->
+    <nav class="sticky top-0 z-50 bg-light-card/80 dark:bg-dark-card/80 backdrop-blur-md border-b border-light-border dark:border-dark-border">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white font-black text-lg shadow-md shadow-cyan-500/30">
+                    R
+                </div>
+                <div>
+                    <span class="font-extrabold text-lg tracking-tight text-light-text dark:text-white">RaHa<span class="text-cyan-500">Mail</span></span>
+                    <span class="ml-2 px-2 py-0.5 text-[10px] font-bold rounded-full bg-cyan-500/10 text-cyan-500 border border-cyan-500/20">v1.4.1</span>
+                </div>
+            </div>
+
+            <div class="hidden md:flex items-center gap-6 text-sm font-semibold">
+                <a href="#overview" class="text-light-muted hover:text-cyan-500 dark:text-dark-muted dark:hover:text-cyan-400 transition-colors">Overview</a>
+                <a href="#features" class="text-light-muted hover:text-cyan-500 dark:text-dark-muted dark:hover:text-cyan-400 transition-colors">Features</a>
+                <a href="#security" class="text-light-muted hover:text-cyan-500 dark:text-dark-muted dark:hover:text-cyan-400 transition-colors">Security</a>
+                <a href="#changelog" class="text-light-muted hover:text-cyan-500 dark:text-dark-muted dark:hover:text-cyan-400 transition-colors">Changelog</a>
+                <a href="#quickstart" class="text-light-muted hover:text-cyan-500 dark:text-dark-muted dark:hover:text-cyan-400 transition-colors">Quickstart</a>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <button type="button" onclick="toggleTheme()" class="w-9 h-9 rounded-xl flex items-center justify-center border border-light-border dark:border-dark-border bg-light-header dark:bg-dark-header text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white transition-colors">
+                    <i class="bi bi-sun-fill dark:hidden text-amber-500"></i>
+                    <i class="bi bi-moon-stars-fill hidden dark:inline text-cyan-400"></i>
+                </button>
+                <a href="https://github.com/coderhaqi/mail-server" target="_blank" class="flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 hover:opacity-90 transition-opacity">
+                    <i class="bi bi-github text-sm"></i>
+                    <span>GitHub</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- HERO SECTION -->
+    <header class="relative overflow-hidden py-20 lg:py-28">
+        <div class="absolute inset-0 bg-gradient-to-b from-cyan-500/5 via-transparent to-transparent pointer-events-none"></div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 mb-6">
+                <i class="bi bi-stars"></i> Version 1.4.1 Released — Modular Multi-Page UI & Permanent Trash Purge
+            </div>
+            <h1 class="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6">
+                Modern, Autonomous, <br class="hidden sm:inline" />
+                <span class="gradient-text">Pure-Go Mail Server</span>
+            </h1>
+            <p class="max-w-3xl mx-auto text-base sm:text-xl text-light-muted dark:text-dark-muted leading-relaxed mb-10">
+                A single self-contained binary delivering native <strong>SMTP</strong>, <strong>IMAP4rev1</strong>, reactive <strong>Webmail</strong>, anti-phishing training simulation, ClamAV antivirus, Rspamd filtering, and automated cloud disaster backups.
+            </p>
+            <div class="flex flex-wrap items-center justify-center gap-4">
+                <a href="#quickstart" class="px-6 py-3 rounded-xl text-sm font-bold bg-cyan-500 hover:bg-cyan-600 text-white shadow-lg shadow-cyan-500/25 transition-all flex items-center gap-2">
+                    <i class="bi bi-terminal"></i> Get Started in 60s
+                </a>
+                <a href="#features" class="px-6 py-3 rounded-xl text-sm font-bold border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card hover:bg-slate-100 dark:hover:bg-dark-header text-light-text dark:text-white transition-all flex items-center gap-2">
+                    <i class="bi bi-grid"></i> Explore Features
+                </a>
+            </div>
+
+            <!-- Key Metric Stats -->
+            <div class="mt-16 grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-4xl mx-auto">
+                <div class="p-4 rounded-2xl border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card">
+                    <div class="text-2xl font-black text-cyan-500">100%</div>
+                    <div class="text-xs font-medium text-light-muted dark:text-dark-muted mt-1">Pure-Go (Zero CGO)</div>
+                </div>
+                <div class="p-4 rounded-2xl border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card">
+                    <div class="text-2xl font-black text-emerald-500">&lt; 30MB</div>
+                    <div class="text-xs font-medium text-light-muted dark:text-dark-muted mt-1">Single Static Binary</div>
+                </div>
+                <div class="p-4 rounded-2xl border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card">
+                    <div class="text-2xl font-black text-blue-500">25 / 587</div>
+                    <div class="text-xs font-medium text-light-muted dark:text-dark-muted mt-1">SMTP & Submission</div>
+                </div>
+                <div class="p-4 rounded-2xl border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card">
+                    <div class="text-2xl font-black text-purple-500">143 / 993</div>
+                    <div class="text-xs font-medium text-light-muted dark:text-dark-muted mt-1">IMAP4rev1 & SSL/TLS</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ARCHITECTURE OVERVIEW -->
+    <section id="overview" class="py-16 border-t border-light-border dark:border-dark-border">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-12">
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-light-text dark:text-white">Built for High Availability & Zero DevOps Friction</h2>
+                <p class="mt-3 text-sm text-light-muted dark:text-dark-muted">No external dependencies like Postfix, Dovecot, MySQL, or Nginx required. RaHaMail handles the complete mail lifecycle natively.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Card 1 -->
+                <div class="p-6 rounded-2xl border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card hover:border-cyan-500/50 transition-all">
+                    <div class="w-12 h-12 rounded-xl bg-cyan-500/10 text-cyan-500 flex items-center justify-center text-xl mb-4">
+                        <i class="bi bi-cpu"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-light-text dark:text-white mb-2">Zero-CGO Single Binary</h3>
+                    <p class="text-xs text-light-muted dark:text-dark-muted leading-relaxed">
+                        Compiled statically with embedded HTML/Tailwind templates and assets using <code>//go:embed</code>. Simply execute <code>./rahamail</code> on any Linux/macOS/Windows machine or deploy in a lightweight Alpine Docker container.
+                    </p>
+                </div>
+                <!-- Card 2 -->
+                <div class="p-6 rounded-2xl border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card hover:border-cyan-500/50 transition-all">
+                    <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center text-xl mb-4">
+                        <i class="bi bi-database"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-light-text dark:text-white mb-2">Flexible Dual Storage Engine</h3>
+                    <p class="text-xs text-light-muted dark:text-dark-muted leading-relaxed">
+                        Optimized <strong>SQLite with WAL Mode</strong> (Write-Ahead Logging) and concurrent readers for standalone nodes, or seamless enterprise clustering with external <strong>PostgreSQL</strong>.
+                    </p>
+                </div>
+                <!-- Card 3 -->
+                <div class="p-6 rounded-2xl border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card hover:border-cyan-500/50 transition-all">
+                    <div class="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center text-xl mb-4">
+                        <i class="bi bi-broadcast"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-light-text dark:text-white mb-2">Real-Time Reactive SSE</h3>
+                    <p class="text-xs text-light-muted dark:text-dark-muted leading-relaxed">
+                        Powered by Server-Sent Events (SSE) hubs. Inbound emails instantly update webmail counters, live traffic spline charts, and streaming log monitors without CPU busy-wait loops or client polling.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CORE FEATURES SECTION -->
+    <section id="features" class="py-16 bg-slate-50 dark:bg-dark-card/50 border-t border-light-border dark:border-dark-border">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-12">
+                <span class="text-xs font-bold uppercase tracking-wider text-cyan-500">Feature Matrix</span>
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-light-text dark:text-white mt-1">Enterprise Features Out of the Box</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Feature 1: Modern Webmail & Multi-Page Admin -->
+                <div class="p-6 rounded-2xl border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-9 h-9 rounded-lg bg-cyan-500/10 text-cyan-500 flex items-center justify-center text-lg">
+                            <i class="bi bi-window-stack"></i>
+                        </div>
+                        <h4 class="text-sm font-bold text-light-text dark:text-white">Modular Multi-Page UI</h4>
+                    </div>
+                    <p class="text-xs text-light-muted dark:text-dark-muted leading-relaxed">
+                        Dedicated templates for Dashboard, Domain Management, Phishing Simulation, Live Logs, and System Settings. Includes native dark/light theme switching and custom modal dialogs.
+                    </p>
+                </div>
+
+                <!-- Feature 2: Anti-Phishing Simulation -->
+                <div class="p-6 rounded-2xl border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-9 h-9 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center text-lg">
+                            <i class="bi bi-shield-exclamation"></i>
+                        </div>
+                        <h4 class="text-sm font-bold text-light-text dark:text-white">Phishing Awareness Simulator</h4>
+                    </div>
+                    <p class="text-xs text-light-muted dark:text-dark-muted leading-relaxed">
+                        Train employees with built-in scenario templates (IT password reset, HR bonus, shipping notifications). Captures click metrics and provides interactive "Teachable Moment" education pages.
+                    </p>
+                </div>
+
+                <!-- Feature 3: Cryptographic DKIM & SPF/DMARC -->
+                <div class="p-6 rounded-2xl border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-9 h-9 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center text-lg">
+                            <i class="bi bi-key-fill"></i>
+                        </div>
+                        <h4 class="text-sm font-bold text-light-text dark:text-white">DKIM, SPF & DMARC Engine</h4>
+                    </div>
+                    <p class="text-xs text-light-muted dark:text-dark-muted leading-relaxed">
+                        Automatic RSA 2048-bit keypair generation with untruncated DNS TXT modals. Inbound verification engine validates SPF, DKIM, and enforces sender DMARC policies (<code>p=reject/quarantine</code>).
+                    </p>
+                </div>
+
+                <!-- Feature 4: Two-Factor Auth (TOTP RFC 6238) -->
+                <div class="p-6 rounded-2xl border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-9 h-9 rounded-lg bg-indigo-500/10 text-indigo-500 flex items-center justify-center text-lg">
+                            <i class="bi bi-shield-lock-fill"></i>
+                        </div>
+                        <h4 class="text-sm font-bold text-light-text dark:text-white">TOTP Two-Factor Auth</h4>
+                    </div>
+                    <p class="text-xs text-light-muted dark:text-dark-muted leading-relaxed">
+                        Pure-Go TOTP supporting Google Authenticator, Authy, and 1Password with standard <code>otpauth://</code> URI export and bcrypt-hashed emergency recovery codes.
+                    </p>
+                </div>
+
+                <!-- Feature 5: Developer REST API & API Keys -->
+                <div class="p-6 rounded-2xl border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-9 h-9 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center text-lg">
+                            <i class="bi bi-code-slash"></i>
+                        </div>
+                        <h4 class="text-sm font-bold text-light-text dark:text-white">Developer REST API</h4>
+                    </div>
+                    <p class="text-xs text-light-muted dark:text-dark-muted leading-relaxed">
+                        Send transactional emails programmatically via <code>POST /api/v1/send</code> using Bearer token authentication (<code>rhm_live_...</code>). Manage and revoke API keys with fine-grained access.
+                    </p>
+                </div>
+
+                <!-- Feature 6: Encrypted Cloud Disaster Backup -->
+                <div class="p-6 rounded-2xl border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-9 h-9 rounded-lg bg-rose-500/10 text-rose-500 flex items-center justify-center text-lg">
+                            <i class="bi bi-cloud-arrow-up-fill"></i>
+                        </div>
+                        <h4 class="text-sm font-bold text-light-text dark:text-white">Automated S3 Cloud Backup</h4>
+                    </div>
+                    <p class="text-xs text-light-muted dark:text-dark-muted leading-relaxed">
+                        Creates non-blocking SQLite database snapshots and compresses mail storage with client-side <strong>AES-256 GCM encryption</strong> before streaming to AWS S3, Cloudflare R2, Wasabi, or MinIO.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECURITY HARDENING SECTION -->
+    <section id="security" class="py-16 border-t border-light-border dark:border-dark-border">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-wider text-rose-500">Security By Design</span>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold text-light-text dark:text-white mt-1 mb-4">Fortified Against Modern Email Vectors</h2>
+                    <p class="text-sm text-light-muted dark:text-dark-muted leading-relaxed mb-6">
+                        RaHaMail implements defense-in-depth protection across network protocols, HTML rendering engines, and physical disk storage.
+                    </p>
+
+                    <div class="space-y-4">
+                        <div class="flex items-start gap-3">
+                            <div class="w-6 h-6 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center text-xs mt-0.5"><i class="bi bi-check2"></i></div>
+                            <div>
+                                <h5 class="text-xs font-bold text-light-text dark:text-white">Anti-SMTP Smuggling Protection</h5>
+                                <p class="text-[11px] text-light-muted dark:text-dark-muted">Enforces strict RFC 5321 CRLF delimiters via <code>SmugglingReader</code>, preventing CVE-2023-51764 and CVE-2023-51765 pipe bypasses.</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-3">
+                            <div class="w-6 h-6 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center text-xs mt-0.5"><i class="bi bi-check2"></i></div>
+                            <div>
+                                <h5 class="text-xs font-bold text-light-text dark:text-white">Zero-XSS Webmail Sanitizer</h5>
+                                <p class="text-[11px] text-light-muted dark:text-dark-muted">Strips executable scripts, malicious iframes, inline event handlers (<code>onerror</code>, <code>onclick</code>), and javascript: protocol URIs from email bodies.</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-3">
+                            <div class="w-6 h-6 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center text-xs mt-0.5"><i class="bi bi-check2"></i></div>
+                            <div>
+                                <h5 class="text-xs font-bold text-light-text dark:text-white">ClamAV & Rspamd Integration</h5>
+                                <p class="text-[11px] text-light-muted dark:text-dark-muted">Real-time socket scanning of attachments and inbound streams, automatically rejecting infected payloads with <code>554 5.7.1</code>.</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-3">
+                            <div class="w-6 h-6 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center text-xs mt-0.5"><i class="bi bi-check2"></i></div>
+                            <div>
+                                <h5 class="text-xs font-bold text-light-text dark:text-white">Inbound Trust Warning Banner</h5>
+                                <p class="text-[11px] text-light-muted dark:text-dark-muted">Classifies unknown external senders and displays interactive warning banners above the message reader with one-click "Trust & Add to Contacts" remediation.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Code / Config Terminal Mockup -->
+                <div class="rounded-2xl border border-light-border dark:border-dark-border bg-slate-900 text-slate-100 p-5 shadow-2xl font-mono text-xs overflow-x-auto">
+                    <div class="flex items-center gap-2 mb-4 pb-3 border-b border-slate-800 text-slate-400">
+                        <span class="w-3 h-3 rounded-full bg-rose-500 inline-block"></span>
+                        <span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
+                        <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
+                        <span class="ml-2 text-[11px]">Security Verification Log</span>
+                    </div>
+                    <p class="text-slate-400"># Inbound Authentication Results</p>
+                    <p class="text-emerald-400">🛡️ [AUTH RESULTS] SPF=pass | DKIM=pass | DMARC=pass (Policy: reject)</p>
+                    <p class="text-cyan-400">🔑 [DKIM VERIFIED] Signature verified for selector: mail._domainkey.company.com</p>
+                    <p class="text-slate-400 mt-2"># Anti-Malware Inspection</p>
+                    <p class="text-emerald-400">🛡️ [CLAMAV SCANNER] Status: CLEAN (Scanned 1 attachment(s))</p>
+                    <p class="text-purple-400">🛡️ [RSPAMD SCANNER] Action: NO_ACTION (Score: 0.1 / 15.0)</p>
+                    <p class="text-slate-400 mt-2"># Storage & Delivery</p>
+                    <p class="text-slate-200">📦 [STORAGE] Securely written to /var/mail/inbox/2/a7f3c8e...eml</p>
+                    <p class="text-cyan-400">🚀 [SSE BROADCAST] New email event dispatched to user: alice@company.com</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- INTERACTIVE CHANGELOG SECTION -->
+    <section id="changelog" class="py-16 bg-slate-50 dark:bg-dark-card/50 border-t border-light-border dark:border-dark-border">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-12">
+                <span class="text-xs font-bold uppercase tracking-wider text-cyan-500">Release History</span>
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-light-text dark:text-white mt-1">Project Changelog & Milestones</h2>
+            </div>
+
+            <div class="space-y-8 relative before:absolute before:inset-0 before:left-4 sm:before:left-1/2 before:w-0.5 before:bg-light-border dark:before:bg-dark-border">
+                
+                <!-- Release v1.4.1 -->
+                <div class="relative flex flex-col sm:flex-row items-start group">
+                    <div class="flex items-center justify-center w-8 h-8 rounded-full bg-cyan-500 text-white font-bold text-xs shadow-lg shadow-cyan-500/30 z-10 sm:mx-auto">
+                        1.4
+                    </div>
+                    <div class="mt-4 sm:mt-0 sm:w-1/2 sm:pr-8 sm:text-right">
+                        <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/10 text-cyan-500 border border-cyan-500/20 mb-1">
+                            Latest Release
+                        </div>
+                        <h4 class="text-base font-bold text-light-text dark:text-white">v1.4.1 — Modular Templates & Permanent Trash Purge</h4>
+                        <span class="text-xs text-light-muted dark:text-dark-muted">October 29, 2026</span>
+                    </div>
+                    <div class="mt-2 sm:mt-0 sm:w-1/2 sm:pl-8">
+                        <div class="p-5 rounded-2xl border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card shadow-sm space-y-2 text-xs">
+                            <p class="font-bold text-emerald-500"><i class="bi bi-plus-circle mr-1"></i> Multi-Page Architecture:</p>
+                            <p class="text-light-muted dark:text-dark-muted">Decoupled monolithic templates into dedicated views for Dashboard, Domains, Phishing Simulation, Logs, and System Settings.</p>
+                            
+                            <p class="font-bold text-cyan-500 pt-1"><i class="bi bi-shield-lock mr-1"></i> Full DKIM Modal & Copy Tool:</p>
+                            <p class="text-light-muted dark:text-dark-muted">Resolved key truncation in the domain manager. Generates genuine RSA 2048-bit keys with one-click copy buttons.</p>
+
+                            <p class="font-bold text-rose-500 pt-1"><i class="bi bi-trash3 mr-1"></i> Trash Purge & Storage Reclaim:</p>
+                            <p class="text-light-muted dark:text-dark-muted">Added permanent deletion and "Empty Trash" buttons that automatically unlink physical <code>.eml</code> files and restore user storage quotas.</p>
+
+                            <p class="font-bold text-amber-500 pt-1"><i class="bi bi-wrench mr-1"></i> SQLite WAL Foreign Key AutoMigrate Fix:</p>
+                            <p class="text-light-muted dark:text-dark-muted">Safely toggles <code>PRAGMA foreign_keys</code> during startup table synchronization, resolving error 787.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Release v1.4.0 -->
+                <div class="relative flex flex-col sm:flex-row items-start group">
+                    <div class="flex items-center justify-center w-8 h-8 rounded-full bg-slate-700 text-white font-bold text-xs shadow z-10 sm:mx-auto">
+                        1.4
+                    </div>
+                    <div class="mt-4 sm:mt-0 sm:w-1/2 sm:pr-8 sm:text-right">
+                        <h4 class="text-base font-bold text-light-text dark:text-white">v1.4.0 — Phishing Simulator & Cloud Disaster Recovery</h4>
+                        <span class="text-xs text-light-muted dark:text-dark-muted">October 29, 2026</span>
+                    </div>
+                    <div class="mt-2 sm:mt-0 sm:w-1/2 sm:pl-8">
+                        <div class="p-5 rounded-2xl border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card shadow-sm space-y-2 text-xs">
+                            <p class="font-bold text-amber-500"><i class="bi bi-exclamation-triangle mr-1"></i> Human Risk & Phishing Simulation:</p>
+                            <p class="text-light-muted dark:text-dark-muted">Scenario manager, encrypted tracking links, interactive Teachable Moment landing pages, and employee failure metrics.</p>
+                            <p class="font-bold text-emerald-500 pt-1"><i class="bi bi-shield-check mr-1"></i> Antivirus & Antispam Gateways:</p>
+                            <p class="text-light-muted dark:text-dark-muted">Integrated ClamAV stream scanner and Rspamd HTTP API with graceful fail-open logic.</p>
+                            <p class="font-bold text-purple-500 pt-1"><i class="bi bi-cloud-arrow-up mr-1"></i> Encrypted Cloud Backups:</p>
+                            <p class="text-light-muted dark:text-dark-muted">Automated AES-256 GCM encrypted tar.gz snapshots to AWS S3, Cloudflare R2, and Wasabi.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Release v1.3.0 -->
+                <div class="relative flex flex-col sm:flex-row items-start group">
+                    <div class="flex items-center justify-center w-8 h-8 rounded-full bg-slate-700 text-white font-bold text-xs shadow z-10 sm:mx-auto">
+                        1.3
+                    </div>
+                    <div class="mt-4 sm:mt-0 sm:w-1/2 sm:pr-8 sm:text-right">
+                        <h4 class="text-base font-bold text-light-text dark:text-white">v1.3.0 — Sender Reputation & Webmail Productivity</h4>
+                        <span class="text-xs text-light-muted dark:text-dark-muted">October 29, 2026</span>
+                    </div>
+                    <div class="mt-2 sm:mt-0 sm:w-1/2 sm:pl-8">
+                        <div class="p-5 rounded-2xl border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card shadow-sm space-y-2 text-xs">
+                            <p class="font-bold text-blue-500"><i class="bi bi-people mr-1"></i> Address Book & Auto-Complete:</p>
+                            <p class="text-light-muted dark:text-dark-muted">Contact management API, debounced composer recipient suggestions, and background auto-harvesting from sent mail.</p>
+                            <p class="font-bold text-cyan-500 pt-1"><i class="bi bi-calendar-event mr-1"></i> Out-of-Office Auto-Responder:</p>
+                            <p class="text-light-muted dark:text-dark-muted">Vacation scheduler with 24-hour rate throttling to prevent auto-reply email looping.</p>
+                            <p class="font-bold text-emerald-500 pt-1"><i class="bi bi-chat-left-text mr-1"></i> Canned Responses & Quick Templates:</p>
+                            <p class="text-light-muted dark:text-dark-muted">Reusable email snippets with one-click insertion into the WYSIWYG editor.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Release v1.2.0 & v1.1.0 -->
+                <div class="relative flex flex-col sm:flex-row items-start group">
+                    <div class="flex items-center justify-center w-8 h-8 rounded-full bg-slate-700 text-white font-bold text-xs shadow z-10 sm:mx-auto">
+                        1.0
+                    </div>
+                    <div class="mt-4 sm:mt-0 sm:w-1/2 sm:pr-8 sm:text-right">
+                        <h4 class="text-base font-bold text-light-text dark:text-white">v1.1.0 & v1.2.0 — Security Hardening & Developer API</h4>
+                        <span class="text-xs text-light-muted dark:text-dark-muted">October 28 - 29, 2026</span>
+                    </div>
+                    <div class="mt-2 sm:mt-0 sm:w-1/2 sm:pl-8">
+                        <div class="p-5 rounded-2xl border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card shadow-sm space-y-2 text-xs">
+                            <p class="font-bold text-purple-500"><i class="bi bi-shield-lock mr-1"></i> TOTP 2FA & Catch-All Routing:</p>
+                            <p class="text-light-muted dark:text-dark-muted">RFC 6238 TOTP two-factor authentication, backup codes, and domain-level catch-all recipient aliasing.</p>
+                            <p class="font-bold text-blue-500 pt-1"><i class="bi bi-braces mr-1"></i> Developer REST API:</p>
+                            <p class="text-light-muted dark:text-dark-muted">Programmatic sending via <code>POST /api/v1/send</code> with Bearer API tokens and usage tracking.</p>
+                            <p class="font-bold text-rose-500 pt-1"><i class="bi bi-shield-shaded mr-1"></i> Vulnerability Mitigations:</p>
+                            <p class="text-light-muted dark:text-dark-muted">Resolved SMTP Smuggling (CVE-2023-51764), Stored XSS filter, and token bucket rate limiters.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- QUICKSTART & DEPLOYMENT -->
+    <section id="quickstart" class="py-16 border-t border-light-border dark:border-dark-border">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-12">
+                <span class="text-xs font-bold uppercase tracking-wider text-cyan-500">Quick Start</span>
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-light-text dark:text-white mt-1">Deploy RaHaMail in Minutes</h2>
+                <p class="mt-2 text-sm text-light-muted dark:text-dark-muted">Get a fully functioning mail server running with a single Docker command or standalone binary.</p>
+            </div>
+
+            <!-- Tab Buttons -->
+            <div class="flex items-center justify-center gap-2 mb-6">
+                <button type="button" onclick="switchTab('docker')" id="tabBtnDocker" class="px-4 py-2 rounded-xl text-xs font-bold bg-cyan-500 text-white shadow-md shadow-cyan-500/20 transition-all">
+                    <i class="bi bi-box mr-1"></i> Docker Container
+                </button>
+                <button type="button" onclick="switchTab('binary')" id="tabBtnBinary" class="px-4 py-2 rounded-xl text-xs font-bold bg-light-header dark:bg-dark-header border border-light-border dark:border-dark-border text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white transition-all">
+                    <i class="bi bi-terminal mr-1"></i> Standalone Binary
+                </button>
+                <button type="button" onclick="switchTab('dns')" id="tabBtnDns" class="px-4 py-2 rounded-xl text-xs font-bold bg-light-header dark:bg-dark-header border border-light-border dark:border-dark-border text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white transition-all">
+                    <i class="bi bi-globe mr-1"></i> DNS Records
+                </button>
+            </div>
+
+            <!-- Tab 1: Docker -->
+            <div id="tabContentDocker" class="p-6 rounded-2xl border border-light-border dark:border-dark-border bg-slate-900 text-slate-100 font-mono text-xs shadow-xl relative">
+                <button type="button" onclick="copySnippet('snippetDocker')" class="absolute top-4 right-4 text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-slate-700 flex items-center gap-1 transition-colors">
+                    <i class="bi bi-copy"></i> Copy
+                </button>
+                <p class="text-slate-400 mb-2"># Run RaHaMail via Docker Hub</p>
+                <pre id="snippetDocker" class="text-cyan-300 leading-relaxed overflow-x-auto">docker run -d \
+  --name rahamail \
+  -p 25:25 \
+  -p 587:587 \
+  -p 143:143 \
+  -p 993:993 \
+  -p 8080:8080 \
+  -v $(pwd)/data:/var/mail \
+  -v $(pwd)/gomail.db:/app/gomail.db \
+  --restart unless-stopped \
+  coderhaqi/rahamail:v1.4.1</pre>
+            </div>
+
+            <!-- Tab 2: Binary -->
+            <div id="tabContentBinary" class="hidden p-6 rounded-2xl border border-light-border dark:border-dark-border bg-slate-900 text-slate-100 font-mono text-xs shadow-xl relative">
+                <button type="button" onclick="copySnippet('snippetBinary')" class="absolute top-4 right-4 text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-slate-700 flex items-center gap-1 transition-colors">
+                    <i class="bi bi-copy"></i> Copy
+                </button>
+                <p class="text-slate-400 mb-2"># Build and run directly from Go source</p>
+                <pre id="snippetBinary" class="text-emerald-300 leading-relaxed overflow-x-auto">git clone https://github.com/coderhaqi/mail-server.git
+cd mail-server
+go build -o rahamail main.go
+./rahamail
+
+# Open your browser at http://localhost:8080 to complete setup</pre>
+            </div>
+
+            <!-- Tab 3: DNS -->
+            <div id="tabContentDns" class="hidden p-6 rounded-2xl border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card shadow-xl overflow-x-auto text-xs">
+                <table class="w-full text-left">
+                    <thead class="border-b border-light-border dark:border-dark-border text-light-muted dark:text-dark-muted font-bold">
+                        <tr>
+                            <th class="p-3">Type</th>
+                            <th class="p-3">Host / Name</th>
+                            <th class="p-3">Value</th>
+                            <th class="p-3">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-light-border dark:divide-dark-border font-mono">
+                        <tr>
+                            <td class="p-3 font-bold text-cyan-500">MX</td>
+                            <td class="p-3">@</td>
+                            <td class="p-3">mail.yourdomain.com (Priority 10)</td>
+                            <td class="p-3 font-sans text-light-muted dark:text-dark-muted">Inbound Mail Routing</td>
+                        </tr>
+                        <tr>
+                            <td class="p-3 font-bold text-emerald-500">A</td>
+                            <td class="p-3">mail</td>
+                            <td class="p-3">YOUR_SERVER_PUBLIC_IP</td>
+                            <td class="p-3 font-sans text-light-muted dark:text-dark-muted">Mail Host Address</td>
+                        </tr>
+                        <tr>
+                            <td class="p-3 font-bold text-purple-500">TXT</td>
+                            <td class="p-3">@</td>
+                            <td class="p-3">v=spf1 mx ~all</td>
+                            <td class="p-3 font-sans text-light-muted dark:text-dark-muted">SPF Sender Policy</td>
+                        </tr>
+                        <tr>
+                            <td class="p-3 font-bold text-amber-500">TXT</td>
+                            <td class="p-3">mail._domainkey</td>
+                            <td class="p-3">v=DKIM1; k=rsa; p=MIIBIjAN... (from Domain modal)</td>
+                            <td class="p-3 font-sans text-light-muted dark:text-dark-muted">Cryptographic DKIM Signature</td>
+                        </tr>
+                        <tr>
+                            <td class="p-3 font-bold text-rose-500">TXT</td>
+                            <td class="p-3">_dmarc</td>
+                            <td class="p-3">v=DMARC1; p=quarantine; sp=quarantine; pct=100</td>
+                            <td class="p-3 font-sans text-light-muted dark:text-dark-muted">DMARC Alignment Policy</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="py-12 border-t border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-light-muted dark:text-dark-muted">
+            <div class="flex items-center gap-2">
+                <span class="font-bold text-light-text dark:text-white">RaHaMail Server</span>
+                <span>•</span>
+                <span>Licensed under MIT</span>
+            </div>
+            <div>
+                Crafted with high-performance Pure-Go and modern Tailwind CSS.
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="https://github.com/coderhaqi/mail-server" target="_blank" class="hover:text-cyan-500 transition-colors">GitHub Repository</a>
+                <a href="https://hub.docker.com/r/coderhaqi/rahamail" target="_blank" class="hover:text-cyan-500 transition-colors">Docker Hub</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- INTERACTIVE JAVASCRIPT -->
+    <script>
+        function toggleTheme() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        if (localStorage.getItem('theme') === 'light') {
+            document.documentElement.classList.remove('dark');
+        } else {
+            document.documentElement.classList.add('dark');
+        }
+
+        function switchTab(tab) {
+            const tabs = ['docker', 'binary', 'dns'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tabBtn${capitalize(t)}`);
+                const content = document.getElementById(`tabContent${capitalize(t)}`);
+                if (t === tab) {
+                    btn.className = 'px-4 py-2 rounded-xl text-xs font-bold bg-cyan-500 text-white shadow-md shadow-cyan-500/20 transition-all';
+                    content.classList.remove('hidden');
+                } else {
+                    btn.className = 'px-4 py-2 rounded-xl text-xs font-bold bg-light-header dark:bg-dark-header border border-light-border dark:border-dark-border text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white transition-all';
+                    content.classList.add('hidden');
+                }
+            });
+        }
+
+        function capitalize(s) {
+            return s.charAt(0).toUpperCase() + s.slice(1);
+        }
+
+        function copySnippet(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            navigator.clipboard.writeText(el.innerText).then(() => {
+                alert('Copied to clipboard!');
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+# Git ignore for gh-pages documentation branch
+# Ignore local runtime/dev binaries, SQLite databases, and transient caches
+gomail.db*
+*.db
+*.db-shm
+*.db-wal
+rahamail
+mailserver
+var/
+.dokumen/
+deploy.sh
+push_dockerhub.sh
+internal/
+web/
+.system_generated/
