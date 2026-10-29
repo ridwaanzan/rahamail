@@ -1,786 +1,663 @@
 <!DOCTYPE html>
-<html lang="id" data-bs-theme="light">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ .title }}</title>
-    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+    <!-- Compiled TailwindCSS Dark & Light Mode Theme -->
+    <link rel="stylesheet" href="/static/css/app.min.css">
+    <!-- Embedded Base64 Bootstrap Icons -->
     <link rel="stylesheet" href="/static/css/bootstrap-icons.min.css">
-    <style>
-        :root {
-            --primary-color: #2563eb;
-            --primary-hover: #1d4ed8;
-            --sidebar-bg: #f8fafc;
-            --border-color: #e2e8f0;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
+    <script>
+        // Init theme immediately to prevent FOUC (flash of unstyled content)
+        if (localStorage.getItem('theme') === 'light' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: light)').matches)) {
+            document.documentElement.classList.remove('dark');
+        } else {
+            document.documentElement.classList.add('dark');
         }
-        body {
-            background-color: #f1f5f9;
-            color: var(--text-main);
-            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-            height: 100vh;
-            overflow: hidden;
-        }
-        .webmail-sidebar {
-            width: 250px;
-            background: var(--sidebar-bg);
-            border-right: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
-        .nav-folder-link {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0.6rem 0.85rem;
-            color: var(--text-muted);
-            text-decoration: none;
-            border-radius: 0.5rem;
-            margin-bottom: 0.25rem;
-            font-size: 0.9rem;
-            font-weight: 500;
-            transition: all 0.15s ease;
-        }
-        .nav-folder-link:hover {
-            background-color: #e2e8f0;
-            color: var(--primary-color);
-        }
-        .nav-folder-link.active {
-            background-color: var(--primary-color);
-            color: #ffffff;
-        }
-        .brand-badge {
-            background: linear-gradient(135deg, #2563eb 0%, #38bdf8 100%);
-        }
-        
-        /* Split Pane Styling */
-        .mail-list-pane {
-            width: 420px;
-            min-width: 340px;
-            border-right: 1px solid var(--border-color);
-            background: #ffffff;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
-        .mail-reader-pane {
-            flex: 1;
-            background: #f8fafc;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
-        }
-        .mail-item {
-            cursor: pointer;
-            border-bottom: 1px solid var(--border-color);
-            padding: 0.85rem 1rem;
-            background: #ffffff;
-            transition: background 0.15s ease;
-        }
-        .mail-item:hover {
-            background-color: #f1f5f9;
-        }
-        .mail-item.selected {
-            background-color: #e0f2fe;
-            border-left: 3px solid var(--primary-color);
-        }
-        .mail-item.unread {
-            font-weight: 600;
-        }
-        .mail-item.unread .mail-subject {
-            color: #0f172a;
-        }
-        .mail-item.unread .mail-from {
-            color: var(--primary-color);
-        }
-        .reader-body-frame {
-            width: 100%;
-            height: 100%;
-            border: 1px solid var(--border-color);
-            background: #ffffff;
-            border-radius: 8px;
-        }
-
-        /* Composer Modal Styling */
-        .composer-editor-toolbar {
-            background: #f8fafc;
-            border: 1px solid #cbd5e1;
-            border-bottom: none;
-            border-radius: 6px 6px 0 0;
-            padding: 6px;
-            display: flex;
-            gap: 4px;
-        }
-        .composer-editor-toolbar button {
-            background: transparent;
-            border: none;
-            color: #475569;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.85rem;
-        }
-        .composer-editor-toolbar button:hover {
-            background: #e2e8f0;
-            color: var(--primary-color);
-        }
-        .composer-editor-area {
-            min-height: 200px;
-            max-height: 320px;
-            overflow-y: auto;
-            background: #ffffff;
-            border: 1px solid #cbd5e1;
-            border-radius: 0 0 6px 6px;
-            padding: 12px;
-            color: #0f172a;
-            outline: none;
-        }
-        .composer-editor-area:focus {
-            border-color: var(--primary-color);
-        }
-        .attachment-chip {
-            background: #e2e8f0;
-            border: 1px solid #cbd5e1;
-            border-radius: 16px;
-            padding: 3px 10px;
-            font-size: 0.78rem;
-            color: #1e293b;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-    </style>
+    </script>
 </head>
-<body class="d-flex">
-    <!-- 1. SIDEBAR -->
-    <aside class="webmail-sidebar p-3">
-        <div class="d-flex align-items-center mb-3 pb-2 border-bottom">
-            <div class="brand-badge p-2 rounded-3 me-2 text-white">
-                <i class="bi bi-envelope-fill fs-5"></i>
-            </div>
-            <div>
-                <h6 class="fw-bold mb-0 text-dark">RaHaMail</h6>
-                <small class="text-secondary" style="font-size: 0.72rem;">Webmail Client</small>
-            </div>
-        </div>
+<body class="bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text h-screen overflow-hidden flex flex-col antialiased selection:bg-cyan-500 selection:text-white">
 
-        <button class="btn btn-primary w-100 py-2 mb-3 fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center" onclick="openComposer()">
-            <i class="bi bi-pencil-square me-2"></i>Tulis Email
-        </button>
-
-        <nav class="flex-grow-1">
-            <a href="/mail?folder=INBOX" class="nav-folder-link {{ if eq .current_folder "INBOX" }}active{{ end }}">
-                <span><i class="bi bi-inbox-fill me-2"></i>Kotak Masuk</span>
-                <span class="badge {{ if eq .current_folder "INBOX" }}bg-white text-primary{{ else }}bg-secondary-subtle text-secondary{{ end }} rounded-pill" id="inboxCountBadge">{{ len .messages }}</span>
-            </a>
-            <a href="/mail?folder=Sent" class="nav-folder-link {{ if eq .current_folder "Sent" }}active{{ end }}">
-                <span><i class="bi bi-send-fill me-2"></i>Terkirim</span>
-            </a>
-            <a href="/mail?folder=Scheduled" class="nav-folder-link {{ if eq .current_folder "Scheduled" }}active{{ end }}">
-                <span><i class="bi bi-clock-history me-2"></i>Terjadwal</span>
-                {{ if gt .scheduled_count 0 }}
-                <span class="badge bg-warning text-dark rounded-pill">{{ .scheduled_count }}</span>
-                {{ end }}
-            </a>
-            <a href="/mail?folder=Drafts" class="nav-folder-link {{ if eq .current_folder "Drafts" }}active{{ end }}">
-                <span><i class="bi bi-file-earmark-text-fill me-2"></i>Draf</span>
-            </a>
-            <a href="/mail?folder=Spam" class="nav-folder-link {{ if eq .current_folder "Spam" }}active{{ end }}">
-                <span><i class="bi bi-shield-slash-fill me-2"></i>Spam</span>
-            </a>
-            <a href="/mail?folder=Trash" class="nav-folder-link {{ if eq .current_folder "Trash" }}active{{ end }}">
-                <span><i class="bi bi-trash-fill me-2"></i>Sampah</span>
-            </a>
-
-            <div class="my-2 border-top"></div>
-
-            <a href="javascript:void(0)" class="nav-folder-link" onclick="openContactsModal()">
-                <span><i class="bi bi-person-lines-fill me-2 text-primary"></i>Buku Kontak</span>
-            </a>
-            <a href="javascript:void(0)" class="nav-folder-link" onclick="openAutoResponderModal()">
-                <span><i class="bi bi-calendar-event me-2 text-warning"></i>Balasan Liburan</span>
-            </a>
-        </nav>
-
-        <!-- Storage & User info -->
-        <div class="pt-3 border-top">
-            <div class="d-flex align-items-center justify-content-between mb-1">
-                <span class="small text-secondary" style="font-size: 0.75rem;"><i class="bi bi-hdd-fill me-1"></i>Penyimpanan</span>
-                <span class="small text-secondary" style="font-size: 0.75rem;">{{ .storage_used }} MB / {{ .storage_quota }} MB</span>
-            </div>
-            <div class="progress mb-3" style="height: 5px;">
-                <div class="progress-bar bg-primary" role="progressbar" style="width: 2%"></div>
-            </div>
-
-            <div class="d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center text-truncate me-2">
-                    <i class="bi bi-person-circle fs-5 text-secondary me-2"></i>
-                    <div class="text-truncate">
-                        <div class="small fw-semibold text-dark text-truncate">{{ .current_user.Email }}</div>
-                        <div class="text-secondary" style="font-size: 0.68rem;">
-                            {{ if .current_user.TwoFactorEnabled }}
-                            <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size:0.6rem;"><i class="bi bi-shield-check me-1"></i>2FA Aktif</span>
-                            {{ else }}
-                            <span class="badge bg-secondary-subtle text-secondary" style="font-size:0.6rem;">2FA Nonaktif</span>
-                            {{ end }}
-                        </div>
-                    </div>
+    <!-- TOPBAR / GLOBAL HEADER -->
+    <header class="h-14 bg-light-header dark:bg-dark-header border-b border-light-border dark:border-dark-border px-4 flex items-center justify-between shrink-0 z-20">
+        <div class="flex items-center gap-3">
+            <button class="md:hidden text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white p-1" onclick="toggleMobileSidebar()" title="Toggle Menu">
+                <i class="bi bi-list text-xl"></i>
+            </button>
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-cyan-glow">
+                    <i class="bi bi-envelope-fill text-sm"></i>
                 </div>
-                <div class="d-flex gap-1">
-                    <button class="btn btn-sm btn-outline-secondary p-1 px-2" onclick="openSecuritySettingsModal()" title="Keamanan Akun & 2FA / API Keys">
-                        <i class="bi bi-shield-lock"></i>
-                    </button>
-                    <a href="/logout" class="btn btn-sm btn-outline-danger p-1 px-2" title="Keluar">
-                        <i class="bi bi-box-arrow-right"></i>
-                    </a>
+                <div class="leading-tight">
+                    <span class="text-sm font-bold tracking-tight text-light-text dark:text-white">WebMail</span>
+                    <span class="text-[10px] text-cyan-600 dark:text-cyan-400 font-medium ml-1">Client</span>
                 </div>
             </div>
         </div>
-    </aside>
 
-    <!-- 2. MESSAGE LIST PANE -->
-    <div class="mail-list-pane">
-        <!-- List Header -->
-        <div class="p-3 border-bottom bg-light">
-            <div class="d-flex align-items-center justify-content-between mb-2">
-                <h6 class="fw-bold mb-0 text-dark">
-                    {{ if eq .current_folder "Scheduled" }}
-                    <i class="bi bi-clock-history text-warning me-1"></i>Email Terjadwal
-                    {{ else }}
-                    {{ .current_folder }}
-                    {{ end }}
-                </h6>
-                <div>
-                    {{ if .current_user.IsAdmin }}
-                    <a href="/" class="btn btn-sm btn-outline-primary p-1 px-2 me-1" title="Dashboard Admin">
-                        <i class="bi bi-speedometer2"></i>
-                    </a>
-                    {{ end }}
-                    <button class="btn btn-sm btn-outline-secondary p-1 px-2" onclick="location.reload()" title="Segarkan">
-                        <i class="bi bi-arrow-clockwise"></i>
-                    </button>
-                </div>
-            </div>
-            <!-- Search bar -->
-            <div class="input-group input-group-sm">
-                <span class="input-group-text bg-white text-secondary"><i class="bi bi-search"></i></span>
-                <input type="text" id="searchInput" class="form-control" placeholder="Cari pesan..." onkeyup="filterMessages()">
-            </div>
-        </div>
+        <div class="flex items-center gap-3">
+            <!-- Theme Toggle Button -->
+            <button onclick="toggleTheme()" class="p-2 rounded-lg text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card border border-light-border dark:border-dark-border transition-all" title="Ganti Tema (Dark/Light)">
+                <i class="bi bi-moon-stars-fill hidden dark:inline text-sm text-cyan-400"></i>
+                <i class="bi bi-sun-fill inline dark:hidden text-sm text-amber-500"></i>
+            </button>
 
-        <!-- Mail Items -->
-        <div class="flex-grow-1 overflow-auto" id="mailListContainer">
-            {{ if eq .current_folder "Scheduled" }}
-                <!-- List Email Terjadwal -->
-                {{ range .scheduled_mails }}
-                <div class="mail-item" id="sched-item-{{ .ID }}">
-                    <div class="d-flex align-items-center justify-content-between mb-1">
-                        <span class="small text-warning fw-semibold text-truncate pe-2">
-                            <i class="bi bi-clock me-1"></i>{{ .ScheduledAt.Format "02 Jan 15:04" }}
-                        </span>
-                        <span class="badge {{ if eq .Status "pending" }}bg-warning-subtle text-warning{{ else if eq .Status "sent" }}bg-success-subtle text-success{{ else }}bg-danger-subtle text-danger{{ end }}" style="font-size: 0.65rem;">
-                            {{ .Status }}
-                        </span>
-                    </div>
-                    <div class="mail-subject small mb-1 text-truncate text-dark fw-semibold">{{ .Subject }}</div>
-                    <div class="text-secondary text-truncate" style="font-size: 0.75rem;">Kepada: {{ .To }}</div>
-                    {{ if eq .Status "pending" }}
-                    <div class="mt-2 text-end">
-                        <button class="btn btn-xs btn-outline-danger py-0 px-2 small" style="font-size: 0.7rem;" onclick="cancelSchedule({{ .ID }})">
-                            <i class="bi bi-x-circle me-1"></i>Batalkan
-                        </button>
-                    </div>
-                    {{ end }}
-                </div>
-                {{ else }}
-                <div class="text-center py-5 text-secondary">
-                    <i class="bi bi-clock-history fs-1 d-block mb-2 opacity-50"></i>
-                    Tidak ada email yang sedang dijadwalkan.
-                </div>
-                {{ end }}
-            {{ else }}
-                <!-- List Email Reguler -->
-                {{ range .messages }}
-                <div class="mail-item {{ if not .IsSeen }}unread{{ end }}" id="msg-item-{{ .ID }}" onclick="loadMessageDetail({{ .ID }})">
-                    <div class="d-flex align-items-center justify-content-between mb-1">
-                        <span class="mail-from small text-truncate pe-2">{{ .From }}</span>
-                        <span class="text-secondary" style="font-size: 0.72rem;">{{ .ReceivedAt.Format "02 Jan 15:04" }}</span>
-                    </div>
-                    <div class="mail-subject small mb-1 text-truncate">{{ .Subject }}</div>
-                    <div class="text-secondary text-truncate" style="font-size: 0.75rem;">{{ .Snippet }}</div>
-                    <div class="d-flex align-items-center mt-2 justify-content-between">
-                        <div>
-                            <span class="badge bg-success-subtle text-success" style="font-size: 0.65rem;">SPF: {{ .SPFStatus }}</span>
-                            <span class="badge bg-info-subtle text-info" style="font-size: 0.65rem;">DKIM: {{ .DKIMStatus }}</span>
-                        </div>
-                        <button class="btn btn-sm p-0 text-secondary" onclick="toggleStar(event, {{ .ID }})" id="star-btn-{{ .ID }}">
-                            <i class="bi {{ if .IsFlagged }}bi-star-fill text-warning{{ else }}bi-star{{ end }}"></i>
-                        </button>
-                    </div>
-                </div>
-                {{ else }}
-                <div class="text-center py-5 text-secondary">
-                    <i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>
-                    Belum ada email di folder ini.
-                </div>
-                {{ end }}
+            {{ if .current_user.IsAdmin }}
+            <!-- Admin Dashboard Link -->
+            <a href="/" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-cyan-600 dark:text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 hover:bg-cyan-500/20 transition-all">
+                <i class="bi bi-speedometer2"></i>
+                <span>Dashboard</span>
+            </a>
             {{ end }}
-        </div>
 
-        <!-- Pagination Controls Footer -->
-        <div class="p-2 px-3 border-top bg-light d-flex align-items-center justify-content-between small text-secondary">
-            <span>{{ .start_item }}-{{ .end_item }} dari {{ .total_items }}</span>
-            <div class="btn-group btn-group-sm">
-                {{ if .has_prev }}
-                <a href="/mail?folder={{ .current_folder }}&page={{ .prev_page }}&limit={{ .limit }}" class="btn btn-outline-secondary py-0 px-2" title="Halaman Sebelumnya">
-                    <i class="bi bi-chevron-left"></i>
-                </a>
-                {{ else }}
-                <button class="btn btn-outline-secondary py-0 px-2" disabled>
-                    <i class="bi bi-chevron-left"></i>
+            <!-- User Menu & Logout -->
+            <div class="flex items-center gap-2 pl-2 border-l border-light-border dark:border-dark-border">
+                <div class="w-7 h-7 rounded-full bg-slate-200 dark:bg-dark-card border border-light-border dark:border-dark-border flex items-center justify-center text-xs font-bold text-light-text dark:text-white">
+                    {{ slice .current_user.Email 0 1 }}
+                </div>
+                <span class="text-xs font-medium text-light-text dark:text-slate-200 hidden md:inline truncate max-w-[150px]">{{ .current_user.Email }}</span>
+                <button onclick="openSecuritySettingsModal()" class="p-1.5 text-light-muted dark:text-dark-muted hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors" title="Keamanan Akun & 2FA / API Keys">
+                    <i class="bi bi-shield-lock text-sm"></i>
                 </button>
-                {{ end }}
-
-                {{ if .has_next }}
-                <a href="/mail?folder={{ .current_folder }}&page={{ .next_page }}&limit={{ .limit }}" class="btn btn-outline-secondary py-0 px-2" title="Halaman Selanjutnya">
-                    <i class="bi bi-chevron-right"></i>
+                <a href="/logout" class="p-1.5 text-light-muted dark:text-dark-muted hover:text-rose-500 transition-colors" title="Keluar">
+                    <i class="bi bi-box-arrow-right text-sm"></i>
                 </a>
-                {{ else }}
-                <button class="btn btn-outline-secondary py-0 px-2" disabled>
-                    <i class="bi bi-chevron-right"></i>
-                </button>
-                {{ end }}
             </div>
         </div>
-    </div>
+    </header>
 
-    <!-- 3. MESSAGE READER PANE (Split View) -->
-    <main class="mail-reader-pane">
-        <!-- Placeholder Empty State -->
-        <div id="readerEmptyState" class="h-100 d-flex flex-column align-items-center justify-content-center text-secondary">
-            <i class="bi bi-envelope-open fs-1 opacity-25 mb-3"></i>
-            <h6>Pilih email di sebelah kiri untuk membaca</h6>
-            <small class="opacity-75">RaHaMail Webmail Reader Engine v1.0</small>
-        </div>
+    <!-- 3-PANE APPLICATION BODY -->
+    <div class="flex flex-1 overflow-hidden relative">
 
-        <!-- Reader Container (Hidden by default) -->
-        <div id="readerContainer" class="d-none h-100 d-flex flex-column">
-            <!-- Reader Action Toolbar -->
-            <div class="p-3 border-bottom bg-white d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center gap-2">
-                    <button class="btn btn-sm btn-outline-secondary" onclick="replyCurrentMail()" title="Balas"><i class="bi bi-reply-fill me-1"></i>Balas</button>
-                    <button class="btn btn-sm btn-outline-secondary" onclick="forwardCurrentMail()" title="Teruskan"><i class="bi bi-forward-fill me-1"></i>Teruskan</button>
-                    <div class="vr mx-1 my-1"></div>
-                    <button class="btn btn-sm btn-outline-warning" onclick="moveCurrentMail('Spam')" title="Tandai Spam"><i class="bi bi-shield-slash me-1"></i>Spam</button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="moveCurrentMail('Trash')" title="Buang ke Sampah"><i class="bi bi-trash me-1"></i>Hapus</button>
-                </div>
+        <!-- PANE 1: FOLDERS & LABELS SIDEBAR -->
+        <aside id="sidebarFolders" class="w-60 bg-light-sidebar dark:bg-dark-sidebar border-r border-light-border dark:border-dark-border flex flex-col justify-between shrink-0 p-3 z-10 transition-transform duration-300 md:translate-x-0 -translate-x-full absolute md:relative h-full">
+            <div class="flex flex-col flex-1 overflow-y-auto space-y-4">
+                <!-- Compose Button with Gradient -->
+                <button onclick="openComposer()" class="w-full py-2.5 px-4 rounded-xl font-semibold text-xs text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 shadow-cyan-glow transition-all flex items-center justify-center gap-2">
+                    <i class="bi bi-plus-lg text-sm"></i>
+                    <span>Tulis Email</span>
+                </button>
+
+                <!-- Folder Navigation -->
                 <div>
-                    <span id="readMailDate" class="text-secondary small me-2"></span>
-                </div>
-            </div>
-
-            <!-- Email Headers Detail -->
-            <div class="p-3 border-bottom bg-white">
-                <div class="d-flex align-items-start justify-content-between">
-                    <div>
-                        <h5 id="readMailSubject" class="fw-bold text-dark mb-2"></h5>
-                        <div class="d-flex align-items-center mb-1">
-                            <span class="badge bg-primary me-2">Dari</span>
-                            <span id="readMailFrom" class="text-primary fw-semibold small"></span>
-                        </div>
-                        <div class="d-flex align-items-center">
-                            <span class="badge bg-secondary me-2">Kepada</span>
-                            <span id="readMailTo" class="text-dark small"></span>
-                        </div>
-                    </div>
-                    <div class="text-end">
-                        <span id="spfBadge" class="badge bg-success-subtle text-success me-1">SPF: PASS</span>
-                        <span id="dkimBadge" class="badge bg-info-subtle text-info me-1">DKIM: PASS</span>
-                        <span id="dmarcBadge" class="badge bg-secondary-subtle text-secondary">DMARC: PASS</span>
-                    </div>
-                </div>
-
-                <!-- Attachment Area -->
-                <div id="attachmentArea" class="d-none mt-3 pt-2 border-top">
-                    <small class="fw-semibold text-secondary d-block mb-1"><i class="bi bi-paperclip me-1"></i>Lampiran File:</small>
-                    <div id="attachmentList" class="d-flex flex-wrap gap-2"></div>
-                </div>
-
-                <!-- Security Trust & Warning Banner (Phase 2) -->
-                <div id="securityAlertBanner" class="alert d-none mt-3 mb-0 d-flex align-items-center justify-content-between p-3 border shadow-sm" role="alert" style="border-radius: 8px;">
-                    <div class="d-flex align-items-center">
-                        <div id="securityAlertIcon" class="me-3 fs-3"></div>
-                        <div>
-                            <div id="securityAlertTitle" class="fw-bold mb-1"></div>
-                            <div id="securityAlertDesc" class="small"></div>
-                        </div>
-                    </div>
-                    <div class="d-flex align-items-center gap-2 ms-3 flex-shrink-0">
-                        <button type="button" id="btnTrustSender" class="btn btn-sm btn-light border fw-semibold shadow-sm text-nowrap" onclick="trustSenderQuickAction()">
-                            <i class="bi bi-person-check me-1 text-success"></i>Tandai Terpercaya
-                        </button>
-                        <button type="button" id="btnSpamSender" class="btn btn-sm btn-outline-danger fw-semibold shadow-sm text-nowrap" onclick="moveCurrentMail('Spam')">
-                            <i class="bi bi-shield-slash me-1"></i>Spam
-                        </button>
-                        <button type="button" class="btn-close ms-2" onclick="dismissSecurityBanner()" aria-label="Close"></button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Email Body Content (Sandboxed IFrame anti-XSS) -->
-            <div class="p-3 flex-grow-1 overflow-hidden d-flex flex-column">
-                <div id="textContentContainer" class="p-3 rounded bg-white border h-100 overflow-auto d-none text-dark" style="white-space: pre-wrap; font-family: monospace;"></div>
-                <iframe id="htmlContentFrame" class="reader-body-frame d-none" sandbox="allow-same-origin"></iframe>
-            </div>
-        </div>
-    </main>
-
-    <!-- 4. RICH-TEXT COMPOSER MODAL (FASE 4 & 5) -->
-    <div class="modal fade" id="composerModal" tabindex="-1" aria-labelledby="composerModalLabel" aria-hidden="true" data-bs-backdrop="static">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content bg-white text-dark shadow-lg">
-                <div class="modal-header border-bottom py-2">
-                    <h6 class="modal-title fw-bold" id="composerModalLabel">
-                        <i class="bi bi-pencil-square text-primary me-2"></i>Tulis Pesan Baru
-                    </h6>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body p-3">
-                    <form id="composeForm">
-                        <!-- To -->
-                        <div class="mb-2 position-relative">
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text bg-light text-secondary" style="width: 75px;">Kepada:</span>
-                                <input type="text" id="composeTo" class="form-control" placeholder="penerima@domain.com" required autocomplete="off" oninput="handleContactAutoComplete(this, 'toSug')">
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleCcBcc()">Cc / Bcc</button>
+                    <span class="text-[10px] font-semibold uppercase tracking-wider text-light-muted dark:text-dark-muted px-2 mb-1 block">Folders</span>
+                    <nav class="space-y-1">
+                        <a href="/mail?folder=INBOX" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all {{ if eq .current_folder "INBOX" }}bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-semibold border border-cyan-500/20{{ else }}text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card{{ end }}">
+                            <div class="flex items-center gap-2.5">
+                                <i class="bi bi-inbox-fill text-sm"></i>
+                                <span>Inbox</span>
                             </div>
-                            <div id="toSug" class="list-group position-absolute w-100 shadow-sm d-none" style="z-index: 1055; top: 100%;"></div>
-                        </div>
-
-                        <!-- Cc & Bcc (Toggleable) -->
-                        <div id="ccBccContainer" class="d-none">
-                            <div class="mb-2 position-relative">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text bg-light text-secondary" style="width: 75px;">Cc:</span>
-                                    <input type="text" id="composeCc" class="form-control" placeholder="cc1@domain.com, cc2@domain.com" autocomplete="off" oninput="handleContactAutoComplete(this, 'ccSug')">
-                                </div>
-                                <div id="ccSug" class="list-group position-absolute w-100 shadow-sm d-none" style="z-index: 1055; top: 100%;"></div>
-                            </div>
-                            <div class="mb-2 position-relative">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text bg-light text-secondary" style="width: 75px;">Bcc:</span>
-                                    <input type="text" id="composeBcc" class="form-control" placeholder="bcc@domain.com" autocomplete="off" oninput="handleContactAutoComplete(this, 'bccSug')">
-                                </div>
-                                <div id="bccSug" class="list-group position-absolute w-100 shadow-sm d-none" style="z-index: 1055; top: 100%;"></div>
-                            </div>
-                        </div>
-
-                        <!-- Subject -->
-                        <div class="mb-3">
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text bg-light text-secondary" style="width: 75px;">Subjek:</span>
-                                <input type="text" id="composeSubject" class="form-control fw-semibold" placeholder="Subjek email..." required>
-                            </div>
-                        </div>
-
-                        <!-- Rich Text WYSIWYG Toolbar -->
-                        <div class="composer-editor-toolbar d-flex align-items-center justify-content-between">
-                            <div class="d-flex align-items-center gap-1">
-                                <button type="button" onclick="formatDoc('bold')" title="Tebal (Ctrl+B)"><i class="bi bi-type-bold"></i></button>
-                                <button type="button" onclick="formatDoc('italic')" title="Miring (Ctrl+I)"><i class="bi bi-type-italic"></i></button>
-                                <button type="button" onclick="formatDoc('underline')" title="Garis Bawah (Ctrl+U)"><i class="bi bi-type-underline"></i></button>
-                                <div class="vr my-1 bg-secondary opacity-25"></div>
-                                <button type="button" onclick="formatDoc('insertUnorderedList')" title="Daftar Bullet"><i class="bi bi-list-ul"></i></button>
-                                <button type="button" onclick="formatDoc('insertOrderedList')" title="Daftar Angka"><i class="bi bi-list-ol"></i></button>
-                                <div class="vr my-1 bg-secondary opacity-25"></div>
-                                <button type="button" onclick="insertLinkPrompt()" title="Sisipkan Tautan"><i class="bi bi-link-45deg"></i></button>
-                                <button type="button" onclick="formatDoc('removeFormat')" title="Hapus Format"><i class="bi bi-eraser"></i></button>
-                            </div>
-                            <div class="dropdown">
-                                <button class="btn btn-xs btn-outline-secondary dropdown-toggle py-0 px-2" type="button" data-bs-toggle="dropdown" aria-expanded="false" onclick="loadTemplatesDropdown()">
-                                    <i class="bi bi-file-text me-1"></i>Template
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end shadow-sm small" id="cannedTemplatesDropdown">
-                                    <li><span class="dropdown-item-text text-muted small">Memuat template...</span></li>
-                                </ul>
-                            </div>
-                        </div>
-
-                        <!-- Editable Content Area -->
-                        <div id="composeEditor" class="composer-editor-area" contenteditable="true" placeholder="Tulis pesan Anda di sini..."></div>
-
-                        <!-- Auto-Save Draft Status Indicator -->
-                        <div class="d-flex justify-content-between align-items-center mt-1">
-                            <span id="draftSaveStatus" class="small text-secondary" style="font-size: 0.72rem;">
-                                <i class="bi bi-cloud-check text-success me-1"></i>Draf otomatis disimpan
-                            </span>
-                            <button type="button" class="btn btn-link btn-xs text-secondary text-decoration-none p-0" style="font-size: 0.72rem;" onclick="clearDraft()">
-                                <i class="bi bi-trash me-1"></i>Hapus Draf
-                            </button>
-                        </div>
-
-                        <!-- Attachment Chips Area -->
-                        <div id="composerAttachments" class="d-flex flex-wrap gap-2 mt-2"></div>
-
-                        <!-- Scheduler Box (Fase 5) -->
-                        <div id="scheduleTimeBox" class="d-none mt-3 p-2 rounded bg-warning-subtle border border-warning">
-                            <div class="d-flex align-items-center justify-content-between mb-1">
-                                <span class="small fw-semibold text-warning-emphasis"><i class="bi bi-clock-history me-1"></i>Pilih Waktu Penjadwalan:</span>
-                                <button type="button" class="btn-close small" style="transform: scale(0.7);" onclick="toggleScheduleBox()"></button>
-                            </div>
-                            <input type="datetime-local" id="scheduleDatetimeInput" class="form-control form-control-sm">
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer border-top py-2 d-flex justify-content-between">
-                    <div>
-                        <!-- Hidden file input for attachments -->
-                        <input type="file" id="composerFileInput" class="d-none" multiple onchange="handleFileSelect(event)">
-                        <button type="button" class="btn btn-sm btn-outline-secondary me-1" onclick="document.getElementById('composerFileInput').click()">
-                            <i class="bi bi-paperclip me-1"></i>Lampiran
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-warning" onclick="toggleScheduleBox()">
-                            <i class="bi bi-alarm me-1"></i>Jadwalkan
-                        </button>
-                    </div>
-                    <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
-                        <button type="button" id="btnSendMail" class="btn btn-sm btn-primary px-3 fw-semibold" onclick="submitSendOrScheduleEmail()">
-                            <i class="bi bi-send-fill me-1"></i>Kirim Sekarang
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 5. ATTACHMENT PREVIEW MODAL (PHASE 4 - v1.1.0) -->
-    <div class="modal fade" id="attachmentPreviewModal" tabindex="-1" aria-labelledby="attachmentPreviewTitle" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-xl">
-            <div class="modal-content bg-white text-dark shadow-lg">
-                <div class="modal-header border-bottom py-2">
-                    <h6 class="modal-title fw-bold text-truncate" id="attachmentPreviewTitle">
-                        <i class="bi bi-file-earmark-text text-primary me-2"></i>Preview Lampiran
-                    </h6>
-                    <div class="d-flex align-items-center gap-2">
-                        <a id="btnDownloadPreview" href="#" download="" class="btn btn-sm btn-outline-primary py-1">
-                            <i class="bi bi-download me-1"></i>Unduh
+                            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold {{ if eq .current_folder "INBOX" }}bg-cyan-500 text-white{{ else }}bg-slate-200 dark:bg-dark-border text-light-muted dark:text-dark-muted{{ end }}" id="inboxCountBadge">{{ len .messages }}</span>
                         </a>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                </div>
-                <div class="modal-body p-3 text-center" style="min-height: 450px; max-height: 80vh; overflow: auto;" id="attachmentPreviewContent">
-                    <!-- Dynamic preview rendered here -->
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- 6. SECURITY & 2FA / API KEYS MODAL (PHASE 1 - v1.2.0) -->
-    <div class="modal fade" id="securitySettingsModal" tabindex="-1" aria-labelledby="securitySettingsTitle" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content bg-white text-dark shadow-lg">
-                <div class="modal-header border-bottom py-2">
-                    <h6 class="modal-title fw-bold" id="securitySettingsTitle">
-                        <i class="bi bi-shield-lock-fill text-primary me-2"></i>Keamanan Akun, 2FA & API Keys
-                    </h6>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <ul class="nav nav-tabs mb-3" id="securityTab" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active fw-semibold" id="tab2fa-btn" data-bs-toggle="tab" data-bs-target="#tab2fa-pane" type="button" role="tab">
-                                <i class="bi bi-shield-check me-1"></i>Otentikasi Dua Faktor (2FA)
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link fw-semibold" id="tabApiKeys-btn" data-bs-toggle="tab" data-bs-target="#tabApiKeys-pane" type="button" role="tab" onclick="loadAPIKeys()">
-                                <i class="bi bi-code-square me-1"></i>Developer API Keys
-                            </button>
-                        </li>
-                    </ul>
-
-                    <div class="tab-content" id="securityTabContent">
-                        <!-- Panel 2FA -->
-                        <div class="tab-pane fade show active" id="tab2fa-pane" role="tabpanel">
-                            <div id="twoFAAlert" class="alert d-none py-2 px-3 small mb-3"></div>
-
-                            {{ if .current_user.TwoFactorEnabled }}
-                            <div class="p-3 bg-light rounded border border-success-subtle mb-3">
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <div>
-                                        <h6 class="fw-bold text-success mb-1"><i class="bi bi-check-circle-fill me-2"></i>2FA Sedang Aktif</h6>
-                                        <p class="small text-secondary mb-0">Akun Anda dilindungi dengan enkripsi TOTP RFC 6238.</p>
-                                    </div>
-                                    <button class="btn btn-sm btn-outline-danger" onclick="toggleDisable2FASection()">
-                                        <i class="bi bi-x-circle me-1"></i>Nonaktifkan 2FA
-                                    </button>
-                                </div>
+                        <a href="/mail?folder=Sent" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all {{ if eq .current_folder "Sent" }}bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-semibold border border-cyan-500/20{{ else }}text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card{{ end }}">
+                            <div class="flex items-center gap-2.5">
+                                <i class="bi bi-send-fill text-sm"></i>
+                                <span>Sent</span>
                             </div>
+                        </a>
 
-                            <div id="disable2FASection" class="d-none border rounded p-3 bg-light-subtle">
-                                <h6 class="small fw-bold text-danger mb-2">Konfirmasi Penonaktifan 2FA</h6>
-                                <p class="small text-secondary mb-2">Masukkan kata sandi Anda untuk memverifikasi tindakan ini:</p>
-                                <div class="input-group input-group-sm mb-2" style="max-width: 320px;">
-                                    <input type="password" id="disable2FAPassword" class="form-control" placeholder="Kata sandi saat ini">
-                                    <button class="btn btn-danger" onclick="submitDisable2FA()">Nonaktifkan</button>
-                                </div>
+                        <a href="/mail?folder=Scheduled" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all {{ if eq .current_folder "Scheduled" }}bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-semibold border border-cyan-500/20{{ else }}text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card{{ end }}">
+                            <div class="flex items-center gap-2.5">
+                                <i class="bi bi-clock-history text-sm text-amber-500"></i>
+                                <span>Scheduled</span>
                             </div>
-                            {{ else }}
-                            <div class="p-3 bg-light rounded border mb-3">
-                                <h6 class="fw-bold mb-1"><i class="bi bi-shield-plus text-primary me-2"></i>Aktifkan Autentikasi Dua Langkah</h6>
-                                <p class="small text-secondary mb-3">Gunakan aplikasi seperti Google Authenticator, Microsoft Authenticator, atau Bitwarden untuk menghasilkan token 6 digit.</p>
-
-                                <div id="setup2FASteps" class="d-none">
-                                    <div class="p-3 bg-white rounded border mb-3">
-                                        <div class="small fw-bold text-secondary mb-2">1. Pindai URI atau masukkan Secret secara manual:</div>
-                                        <div class="input-group input-group-sm mb-2">
-                                            <span class="input-group-text bg-light font-monospace">Secret Key</span>
-                                            <input type="text" id="twoFASecretInput" class="form-control font-monospace fw-bold" readonly>
-                                        </div>
-                                        <div class="small text-muted mb-2">Atau salin tautan <code>otpauth://</code> berikut:</div>
-                                        <textarea id="twoFAUriInput" class="form-control form-control-sm font-monospace text-muted mb-3" rows="2" readonly></textarea>
-                                    </div>
-
-                                    <div class="p-3 bg-white rounded border mb-3">
-                                        <div class="small fw-bold text-secondary mb-2">2. Masukkan 6 digit kode dari aplikasi Authenticator Anda:</div>
-                                        <div class="d-flex gap-2" style="max-width: 340px;">
-                                            <input type="text" id="twoFAVerifyCode" class="form-control form-control-sm text-center fw-bold letter-spacing-2" placeholder="123456" maxlength="6">
-                                            <button class="btn btn-sm btn-primary text-nowrap fw-semibold px-3" onclick="submitEnable2FA()">
-                                                <i class="bi bi-check-lg me-1"></i>Verifikasi & Aktifkan
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div id="backupCodesDisplay" class="d-none p-3 bg-warning-subtle border border-warning rounded mb-3">
-                                    <h6 class="fw-bold text-warning-emphasis mb-1"><i class="bi bi-key-fill me-1"></i>Simpan Kode Pemulihan Cadangan Anda!</h6>
-                                    <p class="small text-secondary mb-2">Gunakan salah satu kode ini jika Anda kehilangan akses ke perangkat autentikasi. Setiap kode hanya dapat digunakan 1 kali:</p>
-                                    <div id="backupCodesList" class="row row-cols-2 g-2 font-monospace fw-bold small text-dark p-2 bg-white rounded border"></div>
-                                </div>
-
-                                <button id="btnStartSetup2FA" class="btn btn-sm btn-primary fw-semibold" onclick="startSetup2FA()">
-                                    <i class="bi bi-qr-code me-1"></i>Mulai Konfigurasi 2FA
-                                </button>
-                            </div>
+                            {{ if gt .scheduled_count 0 }}
+                            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-500 border border-amber-500/30">{{ .scheduled_count }}</span>
                             {{ end }}
+                        </a>
+
+                        <a href="/mail?folder=Drafts" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all {{ if eq .current_folder "Drafts" }}bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-semibold border border-cyan-500/20{{ else }}text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card{{ end }}">
+                            <div class="flex items-center gap-2.5">
+                                <i class="bi bi-file-earmark-text-fill text-sm"></i>
+                                <span>Drafts</span>
+                            </div>
+                        </a>
+
+                        <a href="/mail?folder=Spam" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all {{ if eq .current_folder "Spam" }}bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-semibold border border-cyan-500/20{{ else }}text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card{{ end }}">
+                            <div class="flex items-center gap-2.5">
+                                <i class="bi bi-shield-slash-fill text-sm text-rose-500"></i>
+                                <span>Spam</span>
+                            </div>
+                        </a>
+
+                        <a href="/mail?folder=Trash" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all {{ if eq .current_folder "Trash" }}bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-semibold border border-cyan-500/20{{ else }}text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card{{ end }}">
+                            <div class="flex items-center gap-2.5">
+                                <i class="bi bi-trash-fill text-sm"></i>
+                                <span>Trash</span>
+                            </div>
+                        </a>
+                    </nav>
+                </div>
+
+                <!-- Custom Labels / Tags -->
+                <div>
+                    <span class="text-[10px] font-semibold uppercase tracking-wider text-light-muted dark:text-dark-muted px-2 mb-1 block">Quick Tools</span>
+                    <nav class="space-y-1">
+                        <a href="javascript:void(0)" onclick="openContactsModal()" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card transition-all">
+                            <i class="bi bi-person-lines-fill text-cyan-500 text-sm"></i>
+                            <span>Buku Kontak</span>
+                        </a>
+                        <a href="javascript:void(0)" onclick="openAutoResponderModal()" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card transition-all">
+                            <i class="bi bi-calendar-event text-amber-500 text-sm"></i>
+                            <span>Balasan Liburan</span>
+                        </a>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Sidebar Storage Quota & User Footer -->
+            <div class="pt-3 border-t border-light-border dark:border-dark-border mt-auto">
+                <div class="flex items-center justify-between text-[11px] text-light-muted dark:text-dark-muted mb-1.5">
+                    <span class="flex items-center gap-1"><i class="bi bi-hdd-fill text-[10px]"></i> Storage</span>
+                    <span>{{ .storage_used }}MB / {{ .storage_quota }}MB</span>
+                </div>
+                <div class="w-full bg-slate-200 dark:bg-dark-border rounded-full h-1.5 overflow-hidden">
+                    <div class="bg-cyan-500 h-1.5 rounded-full" style="width: 2%"></div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- PANE 2: MAILBOX MESSAGE LIST -->
+        <section class="w-full md:w-80 lg:w-96 bg-light-card dark:bg-dark-sidebar border-r border-light-border dark:border-dark-border flex flex-col shrink-0">
+            <!-- Search & Filter Header -->
+            <div class="p-3 border-b border-light-border dark:border-dark-border space-y-2">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-light-text dark:text-white uppercase tracking-wider">
+                            {{ if eq .current_folder "Scheduled" }}
+                            <i class="bi bi-clock-history text-amber-500 mr-1"></i>Email Terjadwal
+                            {{ else }}
+                            {{ .current_folder }}
+                            {{ end }}
+                        </span>
+                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-semibold border border-cyan-500/20">
+                            {{ .total_items }}
+                        </span>
+                    </div>
+                    <button onclick="location.reload()" class="p-1 text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white transition-colors" title="Segarkan">
+                        <i class="bi bi-arrow-clockwise text-sm"></i>
+                    </button>
+                </div>
+
+                <!-- Search Input Bar -->
+                <div class="relative">
+                    <i class="bi bi-search absolute left-3 top-2.5 text-light-muted dark:text-dark-muted text-xs"></i>
+                    <input type="text" id="searchInput" placeholder="Cari pesan atau pengirim..." onkeyup="filterMessages()" class="w-full pl-8 pr-3 py-1.5 rounded-lg text-xs bg-slate-100 dark:bg-dark-card border border-light-border dark:border-dark-border text-light-text dark:text-white placeholder:text-light-muted dark:placeholder:text-dark-muted focus:outline-none focus:border-cyan-500 transition-colors">
+                </div>
+            </div>
+
+            <!-- Mail Items List (Scrollable) -->
+            <div class="flex-1 overflow-y-auto divide-y divide-light-border dark:divide-dark-border/60" id="mailListContainer">
+                {{ if eq .current_folder "Scheduled" }}
+                    <!-- List Email Terjadwal -->
+                    {{ range .scheduled_mails }}
+                    <div class="mail-item p-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-dark-card/60 transition-colors" id="sched-item-{{ .ID }}">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-[11px] text-amber-500 font-semibold flex items-center gap-1">
+                                <i class="bi bi-clock text-[10px]"></i>{{ .ScheduledAt.Format "02 Jan 15:04" }}
+                            </span>
+                            <span class="text-[10px] px-1.5 py-0.2 rounded font-medium {{ if eq .Status "pending" }}bg-amber-500/10 text-amber-500 border border-amber-500/20{{ else if eq .Status "sent" }}bg-emerald-500/10 text-emerald-500 border border-emerald-500/20{{ else }}bg-rose-500/10 text-rose-500 border border-rose-500/20{{ end }}">
+                                {{ .Status }}
+                            </span>
+                        </div>
+                        <h4 class="text-xs font-semibold text-light-text dark:text-white truncate mb-0.5">{{ .Subject }}</h4>
+                        <p class="text-[11px] text-light-muted dark:text-dark-muted truncate">Kepada: {{ .To }}</p>
+                        {{ if eq .Status "pending" }}
+                        <div class="mt-2 text-right">
+                            <button onclick="cancelSchedule({{ .ID }})" class="px-2 py-0.5 text-[10px] font-medium text-rose-500 hover:text-white hover:bg-rose-600 border border-rose-500/30 rounded transition-all">
+                                <i class="bi bi-x-circle mr-1"></i>Batalkan
+                            </button>
+                        </div>
+                        {{ end }}
+                    </div>
+                    {{ else }}
+                    <div class="text-center py-12 px-4 text-light-muted dark:text-dark-muted">
+                        <i class="bi bi-clock-history text-3xl opacity-30 block mb-2"></i>
+                        <p class="text-xs">Tidak ada email yang sedang dijadwalkan.</p>
+                    </div>
+                    {{ end }}
+                {{ else }}
+                    <!-- List Email Reguler -->
+                    {{ range .messages }}
+                    <div class="mail-item p-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-dark-card/60 transition-colors {{ if not .IsSeen }}border-l-2 border-cyan-500 bg-cyan-500/[0.02]{{ end }}" id="msg-item-{{ .ID }}" onclick="loadMessageDetail({{ .ID }})">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-xs font-semibold {{ if not .IsSeen }}text-cyan-600 dark:text-cyan-400{{ else }}text-light-text dark:text-slate-300{{ end }} truncate pr-2">
+                                {{ .From }}
+                            </span>
+                            <span class="text-[10px] text-light-muted dark:text-dark-muted shrink-0">{{ .ReceivedAt.Format "02 Jan 15:04" }}</span>
+                        </div>
+                        <h4 class="text-xs {{ if not .IsSeen }}font-bold text-light-text dark:text-white{{ else }}font-medium text-slate-700 dark:text-slate-300{{ end }} truncate mb-1">
+                            {{ .Subject }}
+                        </h4>
+                        <p class="text-[11px] text-light-muted dark:text-dark-muted truncate line-clamp-1 mb-2">
+                            {{ .Snippet }}
+                        </p>
+                        <div class="flex items-center justify-between pt-1">
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-[9px] px-1 py-0.2 rounded font-mono bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                    SPF: {{ .SPFStatus }}
+                                </span>
+                                <span class="text-[9px] px-1 py-0.2 rounded font-mono bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
+                                    DKIM: {{ .DKIMStatus }}
+                                </span>
+                            </div>
+                            <button onclick="toggleStar(event, {{ .ID }})" id="star-btn-{{ .ID }}" class="text-light-muted dark:text-dark-muted hover:text-amber-400 p-0.5" title="Bintang">
+                                <i class="bi {{ if .IsFlagged }}bi-star-fill text-amber-400{{ else }}bi-star{{ end }} text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {{ else }}
+                    <div class="text-center py-12 px-4 text-light-muted dark:text-dark-muted">
+                        <i class="bi bi-inbox text-3xl opacity-30 block mb-2"></i>
+                        <p class="text-xs">Belum ada email di folder ini.</p>
+                    </div>
+                    {{ end }}
+                {{ end }}
+            </div>
+
+            <!-- Pagination Footer -->
+            <div class="p-2.5 px-3 border-t border-light-border dark:border-dark-border flex items-center justify-between text-[11px] text-light-muted dark:text-dark-muted bg-slate-50 dark:bg-dark-header">
+                <span>{{ .start_item }}-{{ .end_item }} dari {{ .total_items }}</span>
+                <div class="flex items-center gap-1">
+                    {{ if .has_prev }}
+                    <a href="/mail?folder={{ .current_folder }}&page={{ .prev_page }}&limit={{ .limit }}" class="p-1 rounded text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-200 dark:hover:bg-dark-card border border-light-border dark:border-dark-border" title="Sebelumnya">
+                        <i class="bi bi-chevron-left text-xs"></i>
+                    </a>
+                    {{ else }}
+                    <button disabled class="p-1 rounded opacity-30 text-light-muted dark:text-dark-muted border border-light-border dark:border-dark-border cursor-not-allowed">
+                        <i class="bi bi-chevron-left text-xs"></i>
+                    </button>
+                    {{ end }}
+
+                    {{ if .has_next }}
+                    <a href="/mail?folder={{ .current_folder }}&page={{ .next_page }}&limit={{ .limit }}" class="p-1 rounded text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-200 dark:hover:bg-dark-card border border-light-border dark:border-dark-border" title="Berikutnya">
+                        <i class="bi bi-chevron-right text-xs"></i>
+                    </a>
+                    {{ else }}
+                    <button disabled class="p-1 rounded opacity-30 text-light-muted dark:text-dark-muted border border-light-border dark:border-dark-border cursor-not-allowed">
+                        <i class="bi bi-chevron-right text-xs"></i>
+                    </button>
+                    {{ end }}
+                </div>
+            </div>
+        </section>
+
+        <!-- PANE 3: EMAIL DETAIL & READER PANE -->
+        <main class="flex-1 bg-light-card dark:bg-dark-bg flex flex-col overflow-hidden">
+            <!-- Empty State Placeholder -->
+            <div id="readerEmptyState" class="h-full flex flex-col items-center justify-center text-center p-6 text-light-muted dark:text-dark-muted">
+                <div class="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-500 dark:text-cyan-400 mb-4 shadow-cyan-glow">
+                    <i class="bi bi-envelope-open text-2xl"></i>
+                </div>
+                <h3 class="text-sm font-semibold text-light-text dark:text-white mb-1">Pilih email di sebelah kiri untuk membaca</h3>
+                <p class="text-xs max-w-sm">RaHaMail Sandboxed Reader Engine v1.4.1 dengan perlindungan anti-XSS & verifikasi SPF/DKIM.</p>
+            </div>
+
+            <!-- Active Reader Container -->
+            <div id="readerContainer" class="hidden h-full flex flex-col overflow-hidden">
+                <!-- Reader Action Toolbar -->
+                <div class="p-3 border-b border-light-border dark:border-dark-border bg-light-header dark:bg-dark-header flex items-center justify-between shrink-0">
+                    <div class="flex items-center gap-1.5">
+                        <button onclick="replyCurrentMail()" class="px-2.5 py-1.5 rounded-lg text-xs font-medium text-light-text dark:text-white hover:bg-slate-100 dark:hover:bg-dark-card border border-light-border dark:border-dark-border transition-all flex items-center gap-1.5">
+                            <i class="bi bi-reply-fill text-cyan-500"></i>
+                            <span>Balas</span>
+                        </button>
+                        <button onclick="forwardCurrentMail()" class="px-2.5 py-1.5 rounded-lg text-xs font-medium text-light-text dark:text-white hover:bg-slate-100 dark:hover:bg-dark-card border border-light-border dark:border-dark-border transition-all flex items-center gap-1.5">
+                            <i class="bi bi-forward-fill text-blue-500"></i>
+                            <span>Teruskan</span>
+                        </button>
+                        <div class="h-4 w-px bg-light-border dark:bg-dark-border mx-1"></div>
+                        <button onclick="moveCurrentMail('Spam')" class="px-2.5 py-1.5 rounded-lg text-xs font-medium text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 border border-amber-500/20 transition-all flex items-center gap-1.5">
+                            <i class="bi bi-shield-slash"></i>
+                            <span>Spam</span>
+                        </button>
+                        <button onclick="moveCurrentMail('Trash')" class="px-2.5 py-1.5 rounded-lg text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border border-rose-500/20 transition-all flex items-center gap-1.5">
+                            <i class="bi bi-trash"></i>
+                            <span>Hapus</span>
+                        </button>
+                    </div>
+                    <div>
+                        <span id="readMailDate" class="text-xs text-light-muted dark:text-dark-muted font-medium"></span>
+                    </div>
+                </div>
+
+                <!-- Email Header & Metadata -->
+                <div class="p-4 border-b border-light-border dark:border-dark-border bg-light-card dark:bg-dark-sidebar shrink-0">
+                    <div class="flex flex-col md:flex-row md:items-start justify-between gap-3">
+                        <div class="space-y-1.5">
+                            <h2 id="readMailSubject" class="text-base font-bold text-light-text dark:text-white tracking-tight"></h2>
+                            <div class="flex flex-wrap items-center gap-2 text-xs">
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">Dari:</span>
+                                <span id="readMailFrom" class="font-medium text-light-text dark:text-slate-200"></span>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2 text-xs">
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-200 dark:bg-dark-card text-light-muted dark:text-dark-muted border border-light-border dark:border-dark-border">Kepada:</span>
+                                <span id="readMailTo" class="text-light-muted dark:text-dark-muted"></span>
+                            </div>
                         </div>
 
-                        <!-- Panel API Keys -->
-                        <div class="tab-pane fade" id="tabApiKeys-pane" role="tabpanel">
-                            <div class="d-flex align-items-center justify-content-between mb-3">
-                                <div>
-                                    <h6 class="fw-bold mb-0">Transactional REST API Tokens</h6>
-                                    <p class="small text-secondary mb-0">Kirim email langsung dari aplikasi web/backend eksternal via JSON HTTPS.</p>
-                                </div>
-                                <button class="btn btn-sm btn-primary fw-semibold" onclick="promptCreateAPIKey()">
-                                    <i class="bi bi-plus-lg me-1"></i>Buat API Key Baru
-                                </button>
-                            </div>
+                        <!-- Auth Badges -->
+                        <div class="flex items-center gap-1.5 self-start shrink-0">
+                            <span id="spfBadge" class="text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">SPF: PASS</span>
+                            <span id="dkimBadge" class="text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">DKIM: PASS</span>
+                            <span id="dmarcBadge" class="text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-slate-200 dark:bg-dark-card text-light-muted dark:text-dark-muted border border-light-border dark:border-dark-border">DMARC: PASS</span>
+                        </div>
+                    </div>
 
-                            <div id="newKeyBanner" class="d-none alert alert-success py-2 px-3 small mb-3">
-                                <div class="fw-bold mb-1"><i class="bi bi-check-circle-fill me-1"></i>API Key Baru Berhasil Dibuat!</div>
-                                <div class="text-secondary mb-2">Simpan token ini sekarang di tempat aman. Demi alasan keamanan, token tidak dapat ditampilkan lagi:</div>
-                                <div class="input-group input-group-sm">
-                                    <input type="text" id="newKeyToken" class="form-control font-monospace fw-bold text-dark bg-white" readonly>
-                                    <button class="btn btn-outline-secondary" onclick="navigator.clipboard.writeText(document.getElementById('newKeyToken').value); alert('Token disalin!');">
-                                        <i class="bi bi-clipboard me-1"></i>Salin
-                                    </button>
-                                </div>
-                            </div>
+                    <!-- Attachment List Chips -->
+                    <div id="attachmentArea" class="hidden mt-3 pt-3 border-t border-light-border dark:border-dark-border">
+                        <span class="text-[11px] font-semibold text-light-muted dark:text-dark-muted block mb-2"><i class="bi bi-paperclip mr-1"></i>Lampiran File:</span>
+                        <div id="attachmentList" class="flex flex-wrap gap-2"></div>
+                    </div>
 
-                            <div class="table-responsive border rounded">
-                                <table class="table table-hover table-sm align-middle mb-0" style="font-size: 0.85rem;">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Nama Token</th>
-                                            <th>Prefix</th>
-                                            <th>Dibuat</th>
-                                            <th>Terakhir Digunakan</th>
-                                            <th class="text-end">Aksi</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="apiKeysTableBody">
-                                        <tr>
-                                            <td colspan="5" class="text-center text-muted py-3">Memuat daftar API key...</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                    <!-- Security Alert Banner -->
+                    <div id="securityAlertBanner" class="hidden mt-3 p-3 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+                        <div class="flex items-center gap-3">
+                            <div id="securityAlertIcon" class="text-xl shrink-0"></div>
+                            <div>
+                                <h4 id="securityAlertTitle" class="text-xs font-bold mb-0.5"></h4>
+                                <p id="securityAlertDesc" class="text-[11px] text-light-muted dark:text-dark-muted"></p>
                             </div>
-
-                            <div class="mt-3 p-3 bg-light rounded border">
-                                <div class="small fw-bold text-secondary mb-1">Contoh Permintaan HTTP (cURL):</div>
-                                <pre class="p-2 bg-white rounded border small font-monospace mb-0 text-dark" style="font-size:0.75rem;">curl -X POST https://yourdomain.com/api/v1/send \
-  -H "Authorization: Bearer rhm_live_xxxxxxxx..." \
-  -H "Content-Type: application/json" \
-  -d '{"to": ["user@example.com"], "subject": "Hello World", "html": "&lt;h1&gt;Hi!&lt;/h1&gt;"}'</pre>
-                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <button type="button" id="btnTrustSender" onclick="trustSenderQuickAction()" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all flex items-center gap-1">
+                                <i class="bi bi-person-check text-xs"></i>
+                                <span>Tandai Terpercaya</span>
+                            </button>
+                            <button type="button" onclick="moveCurrentMail('Spam')" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition-all flex items-center gap-1">
+                                <i class="bi bi-shield-slash text-xs"></i>
+                                <span>Spam</span>
+                            </button>
+                            <button type="button" onclick="dismissSecurityBanner()" class="p-1 text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white">
+                                <i class="bi bi-x-lg text-xs"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
+
+                <!-- Sandboxed Body Viewer (Iframe or Plain Text) -->
+                <div class="flex-1 p-4 overflow-hidden flex flex-col bg-slate-50 dark:bg-dark-bg">
+                    <div id="textContentContainer" class="hidden h-full overflow-y-auto p-4 rounded-xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-xs font-mono whitespace-pre-wrap text-light-text dark:text-slate-200"></div>
+                    <iframe id="htmlContentFrame" class="hidden w-full h-full rounded-xl bg-white border border-light-border dark:border-dark-border" sandbox="allow-same-origin"></iframe>
+                </div>
             </div>
-        </div>
+        </main>
     </div>
 
-    <!-- 7. CONTACTS (ADDRESS BOOK) MODAL (PHASE 2 - v1.3.0) -->
-    <div class="modal fade" id="contactsModal" tabindex="-1" aria-labelledby="contactsModalTitle" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content bg-white text-dark shadow-lg">
-                <div class="modal-header border-bottom py-2">
-                    <h6 class="modal-title fw-bold" id="contactsModalTitle">
-                        <i class="bi bi-person-lines-fill text-primary me-2"></i>Buku Kontak (Address Book)
-                    </h6>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <!-- MODAL 1: RICH-TEXT COMPOSER (TAILWIND REWRITE) -->
+    <div id="composerModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl w-full max-w-2xl shadow-card-dark overflow-hidden flex flex-col max-h-[90vh]">
+            <!-- Modal Header -->
+            <div class="px-4 py-3 border-b border-light-border dark:border-dark-border flex items-center justify-between bg-light-header dark:bg-dark-header">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-cyan-500/10 text-cyan-500 flex items-center justify-center">
+                        <i class="bi bi-pencil-square text-sm"></i>
+                    </div>
+                    <h3 class="text-sm font-bold text-light-text dark:text-white" id="composerModalLabel">Tulis Pesan Baru</h3>
                 </div>
-                <div class="modal-body p-3">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <div class="input-group input-group-sm" style="max-width: 300px;">
-                            <span class="input-group-text bg-white"><i class="bi bi-search text-secondary"></i></span>
-                            <input type="text" id="contactSearchInput" class="form-control" placeholder="Cari kontak..." onkeyup="loadContactsList(this.value)">
+                <button type="button" onclick="closeComposer()" class="text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white p-1">
+                    <i class="bi bi-x-lg text-sm"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-4 overflow-y-auto space-y-3 flex-1">
+                <form id="composeForm">
+                    <!-- To -->
+                    <div class="relative">
+                        <div class="flex items-center rounded-lg border border-light-border dark:border-dark-border bg-slate-50 dark:bg-dark-bg focus-within:border-cyan-500 overflow-hidden">
+                            <span class="px-3 py-1.5 text-xs font-semibold text-light-muted dark:text-dark-muted bg-slate-100 dark:bg-dark-header border-r border-light-border dark:border-dark-border w-20">Kepada:</span>
+                            <input type="text" id="composeTo" class="flex-1 px-3 py-1.5 text-xs bg-transparent text-light-text dark:text-white placeholder:text-light-muted dark:placeholder:text-dark-muted focus:outline-none" placeholder="penerima@domain.com" required autocomplete="off" oninput="handleContactAutoComplete(this, 'toSug')">
+                            <button type="button" onclick="toggleCcBcc()" class="px-2.5 py-1 text-xs text-light-muted dark:text-dark-muted hover:text-cyan-500 font-medium">Cc / Bcc</button>
                         </div>
-                        <button class="btn btn-sm btn-primary fw-semibold" onclick="toggleAddContactForm()">
-                            <i class="bi bi-person-plus-fill me-1"></i>Tambah Kontak
+                        <div id="toSug" class="absolute w-full mt-1 bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-lg shadow-lg z-50 hidden divide-y divide-light-border dark:divide-dark-border"></div>
+                    </div>
+
+                    <!-- Cc & Bcc -->
+                    <div id="ccBccContainer" class="hidden space-y-2 mt-2">
+                        <div class="relative">
+                            <div class="flex items-center rounded-lg border border-light-border dark:border-dark-border bg-slate-50 dark:bg-dark-bg focus-within:border-cyan-500 overflow-hidden">
+                                <span class="px-3 py-1.5 text-xs font-semibold text-light-muted dark:text-dark-muted bg-slate-100 dark:bg-dark-header border-r border-light-border dark:border-dark-border w-20">Cc:</span>
+                                <input type="text" id="composeCc" class="flex-1 px-3 py-1.5 text-xs bg-transparent text-light-text dark:text-white placeholder:text-light-muted dark:placeholder:text-dark-muted focus:outline-none" placeholder="cc1@domain.com, cc2@domain.com" autocomplete="off" oninput="handleContactAutoComplete(this, 'ccSug')">
+                            </div>
+                            <div id="ccSug" class="absolute w-full mt-1 bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-lg shadow-lg z-50 hidden divide-y divide-light-border dark:divide-dark-border"></div>
+                        </div>
+                        <div class="relative">
+                            <div class="flex items-center rounded-lg border border-light-border dark:border-dark-border bg-slate-50 dark:bg-dark-bg focus-within:border-cyan-500 overflow-hidden">
+                                <span class="px-3 py-1.5 text-xs font-semibold text-light-muted dark:text-dark-muted bg-slate-100 dark:bg-dark-header border-r border-light-border dark:border-dark-border w-20">Bcc:</span>
+                                <input type="text" id="composeBcc" class="flex-1 px-3 py-1.5 text-xs bg-transparent text-light-text dark:text-white placeholder:text-light-muted dark:placeholder:text-dark-muted focus:outline-none" placeholder="bcc@domain.com" autocomplete="off" oninput="handleContactAutoComplete(this, 'bccSug')">
+                            </div>
+                            <div id="bccSug" class="absolute w-full mt-1 bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-lg shadow-lg z-50 hidden divide-y divide-light-border dark:divide-dark-border"></div>
+                        </div>
+                    </div>
+
+                    <!-- Subject -->
+                    <div class="flex items-center rounded-lg border border-light-border dark:border-dark-border bg-slate-50 dark:bg-dark-bg focus-within:border-cyan-500 overflow-hidden mt-2">
+                        <span class="px-3 py-1.5 text-xs font-semibold text-light-muted dark:text-dark-muted bg-slate-100 dark:bg-dark-header border-r border-light-border dark:border-dark-border w-20">Subjek:</span>
+                        <input type="text" id="composeSubject" class="flex-1 px-3 py-1.5 text-xs font-semibold bg-transparent text-light-text dark:text-white placeholder:text-light-muted dark:placeholder:text-dark-muted focus:outline-none" placeholder="Subjek email..." required>
+                    </div>
+
+                    <!-- Editor Toolbar -->
+                    <div class="flex items-center justify-between p-2 rounded-t-lg border-t border-x border-light-border dark:border-dark-border bg-slate-100 dark:bg-dark-header mt-2">
+                        <div class="flex items-center gap-1">
+                            <button type="button" onclick="formatDoc('bold')" class="p-1 text-xs text-light-muted dark:text-dark-muted hover:text-cyan-500 rounded" title="Tebal (Ctrl+B)"><i class="bi bi-type-bold"></i></button>
+                            <button type="button" onclick="formatDoc('italic')" class="p-1 text-xs text-light-muted dark:text-dark-muted hover:text-cyan-500 rounded" title="Miring (Ctrl+I)"><i class="bi bi-type-italic"></i></button>
+                            <button type="button" onclick="formatDoc('underline')" class="p-1 text-xs text-light-muted dark:text-dark-muted hover:text-cyan-500 rounded" title="Garis Bawah (Ctrl+U)"><i class="bi bi-type-underline"></i></button>
+                            <div class="h-3 w-px bg-light-border dark:bg-dark-border mx-1"></div>
+                            <button type="button" onclick="formatDoc('insertUnorderedList')" class="p-1 text-xs text-light-muted dark:text-dark-muted hover:text-cyan-500 rounded" title="Bullet List"><i class="bi bi-list-ul"></i></button>
+                            <button type="button" onclick="formatDoc('insertOrderedList')" class="p-1 text-xs text-light-muted dark:text-dark-muted hover:text-cyan-500 rounded" title="Numbered List"><i class="bi bi-list-ol"></i></button>
+                            <div class="h-3 w-px bg-light-border dark:bg-dark-border mx-1"></div>
+                            <button type="button" onclick="insertLinkPrompt()" class="p-1 text-xs text-light-muted dark:text-dark-muted hover:text-cyan-500 rounded" title="Sisipkan Link"><i class="bi bi-link-45deg"></i></button>
+                            <button type="button" onclick="formatDoc('removeFormat')" class="p-1 text-xs text-light-muted dark:text-dark-muted hover:text-cyan-500 rounded" title="Hapus Format"><i class="bi bi-eraser"></i></button>
+                        </div>
+                        <div class="relative">
+                            <button type="button" onclick="toggleTemplatesDropdown()" class="px-2 py-0.5 text-xs text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white rounded border border-light-border dark:border-dark-border flex items-center gap-1">
+                                <i class="bi bi-file-text"></i>
+                                <span>Template</span>
+                            </button>
+                            <div id="cannedDropdownMenu" class="absolute right-0 mt-1 w-48 bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-lg shadow-lg z-50 hidden py-1">
+                                <div id="cannedTemplatesDropdown"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Editable Content Area -->
+                    <div id="composeEditor" class="min-h-[160px] max-h-[260px] overflow-y-auto p-3 text-xs rounded-b-lg border border-light-border dark:border-dark-border bg-white dark:bg-dark-card text-light-text dark:text-white focus:outline-none focus:border-cyan-500" contenteditable="true" placeholder="Tulis pesan Anda di sini..."></div>
+
+                    <!-- Auto-Save Status -->
+                    <div class="flex items-center justify-between text-[11px] text-light-muted dark:text-dark-muted pt-1">
+                        <span id="draftSaveStatus" class="flex items-center gap-1">
+                            <i class="bi bi-cloud-check text-emerald-500"></i> Draf otomatis disimpan
+                        </span>
+                        <button type="button" onclick="clearDraft()" class="text-light-muted dark:text-dark-muted hover:text-rose-500 transition-colors flex items-center gap-1">
+                            <i class="bi bi-trash"></i> Hapus Draf
                         </button>
                     </div>
 
-                    <!-- Form Tambah Kontak Baru -->
-                    <div id="addContactCard" class="card p-3 mb-3 bg-light-subtle d-none">
-                        <h6 class="fw-bold small mb-2 text-primary"><i class="bi bi-plus-circle me-1"></i>Tambah Kontak Baru</h6>
-                        <div class="row g-2 mb-2">
-                            <div class="col-md-6">
-                                <input type="text" id="newContactName" class="form-control form-control-sm" placeholder="Nama Lengkap">
+                    <!-- Attachments List -->
+                    <div id="composerAttachments" class="flex flex-wrap gap-2 mt-2"></div>
+
+                    <!-- Scheduler Box -->
+                    <div id="scheduleTimeBox" class="hidden mt-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-amber-500 flex items-center gap-1.5">
+                                <i class="bi bi-clock-history"></i> Pilih Waktu Penjadwalan:
+                            </span>
+                            <button type="button" onclick="toggleScheduleBox()" class="text-amber-500 hover:text-amber-400">
+                                <i class="bi bi-x-lg text-xs"></i>
+                            </button>
+                        </div>
+                        <input type="datetime-local" id="scheduleDatetimeInput" class="w-full px-3 py-1.5 text-xs rounded-lg border border-amber-500/30 bg-light-card dark:bg-dark-card text-light-text dark:text-white focus:outline-none">
+                    </div>
+                </form>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="px-4 py-3 border-t border-light-border dark:border-dark-border bg-light-header dark:bg-dark-header flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <input type="file" id="composerFileInput" class="hidden" multiple onchange="handleFileSelect(event)">
+                    <button type="button" onclick="document.getElementById('composerFileInput').click()" class="px-2.5 py-1.5 rounded-lg text-xs font-medium text-light-text dark:text-white hover:bg-slate-100 dark:hover:bg-dark-card border border-light-border dark:border-dark-border transition-all flex items-center gap-1.5">
+                        <i class="bi bi-paperclip"></i>
+                        <span>Lampiran</span>
+                    </button>
+                    <button type="button" onclick="toggleScheduleBox()" class="px-2.5 py-1.5 rounded-lg text-xs font-medium text-amber-500 hover:bg-amber-500/10 border border-amber-500/20 transition-all flex items-center gap-1.5">
+                        <i class="bi bi-alarm"></i>
+                        <span>Jadwalkan</span>
+                    </button>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="closeComposer()" class="px-3 py-1.5 rounded-lg text-xs font-medium text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white border border-light-border dark:border-dark-border">
+                        Tutup
+                    </button>
+                    <button type="button" id="btnSendMail" onclick="submitSendOrScheduleEmail()" class="px-4 py-1.5 rounded-lg text-xs font-semibold text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 shadow-cyan-glow transition-all flex items-center gap-1.5">
+                        <i class="bi bi-send-fill text-xs"></i>
+                        <span>Kirim Sekarang</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: ATTACHMENT PREVIEW MODAL -->
+    <div id="attachmentPreviewModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl w-full max-w-4xl shadow-card-dark overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="px-4 py-3 border-b border-light-border dark:border-dark-border flex items-center justify-between bg-light-header dark:bg-dark-header">
+                <h3 class="text-sm font-bold text-light-text dark:text-white truncate flex items-center gap-2" id="attachmentPreviewTitle">
+                    <i class="bi bi-file-earmark-text text-cyan-500"></i> Preview Lampiran
+                </h3>
+                <div class="flex items-center gap-2">
+                    <a id="btnDownloadPreview" href="#" download="" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 hover:bg-cyan-500/20 transition-all flex items-center gap-1">
+                        <i class="bi bi-download"></i> Unduh
+                    </a>
+                    <button type="button" onclick="closeAttachmentPreviewModal()" class="text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white p-1">
+                        <i class="bi bi-x-lg text-sm"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-4 text-center overflow-auto flex-1 min-h-[350px]" id="attachmentPreviewContent"></div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: SECURITY SETTINGS & 2FA / API KEYS -->
+    <div id="securitySettingsModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl w-full max-w-2xl shadow-card-dark overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="px-4 py-3 border-b border-light-border dark:border-dark-border flex items-center justify-between bg-light-header dark:bg-dark-header">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-cyan-500/10 text-cyan-500 flex items-center justify-center">
+                        <i class="bi bi-shield-lock-fill text-sm"></i>
+                    </div>
+                    <h3 class="text-sm font-bold text-light-text dark:text-white">Keamanan Akun, 2FA & API Keys</h3>
+                </div>
+                <button type="button" onclick="closeSecuritySettingsModal()" class="text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white p-1">
+                    <i class="bi bi-x-lg text-sm"></i>
+                </button>
+            </div>
+            <div class="p-4 overflow-y-auto space-y-4 flex-1">
+                <!-- Tabs -->
+                <div class="flex border-b border-light-border dark:border-dark-border gap-4">
+                    <button id="tab2faBtn" onclick="switchSecurityTab('2fa')" class="pb-2 text-xs font-semibold border-b-2 border-cyan-500 text-cyan-600 dark:text-cyan-400">
+                        <i class="bi bi-shield-check mr-1"></i>Otentikasi Dua Faktor (2FA)
+                    </button>
+                    <button id="tabApiKeysBtn" onclick="switchSecurityTab('apikeys')" class="pb-2 text-xs font-medium text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white">
+                        <i class="bi bi-code-square mr-1"></i>Developer API Keys
+                    </button>
+                </div>
+
+                <!-- 2FA Tab Pane -->
+                <div id="secTab2fa" class="space-y-4">
+                    <div id="twoFAAlert" class="hidden p-3 rounded-xl text-xs"></div>
+
+                    {{ if .current_user.TwoFactorEnabled }}
+                    <div class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between">
+                        <div>
+                            <h4 class="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 mb-1">
+                                <i class="bi bi-check-circle-fill"></i> 2FA Sedang Aktif
+                            </h4>
+                            <p class="text-[11px] text-light-muted dark:text-dark-muted">Akun Anda dilindungi dengan enkripsi TOTP RFC 6238.</p>
+                        </div>
+                        <button onclick="toggleDisable2FASection()" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-500 hover:text-white hover:bg-rose-600 border border-rose-500/30 transition-all">
+                            Nonaktifkan 2FA
+                        </button>
+                    </div>
+
+                    <div id="disable2FASection" class="hidden p-3 rounded-xl bg-rose-500/5 border border-rose-500/20 space-y-2">
+                        <h5 class="text-xs font-bold text-rose-500">Konfirmasi Penonaktifan 2FA</h5>
+                        <p class="text-[11px] text-light-muted dark:text-dark-muted">Masukkan kata sandi akun Anda untuk mengonfirmasi:</p>
+                        <div class="flex gap-2 max-w-sm">
+                            <input type="password" id="disable2FAPassword" class="flex-1 px-3 py-1.5 text-xs rounded-lg border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card text-light-text dark:text-white focus:outline-none" placeholder="Kata sandi saat ini">
+                            <button onclick="submitDisable2FA()" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-rose-600 hover:bg-rose-500">Nonaktifkan</button>
+                        </div>
+                    </div>
+                    {{ else }}
+                    <div class="p-4 rounded-xl bg-slate-50 dark:bg-dark-header border border-light-border dark:border-dark-border space-y-3">
+                        <h4 class="text-xs font-bold text-light-text dark:text-white flex items-center gap-1.5">
+                            <i class="bi bi-shield-plus text-cyan-500"></i> Aktifkan Autentikasi Dua Langkah
+                        </h4>
+                        <p class="text-[11px] text-light-muted dark:text-dark-muted">Gunakan aplikasi seperti Google Authenticator atau Bitwarden untuk menghasilkan token 6-digit.</p>
+
+                        <div id="setup2FASteps" class="hidden space-y-3">
+                            <div class="p-3 bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-xl space-y-2">
+                                <span class="text-[11px] font-semibold text-light-muted dark:text-dark-muted block">1. Masukkan Secret Key ke aplikasi Authenticator:</span>
+                                <input type="text" id="twoFASecretInput" class="w-full px-3 py-1.5 text-xs font-mono font-bold rounded-lg border border-light-border dark:border-dark-border bg-slate-50 dark:bg-dark-header text-cyan-600 dark:text-cyan-400" readonly>
+                                <textarea id="twoFAUriInput" class="w-full px-3 py-1.5 text-[10px] font-mono rounded-lg border border-light-border dark:border-dark-border bg-slate-50 dark:bg-dark-header text-light-muted dark:text-dark-muted" rows="2" readonly></textarea>
                             </div>
-                            <div class="col-md-6">
-                                <input type="email" id="newContactEmail" class="form-control form-control-sm" placeholder="alamat@domain.com" required>
-                            </div>
-                            <div class="col-md-6">
-                                <input type="text" id="newContactCompany" class="form-control form-control-sm" placeholder="Perusahaan / Organisasi (Opsional)">
-                            </div>
-                            <div class="col-md-6">
-                                <input type="text" id="newContactNotes" class="form-control form-control-sm" placeholder="Catatan tambahan (Opsional)">
+                            <div class="p-3 bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-xl space-y-2">
+                                <span class="text-[11px] font-semibold text-light-muted dark:text-dark-muted block">2. Masukkan 6-digit kode verifikasi:</span>
+                                <div class="flex gap-2 max-w-xs">
+                                    <input type="text" id="twoFAVerifyCode" class="flex-1 px-3 py-1.5 text-center text-xs font-mono font-bold rounded-lg border border-light-border dark:border-dark-border bg-slate-50 dark:bg-dark-header text-light-text dark:text-white focus:outline-none" placeholder="123456" maxlength="6">
+                                    <button onclick="submitEnable2FA()" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-cyan-600 hover:bg-cyan-500">Aktifkan</button>
+                                </div>
                             </div>
                         </div>
-                        <div class="d-flex justify-content-end gap-2">
-                            <button class="btn btn-sm btn-outline-secondary" onclick="toggleAddContactForm()">Batal</button>
-                            <button class="btn btn-sm btn-primary" onclick="submitCreateContact()">Simpan Kontak</button>
+
+                        <div id="backupCodesDisplay" class="hidden p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 space-y-2">
+                            <h5 class="text-xs font-bold text-amber-500 flex items-center gap-1.5">
+                                <i class="bi bi-key-fill"></i> Simpan Kode Pemulihan Cadangan Anda!
+                            </h5>
+                            <div id="backupCodesList" class="grid grid-cols-2 gap-2 text-xs font-mono font-bold p-2 bg-white dark:bg-dark-card rounded-lg border border-light-border dark:border-dark-border"></div>
+                        </div>
+
+                        <button id="btnStartSetup2FA" onclick="startSetup2FA()" class="px-3.5 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 shadow-cyan-glow">
+                            <i class="bi bi-qr-code mr-1"></i> Mulai Konfigurasi 2FA
+                        </button>
+                    </div>
+                    {{ end }}
+                </div>
+
+                <!-- API Keys Tab Pane -->
+                <div id="secTabApiKeys" class="hidden space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="text-xs font-bold text-light-text dark:text-white">Transactional REST API Tokens</h4>
+                            <p class="text-[11px] text-light-muted dark:text-dark-muted">Kirim email langsung dari web app/backend eksternal via JSON HTTPS.</p>
+                        </div>
+                        <button onclick="promptCreateAPIKey()" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500">
+                            <i class="bi bi-plus-lg mr-1"></i> Buat API Key Baru
+                        </button>
+                    </div>
+
+                    <div id="newKeyBanner" class="hidden p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 space-y-2">
+                        <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 block"><i class="bi bi-check-circle-fill mr-1"></i> API Key Baru Berhasil Dibuat:</span>
+                        <div class="flex gap-2">
+                            <input type="text" id="newKeyToken" class="flex-1 px-3 py-1.5 text-xs font-mono font-bold rounded-lg border border-light-border dark:border-dark-border bg-white dark:bg-dark-card text-light-text dark:text-white" readonly>
+                            <button onclick="navigator.clipboard.writeText(document.getElementById('newKeyToken').value); alert('Token disalin!');" class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-light-border dark:border-dark-border bg-slate-100 dark:bg-dark-header">Salin</button>
                         </div>
                     </div>
 
-                    <!-- Tabel Daftar Kontak -->
-                    <div class="table-responsive border rounded" style="max-height: 400px; overflow-y: auto;">
-                        <table class="table table-hover table-sm align-middle mb-0" style="font-size: 0.85rem;">
-                            <thead class="table-light sticky-top">
+                    <div class="border border-light-border dark:border-dark-border rounded-xl overflow-hidden">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50 dark:bg-dark-header border-b border-light-border dark:border-dark-border text-light-muted dark:text-dark-muted">
                                 <tr>
-                                    <th>Nama</th>
-                                    <th>Email</th>
-                                    <th>Perusahaan</th>
-                                    <th class="text-end">Aksi</th>
+                                    <th class="p-2.5 font-semibold">Nama</th>
+                                    <th class="p-2.5 font-semibold">Prefix</th>
+                                    <th class="p-2.5 font-semibold">Dibuat</th>
+                                    <th class="p-2.5 font-semibold text-right">Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody id="contactsTableBody">
-                                <tr><td colspan="4" class="text-center text-muted py-3">Memuat kontak...</td></tr>
+                            <tbody id="apiKeysTableBody" class="divide-y divide-light-border dark:divide-dark-border">
+                                <tr><td colspan="4" class="p-3 text-center text-light-muted dark:text-dark-muted">Memuat daftar API keys...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -789,117 +666,288 @@
         </div>
     </div>
 
-    <!-- 8. VACATION AUTO-RESPONDER MODAL (PHASE 2 - v1.3.0) -->
-    <div class="modal fade" id="autoResponderModal" tabindex="-1" aria-labelledby="autoResponderTitle" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content bg-white text-dark shadow-lg">
-                <div class="modal-header border-bottom py-2">
-                    <h6 class="modal-title fw-bold" id="autoResponderTitle">
-                        <i class="bi bi-calendar-event text-warning me-2"></i>Pesan Balasan Liburan (Out of Office)
-                    </h6>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body p-3">
-                    <div class="form-check form-switch mb-3">
-                        <input class="form-check-input" type="checkbox" role="switch" id="arEnabled" onchange="toggleAREnabledState()">
-                        <label class="form-check-label fw-bold small" for="arEnabled">Aktifkan Balasan Otomatis</label>
+    <!-- MODAL 4: CONTACTS (ADDRESS BOOK) -->
+    <div id="contactsModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl w-full max-w-2xl shadow-card-dark overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="px-4 py-3 border-b border-light-border dark:border-dark-border flex items-center justify-between bg-light-header dark:bg-dark-header">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-cyan-500/10 text-cyan-500 flex items-center justify-center">
+                        <i class="bi bi-person-lines-fill text-sm"></i>
                     </div>
-
-                    <div id="arConfigSection">
-                        <div class="row g-2 mb-3">
-                            <div class="col-6">
-                                <label class="small text-secondary fw-semibold">Tanggal Mulai:</label>
-                                <input type="datetime-local" id="arStartTime" class="form-control form-control-sm">
-                            </div>
-                            <div class="col-6">
-                                <label class="small text-secondary fw-semibold">Tanggal Selesai:</label>
-                                <input type="datetime-local" id="arEndTime" class="form-control form-control-sm">
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="small text-secondary fw-semibold">Subjek Pesan Balasan:</label>
-                            <input type="text" id="arSubject" class="form-control form-control-sm" placeholder="Out of Office: Sedang Cuti">
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="small text-secondary fw-semibold">Isi Pesan Balasan:</label>
-                            <textarea id="arBodyText" class="form-control form-control-sm" rows="5" placeholder="Tuliskan pesan balasan otomatis Anda..."></textarea>
-                            <div class="form-text small text-muted">Setiap pengirim hanya akan menerima maksimal 1 balasan otomatis per 24 jam.</div>
-                        </div>
-                    </div>
+                    <h3 class="text-sm font-bold text-light-text dark:text-white">Buku Kontak (Address Book)</h3>
                 </div>
-                <div class="modal-footer border-top py-2">
-                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
-                    <button type="button" class="btn btn-sm btn-primary fw-semibold" onclick="submitSaveAutoResponder()">
-                        <i class="bi bi-save me-1"></i>Simpan Pengaturan
+                <button type="button" onclick="closeContactsModal()" class="text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white p-1">
+                    <i class="bi bi-x-lg text-sm"></i>
+                </button>
+            </div>
+            <div class="p-4 overflow-y-auto space-y-3 flex-1">
+                <div class="flex items-center justify-between gap-3">
+                    <input type="text" id="contactSearchInput" placeholder="Cari kontak..." onkeyup="loadContactsList(this.value)" class="flex-1 px-3 py-1.5 text-xs rounded-lg border border-light-border dark:border-dark-border bg-slate-50 dark:bg-dark-bg text-light-text dark:text-white focus:outline-none">
+                    <button onclick="toggleAddContactForm()" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500">
+                        <i class="bi bi-person-plus-fill mr-1"></i> Tambah Kontak
                     </button>
                 </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- 9. CANNED TEMPLATES MODAL (PHASE 2 - v1.3.0) -->
-    <div class="modal fade" id="cannedModal" tabindex="-1" aria-labelledby="cannedModalTitle" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content bg-white text-dark shadow-lg">
-                <div class="modal-header border-bottom py-2">
-                    <h6 class="modal-title fw-bold" id="cannedModalTitle">
-                        <i class="bi bi-file-text text-primary me-2"></i>Kelola Template Email (Canned Responses)
-                    </h6>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <!-- Add Contact Form -->
+                <div id="addContactCard" class="hidden p-3 rounded-xl bg-slate-50 dark:bg-dark-header border border-light-border dark:border-dark-border space-y-2">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <input type="text" id="newContactName" class="px-3 py-1.5 text-xs rounded-lg border border-light-border dark:border-dark-border bg-white dark:bg-dark-card text-light-text dark:text-white" placeholder="Nama Lengkap">
+                        <input type="email" id="newContactEmail" class="px-3 py-1.5 text-xs rounded-lg border border-light-border dark:border-dark-border bg-white dark:bg-dark-card text-light-text dark:text-white" placeholder="alamat@domain.com" required>
+                        <input type="text" id="newContactCompany" class="px-3 py-1.5 text-xs rounded-lg border border-light-border dark:border-dark-border bg-white dark:bg-dark-card text-light-text dark:text-white" placeholder="Perusahaan / Organisasi (Opsional)">
+                        <input type="text" id="newContactNotes" class="px-3 py-1.5 text-xs rounded-lg border border-light-border dark:border-dark-border bg-white dark:bg-dark-card text-light-text dark:text-white" placeholder="Catatan Tambahan (Opsional)">
+                    </div>
+                    <div class="flex justify-end gap-2 pt-1">
+                        <button onclick="toggleAddContactForm()" class="px-2.5 py-1 text-xs text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white">Batal</button>
+                        <button onclick="submitCreateContact()" class="px-3 py-1 text-xs font-semibold text-white bg-cyan-600 hover:bg-cyan-500 rounded-lg">Simpan Kontak</button>
+                    </div>
                 </div>
-                <div class="modal-body p-3">
-                    <div class="p-3 bg-light rounded border mb-3">
-                        <h6 class="small fw-bold text-primary mb-2">Buat Template Baru</h6>
-                        <div class="mb-2">
-                            <input type="text" id="newTemplateTitle" class="form-control form-control-sm" placeholder="Judul Template (misal: Konfirmasi Terima, Penawaran)">
-                        </div>
-                        <div class="mb-2">
-                            <textarea id="newTemplateContent" class="form-control form-control-sm" rows="3" placeholder="Isi pesan template..."></textarea>
-                        </div>
-                        <div class="d-flex justify-content-end">
-                            <button class="btn btn-sm btn-primary" onclick="submitCreateTemplate()">Simpan Template</button>
-                        </div>
-                    </div>
 
-                    <h6 class="fw-bold small text-secondary mb-2">Daftar Template Tersimpan:</h6>
-                    <div class="list-group list-group-flush border rounded" id="cannedModalList" style="max-height: 250px; overflow-y: auto;">
-                        <div class="list-group-item text-center text-muted small py-3">Memuat template...</div>
-                    </div>
+                <!-- Contacts Table -->
+                <div class="border border-light-border dark:border-dark-border rounded-xl overflow-hidden max-h-[300px] overflow-y-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-50 dark:bg-dark-header border-b border-light-border dark:border-dark-border text-light-muted dark:text-dark-muted sticky top-0">
+                            <tr>
+                                <th class="p-2.5 font-semibold">Nama</th>
+                                <th class="p-2.5 font-semibold">Email</th>
+                                <th class="p-2.5 font-semibold">Perusahaan</th>
+                                <th class="p-2.5 font-semibold text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="contactsTableBody" class="divide-y divide-light-border dark:divide-dark-border">
+                            <tr><td colspan="4" class="p-3 text-center text-light-muted dark:text-dark-muted">Memuat kontak...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="/static/js/bootstrap.bundle.min.js"></script>
+    <!-- MODAL 5: VACATION AUTO-RESPONDER -->
+    <div id="autoResponderModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl w-full max-w-lg shadow-card-dark overflow-hidden flex flex-col">
+            <div class="px-4 py-3 border-b border-light-border dark:border-dark-border flex items-center justify-between bg-light-header dark:bg-dark-header">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center">
+                        <i class="bi bi-calendar-event text-sm"></i>
+                    </div>
+                    <h3 class="text-sm font-bold text-light-text dark:text-white">Pesan Balasan Liburan (Out of Office)</h3>
+                </div>
+                <button type="button" onclick="closeAutoResponderModal()" class="text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white p-1">
+                    <i class="bi bi-x-lg text-sm"></i>
+                </button>
+            </div>
+            <div class="p-4 space-y-3">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="arEnabled" class="w-4 h-4 text-cyan-500 rounded border-light-border dark:border-dark-border focus:ring-0">
+                    <span class="text-xs font-bold text-light-text dark:text-white">Aktifkan Balasan Otomatis</span>
+                </label>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <span class="text-[11px] font-semibold text-light-muted dark:text-dark-muted block mb-1">Mulai:</span>
+                        <input type="datetime-local" id="arStartTime" class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-light-border dark:border-dark-border bg-slate-50 dark:bg-dark-bg text-light-text dark:text-white">
+                    </div>
+                    <div>
+                        <span class="text-[11px] font-semibold text-light-muted dark:text-dark-muted block mb-1">Selesai:</span>
+                        <input type="datetime-local" id="arEndTime" class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-light-border dark:border-dark-border bg-slate-50 dark:bg-dark-bg text-light-text dark:text-white">
+                    </div>
+                </div>
+
+                <div>
+                    <span class="text-[11px] font-semibold text-light-muted dark:text-dark-muted block mb-1">Subjek:</span>
+                    <input type="text" id="arSubject" placeholder="Out of Office: Sedang Cuti" class="w-full px-3 py-1.5 text-xs rounded-lg border border-light-border dark:border-dark-border bg-slate-50 dark:bg-dark-bg text-light-text dark:text-white">
+                </div>
+
+                <div>
+                    <span class="text-[11px] font-semibold text-light-muted dark:text-dark-muted block mb-1">Isi Pesan Balasan:</span>
+                    <textarea id="arBodyText" rows="4" placeholder="Tuliskan pesan balasan liburan Anda..." class="w-full p-2.5 text-xs rounded-lg border border-light-border dark:border-dark-border bg-slate-50 dark:bg-dark-bg text-light-text dark:text-white"></textarea>
+                    <span class="text-[10px] text-light-muted dark:text-dark-muted block mt-1">Setiap pengirim hanya akan menerima maksimal 1 balasan otomatis per 24 jam.</span>
+                </div>
+            </div>
+            <div class="px-4 py-3 border-t border-light-border dark:border-dark-border bg-light-header dark:bg-dark-header flex justify-end gap-2">
+                <button onclick="closeAutoResponderModal()" class="px-3 py-1.5 text-xs text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white border border-light-border dark:border-dark-border rounded-lg">Tutup</button>
+                <button onclick="submitSaveAutoResponder()" class="px-4 py-1.5 text-xs font-semibold text-white bg-cyan-600 hover:bg-cyan-500 rounded-lg">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 6: CANNED RESPONSES / TEMPLATES -->
+    <div id="cannedModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl w-full max-w-lg shadow-card-dark overflow-hidden flex flex-col">
+            <div class="px-4 py-3 border-b border-light-border dark:border-dark-border flex items-center justify-between bg-light-header dark:bg-dark-header">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-cyan-500/10 text-cyan-500 flex items-center justify-center">
+                        <i class="bi bi-file-text text-sm"></i>
+                    </div>
+                    <h3 class="text-sm font-bold text-light-text dark:text-white">Kelola Template Email</h3>
+                </div>
+                <button type="button" onclick="closeCannedModal()" class="text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white p-1">
+                    <i class="bi bi-x-lg text-sm"></i>
+                </button>
+            </div>
+            <div class="p-4 space-y-3">
+                <div class="p-3 rounded-xl bg-slate-50 dark:bg-dark-header border border-light-border dark:border-dark-border space-y-2">
+                    <h5 class="text-xs font-bold text-cyan-600 dark:text-cyan-400">Buat Template Baru</h5>
+                    <input type="text" id="newTemplateTitle" class="w-full px-3 py-1.5 text-xs rounded-lg border border-light-border dark:border-dark-border bg-white dark:bg-dark-card text-light-text dark:text-white" placeholder="Judul Template">
+                    <textarea id="newTemplateContent" rows="3" class="w-full p-2.5 text-xs rounded-lg border border-light-border dark:border-dark-border bg-white dark:bg-dark-card text-light-text dark:text-white" placeholder="Isi pesan template..."></textarea>
+                    <div class="flex justify-end">
+                        <button onclick="submitCreateTemplate()" class="px-3 py-1 text-xs font-semibold text-white bg-cyan-600 hover:bg-cyan-500 rounded-lg">Simpan Template</button>
+                    </div>
+                </div>
+
+                <div class="space-y-1.5 max-h-[220px] overflow-y-auto" id="cannedModalList">
+                    <div class="text-center text-xs text-light-muted dark:text-dark-muted py-3">Memuat template...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT LOGIC (NATIVE JS MODALS & WEBSOCKET/SSE/API INTERFACE) -->
     <script>
         let currentLoadedMailId = null;
-        let composerModalInstance = null;
-        let attachmentPreviewModalInstance = null;
         let selectedAttachments = [];
         let currentMailAttachments = [];
         let currentSecurityAlert = null;
         let isScheduleMode = false;
         let autoSaveTimer = null;
 
-        document.addEventListener('DOMContentLoaded', () => {
-            composerModalInstance = new bootstrap.Modal(document.getElementById('composerModal'));
-            attachmentPreviewModalInstance = new bootstrap.Modal(document.getElementById('attachmentPreviewModal'));
+        // Theme Toggle
+        function toggleTheme() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            }
+        }
 
-            // Setup auto-save listener untuk draf composer
+        // Mobile Sidebar
+        function toggleMobileSidebar() {
+            const sb = document.getElementById('sidebarFolders');
+            if (sb) {
+                sb.classList.toggle('-translate-x-full');
+            }
+        }
+
+        // Native Modal Helpers
+        function showModal(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('hidden');
+        }
+        function hideModal(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.add('hidden');
+        }
+
+        function openComposer(to = '', subject = '', body = '') {
+            selectedAttachments = [];
+            isScheduleMode = false;
+            document.getElementById('scheduleTimeBox').classList.add('hidden');
+            document.getElementById('btnSendMail').innerHTML = '<i class="bi bi-send-fill text-xs"></i><span>Kirim Sekarang</span>';
+
+            if (to || subject || body) {
+                document.getElementById('composeTo').value = to;
+                document.getElementById('composeSubject').value = subject;
+                document.getElementById('composeEditor').innerHTML = body;
+                document.getElementById('composeCc').value = '';
+                document.getElementById('composeBcc').value = '';
+            } else {
+                restoreDraftFromStorage();
+            }
+
+            renderAttachmentChips();
+            showModal('composerModal');
+        }
+
+        function closeComposer() {
+            hideModal('composerModal');
+        }
+
+        function closeAttachmentPreviewModal() {
+            hideModal('attachmentPreviewModal');
+        }
+
+        function openSecuritySettingsModal() {
+            showModal('securitySettingsModal');
+        }
+        function closeSecuritySettingsModal() {
+            hideModal('securitySettingsModal');
+        }
+
+        function switchSecurityTab(tab) {
+            const btn2fa = document.getElementById('tab2faBtn');
+            const btnApi = document.getElementById('tabApiKeysBtn');
+            const sec2fa = document.getElementById('secTab2fa');
+            const secApi = document.getElementById('secTabApiKeys');
+
+            if (tab === '2fa') {
+                btn2fa.className = 'pb-2 text-xs font-semibold border-b-2 border-cyan-500 text-cyan-600 dark:text-cyan-400';
+                btnApi.className = 'pb-2 text-xs font-medium text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white';
+                sec2fa.classList.remove('hidden');
+                secApi.classList.add('hidden');
+            } else {
+                btnApi.className = 'pb-2 text-xs font-semibold border-b-2 border-cyan-500 text-cyan-600 dark:text-cyan-400';
+                btn2fa.className = 'pb-2 text-xs font-medium text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white';
+                secApi.classList.remove('hidden');
+                sec2fa.classList.add('hidden');
+                loadAPIKeys();
+            }
+        }
+
+        function openContactsModal() {
+            showModal('contactsModal');
+            loadContactsList();
+        }
+        function closeContactsModal() {
+            hideModal('contactsModal');
+        }
+
+        function openAutoResponderModal() {
+            showModal('autoResponderModal');
+            loadAutoResponderData();
+        }
+        function closeAutoResponderModal() {
+            hideModal('autoResponderModal');
+        }
+
+        function openCannedModal() {
+            showModal('cannedModal');
+            loadCannedList();
+        }
+        function closeCannedModal() {
+            hideModal('cannedModal');
+        }
+
+        function toggleTemplatesDropdown() {
+            const drop = document.getElementById('cannedDropdownMenu');
+            drop.classList.toggle('hidden');
+            if (!drop.classList.contains('hidden')) {
+                loadTemplatesDropdown();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
             const inputs = ['composeTo', 'composeCc', 'composeBcc', 'composeSubject'];
             inputs.forEach(id => {
                 document.getElementById(id)?.addEventListener('input', triggerAutoSave);
             });
             document.getElementById('composeEditor')?.addEventListener('input', triggerAutoSave);
+
+            // Close dropdowns on outside click
+            document.addEventListener('click', (e) => {
+                const drop = document.getElementById('cannedDropdownMenu');
+                if (drop && !drop.contains(e.target) && !e.target.closest('button[onclick="toggleTemplatesDropdown()"]')) {
+                    drop.classList.add('hidden');
+                }
+            });
         });
 
         function triggerAutoSave() {
             clearTimeout(autoSaveTimer);
             const statusEl = document.getElementById('draftSaveStatus');
             if (statusEl) {
-                statusEl.innerHTML = '<span class="spinner-border spinner-border-sm me-1" style="width:0.7rem;height:0.7rem;"></span>Menyimpan draf...';
+                statusEl.innerHTML = '<span class="animate-spin mr-1">⌛</span> Menyimpan draf...';
             }
             autoSaveTimer = setTimeout(saveDraftToStorage, 1000);
         }
@@ -916,7 +964,7 @@
             localStorage.setItem('rahamail_draft', JSON.stringify(draftData));
             const statusEl = document.getElementById('draftSaveStatus');
             if (statusEl) {
-                statusEl.innerHTML = `<i class="bi bi-cloud-check text-success me-1"></i>Tersimpan lokal (${draftData.updatedAt})`;
+                statusEl.innerHTML = `<i class="bi bi-cloud-check text-emerald-500 mr-1"></i> Tersimpan lokal (${draftData.updatedAt})`;
             }
         }
 
@@ -932,11 +980,11 @@
                     document.getElementById('composeSubject').value = data.subject || '';
                     document.getElementById('composeEditor').innerHTML = data.body || '';
                     if (data.cc || data.bcc) {
-                        document.getElementById('ccBccContainer').classList.remove('d-none');
+                        document.getElementById('ccBccContainer').classList.remove('hidden');
                     }
                     const statusEl = document.getElementById('draftSaveStatus');
                     if (statusEl) {
-                        statusEl.innerHTML = `<i class="bi bi-cloud-check text-success me-1"></i>Draf dipulihkan (${data.updatedAt || 'sebelumnya'})`;
+                        statusEl.innerHTML = `<i class="bi bi-cloud-check text-emerald-500 mr-1"></i> Draf dipulihkan (${data.updatedAt || 'sebelumnya'})`;
                     }
                     return true;
                 }
@@ -955,35 +1003,13 @@
             document.getElementById('composeEditor').innerHTML = '';
             const statusEl = document.getElementById('draftSaveStatus');
             if (statusEl) {
-                statusEl.innerHTML = '<i class="bi bi-check me-1"></i>Draf dibersihkan';
+                statusEl.innerHTML = '<i class="bi bi-check mr-1"></i> Draf dibersihkan';
             }
-        }
-
-        function openComposer(to = '', subject = '', body = '') {
-            selectedAttachments = [];
-            isScheduleMode = false;
-            document.getElementById('scheduleTimeBox').classList.add('d-none');
-            document.getElementById('btnSendMail').innerHTML = '<i class="bi bi-send-fill me-1"></i>Kirim Sekarang';
-
-            // Jika ada parameter eksplisit (misal dari reply/forward), gunakan itu
-            if (to || subject || body) {
-                document.getElementById('composeTo').value = to;
-                document.getElementById('composeSubject').value = subject;
-                document.getElementById('composeEditor').innerHTML = body;
-                document.getElementById('composeCc').value = '';
-                document.getElementById('composeBcc').value = '';
-            } else {
-                // Jika tulis email baru kosong, coba pulihkan draf lama
-                restoreDraftFromStorage();
-            }
-
-            renderAttachmentChips();
-            composerModalInstance.show();
         }
 
         function toggleCcBcc() {
             const container = document.getElementById('ccBccContainer');
-            container.classList.toggle('d-none');
+            container.classList.toggle('hidden');
         }
 
         function toggleScheduleBox() {
@@ -992,19 +1018,16 @@
             isScheduleMode = !isScheduleMode;
 
             if (isScheduleMode) {
-                box.classList.remove('d-none');
-                btn.innerHTML = '<i class="bi bi-clock-history me-1"></i>Jadwalkan Pengiriman';
-                btn.className = 'btn btn-sm btn-warning px-3 fw-semibold text-dark';
-                // Set default waktu besok pukul 08:00
+                box.classList.remove('hidden');
+                btn.innerHTML = '<i class="bi bi-clock-history mr-1"></i><span>Jadwalkan Pengiriman</span>';
                 const tomorrow = new Date();
                 tomorrow.setDate(tomorrow.getDate() + 1);
                 tomorrow.setHours(8, 0, 0, 0);
                 const isoStr = new Date(tomorrow.getTime() - tomorrow.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
                 document.getElementById('scheduleDatetimeInput').value = isoStr;
             } else {
-                box.classList.add('d-none');
-                btn.innerHTML = '<i class="bi bi-send-fill me-1"></i>Kirim Sekarang';
-                btn.className = 'btn btn-sm btn-primary px-3 fw-semibold';
+                box.classList.add('hidden');
+                btn.innerHTML = '<i class="bi bi-send-fill text-xs"></i><span>Kirim Sekarang</span>';
             }
         }
 
@@ -1046,11 +1069,11 @@
             container.innerHTML = '';
             selectedAttachments.forEach((att, idx) => {
                 const chip = document.createElement('div');
-                chip.className = 'attachment-chip';
+                chip.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-slate-100 dark:bg-dark-header border border-light-border dark:border-dark-border text-light-text dark:text-white';
                 chip.innerHTML = `
-                    <i class="bi bi-file-earmark"></i>
+                    <i class="bi bi-paperclip text-cyan-500"></i>
                     <span>${att.file_name} (${(att.size / 1024).toFixed(0)} KB)</span>
-                    <i class="bi bi-x-circle text-danger ms-1 cursor-pointer" onclick="removeAttachment(${idx})"></i>
+                    <button type="button" onclick="removeAttachment(${idx})" class="text-rose-500 hover:text-rose-400 p-0.5"><i class="bi bi-x-circle"></i></button>
                 `;
                 container.appendChild(chip);
             });
@@ -1088,7 +1111,7 @@
                     btn.disabled = false;
                     return;
                 }
-                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Menjadwalkan...';
+                btn.innerHTML = '<span>Menjadwalkan...</span>';
 
                 try {
                     const res = await fetch('/api/v1/webmail/schedule', {
@@ -1105,7 +1128,7 @@
                     if (res.ok && data.status === 'success') {
                         localStorage.removeItem('rahamail_draft');
                         alert(data.message);
-                        composerModalInstance.hide();
+                        closeComposer();
                         window.location.href = '/mail?folder=Scheduled';
                     } else {
                         alert('Gagal menjadwalkan: ' + (data.error || 'Terjadi kesalahan'));
@@ -1114,10 +1137,10 @@
                     alert('Gagal menghubungi server.');
                 } finally {
                     btn.disabled = false;
-                    btn.innerHTML = '<i class="bi bi-clock-history me-1"></i>Jadwalkan Pengiriman';
+                    btn.innerHTML = '<i class="bi bi-clock-history mr-1"></i><span>Jadwalkan Pengiriman</span>';
                 }
             } else {
-                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Mengirim...';
+                btn.innerHTML = '<span>Mengirim...</span>';
 
                 try {
                     const res = await fetch('/api/v1/webmail/send', {
@@ -1135,7 +1158,7 @@
                     if (res.ok && data.status === 'success') {
                         localStorage.removeItem('rahamail_draft');
                         alert('Email berhasil dikirim!');
-                        composerModalInstance.hide();
+                        closeComposer();
                         location.reload();
                     } else {
                         alert('Gagal mengirim email: ' + (data.error || 'Terjadi kesalahan'));
@@ -1144,7 +1167,7 @@
                     alert('Gagal terhubung ke server saat mengirim email.');
                 } finally {
                     btn.disabled = false;
-                    btn.innerHTML = '<i class="bi bi-send-fill me-1"></i>Kirim Sekarang';
+                    btn.innerHTML = '<i class="bi bi-send-fill text-xs"></i><span>Kirim Sekarang</span>';
                 }
             }
         }
@@ -1168,11 +1191,12 @@
         async function loadMessageDetail(id) {
             currentLoadedMailId = id;
 
-            document.querySelectorAll('.mail-item').forEach(el => el.classList.remove('selected'));
+            document.querySelectorAll('.mail-item').forEach(el => {
+                el.classList.remove('bg-cyan-500/10', 'border-l-4', 'border-cyan-500');
+            });
             const activeItem = document.getElementById(`msg-item-${id}`);
             if (activeItem) {
-                activeItem.classList.add('selected');
-                activeItem.classList.remove('unread');
+                activeItem.classList.add('bg-cyan-500/10', 'border-l-4', 'border-cyan-500');
             }
 
             try {
@@ -1180,8 +1204,8 @@
                 if (!res.ok) throw new Error('Gagal memuat pesan');
                 const data = await res.json();
 
-                document.getElementById('readerEmptyState').classList.add('d-none');
-                document.getElementById('readerContainer').classList.remove('d-none');
+                document.getElementById('readerEmptyState').classList.add('hidden');
+                document.getElementById('readerContainer').classList.remove('hidden');
 
                 const msg = data.message;
                 const content = data.content;
@@ -1199,28 +1223,27 @@
                 const attList = document.getElementById('attachmentList');
                 attList.innerHTML = '';
                 if (content.attachments && content.attachments.length > 0) {
-                    attArea.classList.remove('d-none');
+                    attArea.classList.remove('hidden');
                     content.attachments.forEach((att, idx) => {
-                        const card = document.createElement('div');
-                        card.className = 'btn-group btn-group-sm';
+                        const chip = document.createElement('div');
+                        chip.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20';
                         const sizeKB = (att.size / 1024).toFixed(1);
-                        card.innerHTML = `
-                            <button type="button" class="btn btn-outline-primary py-1" onclick="previewAttachment(${idx})">
-                                <i class="bi bi-eye me-1"></i>${att.file_name} (${sizeKB} KB)
+                        chip.innerHTML = `
+                            <button type="button" onclick="previewAttachment(${idx})" class="font-medium hover:underline flex items-center gap-1">
+                                <i class="bi bi-eye"></i> ${att.file_name} (${sizeKB} KB)
                             </button>
-                            <button type="button" class="btn btn-outline-primary py-1" onclick="downloadAttachment(${idx})">
+                            <button type="button" onclick="downloadAttachment(${idx})" class="p-0.5 hover:text-white" title="Unduh">
                                 <i class="bi bi-download"></i>
                             </button>
                         `;
-                        attList.appendChild(card);
+                        attList.appendChild(chip);
                     });
                     currentMailAttachments = content.attachments;
                 } else {
-                    attArea.classList.add('d-none');
+                    attArea.classList.add('hidden');
                     currentMailAttachments = [];
                 }
 
-                // Render Security Alert Banner (Phase 2)
                 currentSecurityAlert = data.security_alert || null;
                 renderSecurityBanner(currentSecurityAlert);
 
@@ -1228,12 +1251,12 @@
                 const textContainer = document.getElementById('textContentContainer');
 
                 if (content.body_html) {
-                    textContainer.classList.add('d-none');
-                    htmlFrame.classList.remove('d-none');
+                    textContainer.classList.add('hidden');
+                    htmlFrame.classList.remove('hidden');
                     htmlFrame.srcdoc = content.body_html;
                 } else {
-                    htmlFrame.classList.add('d-none');
-                    textContainer.classList.remove('d-none');
+                    htmlFrame.classList.add('hidden');
+                    textContainer.classList.remove('hidden');
                     textContainer.textContent = content.body_text || msg.snippet;
                 }
             } catch (err) {
@@ -1248,9 +1271,9 @@
                 const data = await res.json();
                 const starBtn = document.getElementById(`star-btn-${id}`);
                 if (data.is_flagged) {
-                    starBtn.innerHTML = '<i class="bi bi-star-fill text-warning"></i>';
+                    starBtn.innerHTML = '<i class="bi bi-star-fill text-amber-400 text-xs"></i>';
                 } else {
-                    starBtn.innerHTML = '<i class="bi bi-star"></i>';
+                    starBtn.innerHTML = '<i class="bi bi-star text-xs"></i>';
                 }
             } catch (err) {
                 console.error(err);
@@ -1269,8 +1292,8 @@
                 });
                 if (res.ok) {
                     document.getElementById(`msg-item-${currentLoadedMailId}`)?.remove();
-                    document.getElementById('readerEmptyState').classList.remove('d-none');
-                    document.getElementById('readerContainer').classList.add('d-none');
+                    document.getElementById('readerEmptyState').classList.remove('hidden');
+                    document.getElementById('readerContainer').classList.add('hidden');
                     currentLoadedMailId = null;
                 }
             } catch (err) {
@@ -1291,7 +1314,7 @@
             if (!att) return;
 
             document.getElementById('attachmentPreviewTitle').innerHTML = `
-                <i class="bi bi-file-earmark-text text-primary me-2"></i>${att.file_name}
+                <i class="bi bi-file-earmark-text text-cyan-500 mr-2"></i> ${att.file_name}
             `;
 
             const downloadBtn = document.getElementById('btnDownloadPreview');
@@ -1306,34 +1329,30 @@
             const fname = (att.file_name || '').toLowerCase();
 
             if (ctype.startsWith('image/') || fname.endsWith('.png') || fname.endsWith('.jpg') || fname.endsWith('.jpeg') || fname.endsWith('.gif') || fname.endsWith('.webp')) {
-                // Image Preview
-                container.innerHTML = `<img src="${dataUri}" class="img-fluid rounded shadow-sm" style="max-height: 70vh; object-fit: contain;">`;
+                container.innerHTML = `<img src="${dataUri}" class="max-h-[70vh] mx-auto rounded-lg shadow-md object-contain">`;
             } else if (ctype === 'application/pdf' || fname.endsWith('.pdf')) {
-                // PDF Preview
-                container.innerHTML = `<iframe src="${dataUri}" style="width: 100%; height: 70vh; border: none; border-radius: 8px;"></iframe>`;
+                container.innerHTML = `<iframe src="${dataUri}" class="w-full h-[70vh] rounded-lg border-0"></iframe>`;
             } else if (ctype.startsWith('text/') || fname.endsWith('.txt') || fname.endsWith('.log') || fname.endsWith('.json') || fname.endsWith('.csv')) {
-                // Text Preview
                 try {
                     const textContent = atob(att.data_base64);
-                    container.innerHTML = `<pre class="text-start bg-light p-3 border rounded" style="max-height: 70vh; overflow: auto; white-space: pre-wrap;">${escapeHtml(textContent)}</pre>`;
+                    container.innerHTML = `<pre class="text-left bg-slate-100 dark:bg-dark-header p-4 rounded-xl border border-light-border dark:border-dark-border max-h-[70vh] overflow-auto whitespace-pre-wrap text-xs font-mono text-light-text dark:text-white">${escapeHtml(textContent)}</pre>`;
                 } catch (e) {
-                    container.innerHTML = `<div class="alert alert-warning">Tidak dapat menampilkan isi teks. Silakan unduh file.</div>`;
+                    container.innerHTML = `<div class="p-4 rounded-xl bg-amber-500/10 text-amber-500 text-xs">Tidak dapat menampilkan isi teks. Silakan unduh file.</div>`;
                 }
             } else {
-                // Binary File fallback
                 container.innerHTML = `
-                    <div class="py-5">
-                        <i class="bi bi-file-earmark-arrow-down fs-1 text-secondary mb-3 d-block"></i>
-                        <h5>Format file ini tidak mendukung live preview langsung</h5>
-                        <p class="text-secondary small">Ukuran file: ${(att.size / 1024).toFixed(1)} KB | Tipe: ${att.content_type || 'Binary'}</p>
-                        <a href="${dataUri}" download="${att.file_name}" class="btn btn-primary px-4 py-2 mt-2">
-                            <i class="bi bi-download me-1"></i>Unduh Berkas Sekarang
+                    <div class="py-12">
+                        <i class="bi bi-file-earmark-arrow-down text-4xl text-light-muted dark:text-dark-muted block mb-3"></i>
+                        <h4 class="text-sm font-semibold text-light-text dark:text-white mb-1">Format file ini tidak mendukung preview langsung</h4>
+                        <p class="text-xs text-light-muted dark:text-dark-muted mb-4">Ukuran: ${(att.size / 1024).toFixed(1)} KB | Tipe: ${att.content_type || 'Binary'}</p>
+                        <a href="${dataUri}" download="${att.file_name}" class="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-cyan-500 to-blue-600 inline-flex items-center gap-1.5 shadow-cyan-glow">
+                            <i class="bi bi-download"></i> Unduh Berkas Sekarang
                         </a>
                     </div>
                 `;
             }
 
-            attachmentPreviewModalInstance.show();
+            showModal('attachmentPreviewModal');
         }
 
         function downloadAttachment(idx) {
@@ -1347,7 +1366,6 @@
             document.body.removeChild(a);
         }
 
-        // Security Warning Banner Handlers (Phase 2)
         function renderSecurityBanner(alertData) {
             const banner = document.getElementById('securityAlertBanner');
             const icon = document.getElementById('securityAlertIcon');
@@ -1358,34 +1376,34 @@
             if (!banner || !icon || !title || !desc || !btnTrust) return;
 
             if (!alertData || alertData.level === 'none') {
-                banner.classList.add('d-none');
+                banner.classList.add('hidden');
                 return;
             }
 
-            banner.className = 'alert mt-3 mb-0 d-flex align-items-center justify-content-between p-3 border shadow-sm';
-            
+            banner.className = 'mt-3 p-3 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm ';
+
             if (alertData.level === 'danger') {
-                banner.classList.add('alert-danger', 'border-danger-subtle');
-                icon.innerHTML = '<i class="bi bi-shield-x text-danger"></i>';
-                btnTrust.classList.add('d-none'); // Don't encourage whitelisting outright spoofed emails
+                banner.classList.add('bg-rose-500/10', 'border-rose-500/30', 'text-rose-500');
+                icon.innerHTML = '<i class="bi bi-shield-x text-rose-500"></i>';
+                btnTrust.classList.add('hidden');
             } else if (alertData.level === 'warning') {
-                banner.classList.add('alert-warning', 'border-warning-subtle');
-                icon.innerHTML = '<i class="bi bi-exclamation-triangle text-warning"></i>';
-                btnTrust.classList.remove('d-none');
-            } else if (alertData.level === 'info') {
-                banner.classList.add('alert-info', 'border-info-subtle');
-                icon.innerHTML = '<i class="bi bi-info-circle text-info"></i>';
-                btnTrust.classList.remove('d-none');
+                banner.classList.add('bg-amber-500/10', 'border-amber-500/30', 'text-amber-500');
+                icon.innerHTML = '<i class="bi bi-exclamation-triangle text-amber-500"></i>';
+                btnTrust.classList.remove('hidden');
+            } else {
+                banner.classList.add('bg-cyan-500/10', 'border-cyan-500/30', 'text-cyan-500');
+                icon.innerHTML = '<i class="bi bi-info-circle text-cyan-500"></i>';
+                btnTrust.classList.remove('hidden');
             }
 
             title.textContent = alertData.title || 'Peringatan Keamanan';
             desc.textContent = alertData.description || 'Harap berhati-hati dalam berinteraksi dengan pesan ini.';
-            banner.classList.remove('d-none');
+            banner.classList.remove('hidden');
         }
 
         function dismissSecurityBanner() {
             const banner = document.getElementById('securityAlertBanner');
-            if (banner) banner.classList.add('d-none');
+            if (banner) banner.classList.add('hidden');
         }
 
         async function trustSenderQuickAction() {
@@ -1397,7 +1415,6 @@
             const senderEmail = currentSecurityAlert.sender_email;
             const fromDisplay = document.getElementById('readMailFrom')?.textContent || senderEmail;
             
-            // Derive contact name if formatted like "Name <email>"
             let contactName = senderEmail.split('@')[0];
             const nameMatch = fromDisplay.match(/^([^<]+)<.+>$/);
             if (nameMatch) {
@@ -1450,15 +1467,7 @@
             openComposer('', fwdSubject, `<br><br><blockquote>--- Pesan Diteruskan ---<br></blockquote>`);
         }
 
-        // Security & 2FA / API Keys Handlers
-        let securityModalInstance = null;
-        function openSecuritySettingsModal() {
-            if (!securityModalInstance) {
-                securityModalInstance = new bootstrap.Modal(document.getElementById('securitySettingsModal'));
-            }
-            securityModalInstance.show();
-        }
-
+        // 2FA Functions
         async function startSetup2FA() {
             try {
                 const res = await fetch('/api/v1/2fa/setup');
@@ -1466,8 +1475,8 @@
                 if (res.ok && data.secret) {
                     document.getElementById('twoFASecretInput').value = data.secret;
                     document.getElementById('twoFAUriInput').value = data.otpauth;
-                    document.getElementById('setup2FASteps').classList.remove('d-none');
-                    document.getElementById('btnStartSetup2FA').classList.add('d-none');
+                    document.getElementById('setup2FASteps').classList.remove('hidden');
+                    document.getElementById('btnStartSetup2FA').classList.add('hidden');
                 } else {
                     alert(data.error || 'Gagal menyiapkan 2FA');
                 }
@@ -1482,9 +1491,9 @@
             const alertBox = document.getElementById('twoFAAlert');
 
             if (!code || code.length !== 6) {
-                alertBox.className = 'alert alert-danger py-2 px-3 small';
+                alertBox.className = 'p-3 rounded-xl text-xs bg-rose-500/10 text-rose-500 border border-rose-500/20';
                 alertBox.textContent = 'Masukkan 6 digit kode dari aplikasi Authenticator';
-                alertBox.classList.remove('d-none');
+                alertBox.classList.remove('hidden');
                 return;
             }
 
@@ -1496,28 +1505,28 @@
                 });
                 const data = await res.json();
                 if (res.ok && data.status === 'success') {
-                    alertBox.className = 'alert alert-success py-2 px-3 small';
+                    alertBox.className = 'p-3 rounded-xl text-xs bg-emerald-500/10 text-emerald-500 border border-emerald-500/20';
                     alertBox.textContent = data.message;
-                    alertBox.classList.remove('d-none');
+                    alertBox.classList.remove('hidden');
 
-                    document.getElementById('setup2FASteps').classList.add('d-none');
+                    document.getElementById('setup2FASteps').classList.add('hidden');
                     const backupContainer = document.getElementById('backupCodesDisplay');
                     const backupList = document.getElementById('backupCodesList');
                     backupList.innerHTML = '';
                     if (data.backup_codes) {
                         data.backup_codes.forEach(c => {
                             const col = document.createElement('div');
-                            col.className = 'col text-center p-1 border rounded bg-light';
+                            col.className = 'text-center p-1 rounded bg-slate-100 dark:bg-dark-header';
                             col.textContent = c;
                             backupList.appendChild(col);
                         });
-                        backupContainer.classList.remove('d-none');
+                        backupContainer.classList.remove('hidden');
                     }
                     setTimeout(() => { location.reload(); }, 3500);
                 } else {
-                    alertBox.className = 'alert alert-danger py-2 px-3 small';
+                    alertBox.className = 'p-3 rounded-xl text-xs bg-rose-500/10 text-rose-500 border border-rose-500/20';
                     alertBox.textContent = data.error || 'Verifikasi kode gagal';
-                    alertBox.classList.remove('d-none');
+                    alertBox.classList.remove('hidden');
                 }
             } catch (err) {
                 alert('Gagal terhubung ke server');
@@ -1525,8 +1534,7 @@
         }
 
         function toggleDisable2FASection() {
-            const sec = document.getElementById('disable2FASection');
-            sec.classList.toggle('d-none');
+            document.getElementById('disable2FASection').classList.toggle('hidden');
         }
 
         async function submitDisable2FA() {
@@ -1562,17 +1570,16 @@
                 const data = await res.json();
                 if (res.ok && data.keys) {
                     if (data.keys.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Belum ada API key yang dibuat.</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-light-muted dark:text-dark-muted">Belum ada API key yang dibuat.</td></tr>';
                         return;
                     }
                     tbody.innerHTML = data.keys.map(k => `
                         <tr>
-                            <td class="fw-semibold text-dark">${escapeHtml(k.name)}</td>
-                            <td><code>${k.prefix}••••••••</code></td>
-                            <td class="text-secondary small">${new Date(k.created_at).toLocaleDateString()}</td>
-                            <td class="text-secondary small">${k.last_used_at ? new Date(k.last_used_at).toLocaleString() : '<span class="text-muted">Belum pernah</span>'}</td>
-                            <td class="text-end">
-                                <button class="btn btn-xs btn-outline-danger py-0 px-2" onclick="revokeAPIKey(${k.id})" title="Cabut API Key">
+                            <td class="p-2.5 font-semibold text-light-text dark:text-white">${escapeHtml(k.name)}</td>
+                            <td class="p-2.5 font-mono text-cyan-600 dark:text-cyan-400">${k.prefix}••••••••</td>
+                            <td class="p-2.5 text-light-muted dark:text-dark-muted">${new Date(k.created_at).toLocaleDateString()}</td>
+                            <td class="p-2.5 text-right">
+                                <button onclick="revokeAPIKey(${k.id})" class="p-1 text-rose-500 hover:text-rose-400" title="Cabut">
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </td>
@@ -1580,12 +1587,12 @@
                     `).join('');
                 }
             } catch (err) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger py-3">Gagal memuat API keys.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-rose-500">Gagal memuat API keys.</td></tr>';
             }
         }
 
         async function promptCreateAPIKey() {
-            const name = prompt('Masukkan nama deskriptif untuk API key ini (contoh: Website Backend, Staging Server):');
+            const name = prompt('Nama deskriptif untuk API key baru:');
             if (!name || name.trim() === '') return;
 
             try {
@@ -1597,7 +1604,7 @@
                 const data = await res.json();
                 if (res.ok && data.api_key) {
                     document.getElementById('newKeyToken').value = data.api_key;
-                    document.getElementById('newKeyBanner').classList.remove('d-none');
+                    document.getElementById('newKeyBanner').classList.remove('hidden');
                     loadAPIKeys();
                 } else {
                     alert(data.error || 'Gagal membuat API key');
@@ -1608,37 +1615,24 @@
         }
 
         async function revokeAPIKey(id) {
-            if (!confirm('Apakah Anda yakin ingin mencabut API key ini? Aplikasi yang menggunakan token ini tidak akan dapat mengirim email lagi.')) return;
+            if (!confirm('Apakah Anda yakin ingin mencabut API key ini?')) return;
             try {
                 const res = await fetch(`/api/v1/api-keys/${id}`, { method: 'DELETE' });
-                const data = await res.json();
                 if (res.ok) {
                     loadAPIKeys();
                 } else {
-                    alert(data.error || 'Gagal mencabut API key');
+                    alert('Gagal mencabut API key');
                 }
             } catch (err) {
                 alert('Gagal terhubung ke server');
             }
         }
 
-        // Phase 2: Contacts, Auto-Complete, Vacation Responder & Canned Responses
-        let contactsModalInstance = null;
-        let autoResponderModalInstance = null;
-        let cannedModalInstance = null;
+        // Contacts JS
         let autoHarvestTimeout = null;
 
-        function openContactsModal() {
-            if (!contactsModalInstance) {
-                contactsModalInstance = new bootstrap.Modal(document.getElementById('contactsModal'));
-            }
-            loadContactsList();
-            contactsModalInstance.show();
-        }
-
         function toggleAddContactForm() {
-            const card = document.getElementById('addContactCard');
-            card.classList.toggle('d-none');
+            document.getElementById('addContactCard').classList.toggle('hidden');
         }
 
         async function loadContactsList(query = '') {
@@ -1648,23 +1642,23 @@
                 const data = await res.json();
                 if (res.ok && Array.isArray(data)) {
                     if (data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">Tidak ada kontak ditemukan.</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-light-muted dark:text-dark-muted">Tidak ada kontak ditemukan.</td></tr>';
                         return;
                     }
                     tbody.innerHTML = data.map(c => `
                         <tr>
-                            <td class="fw-semibold text-dark">${escapeHtml(c.name || '-')}</td>
-                            <td><a href="javascript:void(0)" onclick="openComposer('${c.email}', '', '')" class="text-decoration-none">${escapeHtml(c.email)}</a></td>
-                            <td class="text-secondary small">${escapeHtml(c.company || '-')}</td>
-                            <td class="text-end">
-                                <button class="btn btn-xs btn-outline-primary py-0 px-2 me-1" onclick="openComposer('${c.email}', '', '')" title="Kirim Email"><i class="bi bi-envelope"></i></button>
-                                <button class="btn btn-xs btn-outline-danger py-0 px-2" onclick="deleteContactItem(${c.id})" title="Hapus"><i class="bi bi-trash"></i></button>
+                            <td class="p-2.5 font-semibold text-light-text dark:text-white">${escapeHtml(c.name || '-')}</td>
+                            <td class="p-2.5"><a href="javascript:void(0)" onclick="closeContactsModal(); openComposer('${c.email}', '', '')" class="text-cyan-600 dark:text-cyan-400 hover:underline">${escapeHtml(c.email)}</a></td>
+                            <td class="p-2.5 text-light-muted dark:text-dark-muted">${escapeHtml(c.company || '-')}</td>
+                            <td class="p-2.5 text-right">
+                                <button onclick="closeContactsModal(); openComposer('${c.email}', '', '')" class="p-1 text-cyan-500 hover:text-cyan-400 mr-1" title="Kirim"><i class="bi bi-envelope"></i></button>
+                                <button onclick="deleteContactItem(${c.id})" class="p-1 text-rose-500 hover:text-rose-400" title="Hapus"><i class="bi bi-trash"></i></button>
                             </td>
                         </tr>
                     `).join('');
                 }
             } catch (err) {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger py-3">Gagal memuat kontak.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-rose-500">Gagal memuat kontak.</td></tr>';
             }
         }
 
@@ -1685,7 +1679,6 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name, email, company, notes })
                 });
-                const data = await res.json();
                 if (res.ok) {
                     document.getElementById('newContactName').value = '';
                     document.getElementById('newContactEmail').value = '';
@@ -1694,6 +1687,7 @@
                     toggleAddContactForm();
                     loadContactsList();
                 } else {
+                    const data = await res.json();
                     alert(data.error || 'Gagal menambahkan kontak.');
                 }
             } catch (err) {
@@ -1715,7 +1709,6 @@
             }
         }
 
-        // Contact Auto-Complete for Composer
         function handleContactAutoComplete(input, targetSugId) {
             clearTimeout(autoHarvestTimeout);
             const val = input.value;
@@ -1723,7 +1716,7 @@
             const lastToken = val.split(',').pop().trim();
 
             if (!lastToken || lastToken.length < 1) {
-                container.classList.add('d-none');
+                container.classList.add('hidden');
                 container.innerHTML = '';
                 return;
             }
@@ -1734,20 +1727,20 @@
                     const data = await res.json();
                     if (res.ok && Array.isArray(data) && data.length > 0) {
                         container.innerHTML = data.slice(0, 5).map(c => `
-                            <button type="button" class="list-group-item list-group-item-action py-1 px-2 d-flex justify-content-between align-items-center" onclick="selectAutoCompleteContact('${input.id}', '${targetSugId}', '${c.email}')">
+                            <button type="button" class="w-full text-left p-2 hover:bg-slate-100 dark:hover:bg-dark-header flex justify-between items-center transition-colors" onclick="selectAutoCompleteContact('${input.id}', '${targetSugId}', '${c.email}')">
                                 <div>
-                                    <div class="small fw-semibold text-dark">${escapeHtml(c.name)}</div>
-                                    <div class="text-secondary" style="font-size:0.75rem;">${escapeHtml(c.email)}</div>
+                                    <div class="text-xs font-semibold text-light-text dark:text-white">${escapeHtml(c.name)}</div>
+                                    <div class="text-[10px] text-light-muted dark:text-dark-muted">${escapeHtml(c.email)}</div>
                                 </div>
-                                <span class="badge bg-light text-secondary border small">Kontak</span>
+                                <span class="text-[9px] px-1 rounded bg-cyan-500/10 text-cyan-500 border border-cyan-500/20">Kontak</span>
                             </button>
                         `).join('');
-                        container.classList.remove('d-none');
+                        container.classList.remove('hidden');
                     } else {
-                        container.classList.add('d-none');
+                        container.classList.add('hidden');
                     }
                 } catch (e) {
-                    container.classList.add('d-none');
+                    container.classList.add('hidden');
                 }
             }, 150);
         }
@@ -1759,19 +1752,11 @@
             parts.push(' ' + email);
             input.value = parts.join(',').trim();
             if (input.value.startsWith(',')) input.value = input.value.substring(1).trim();
-            document.getElementById(targetSugId).classList.add('d-none');
+            document.getElementById(targetSugId).classList.add('hidden');
             input.focus();
         }
 
-        // Vacation Auto-Responder
-        function openAutoResponderModal() {
-            if (!autoResponderModalInstance) {
-                autoResponderModalInstance = new bootstrap.Modal(document.getElementById('autoResponderModal'));
-            }
-            loadAutoResponderData();
-            autoResponderModalInstance.show();
-        }
-
+        // Vacation Auto-Responder JS
         async function loadAutoResponderData() {
             try {
                 const res = await fetch('/api/v1/webmail/auto-responder');
@@ -1813,11 +1798,11 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                const data = await res.json();
                 if (res.ok) {
                     alert('Pengaturan balasan liburan otomatis berhasil disimpan.');
-                    autoResponderModalInstance.hide();
+                    closeAutoResponderModal();
                 } else {
+                    const data = await res.json();
                     alert(data.error || 'Gagal menyimpan.');
                 }
             } catch (err) {
@@ -1825,30 +1810,36 @@
             }
         }
 
-        // Canned Responses / Templates
+        // Canned Responses / Templates JS
         async function loadTemplatesDropdown() {
-            const menu = document.getElementById('cannedTemplatesDropdown');
+            const container = document.getElementById('cannedTemplatesDropdown');
             try {
                 const res = await fetch('/api/v1/webmail/templates');
                 const data = await res.json();
                 if (res.ok && Array.isArray(data)) {
                     if (data.length === 0) {
-                        menu.innerHTML = `
-                            <li><span class="dropdown-item-text text-muted small">Belum ada template</span></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item small text-primary" href="javascript:void(0)" onclick="openCannedModal()"><i class="bi bi-gear me-1"></i>Kelola Template</a></li>
+                        container.innerHTML = `
+                            <div class="p-2 text-xs text-light-muted dark:text-dark-muted">Belum ada template</div>
+                            <div class="border-t border-light-border dark:border-dark-border my-1"></div>
+                            <button type="button" onclick="toggleTemplatesDropdown(); openCannedModal()" class="w-full text-left p-2 text-xs font-semibold text-cyan-600 dark:text-cyan-400 hover:bg-slate-100 dark:hover:bg-dark-header">
+                                <i class="bi bi-gear mr-1"></i> Kelola Template
+                            </button>
                         `;
                         return;
                     }
-                    menu.innerHTML = data.map(t => `
-                        <li><a class="dropdown-item small" href="javascript:void(0)" onclick="insertCannedTemplate('${escapeHtml(t.content).replace(/'/g, "\\'")}')">${escapeHtml(t.title)}</a></li>
+                    container.innerHTML = data.map(t => `
+                        <button type="button" onclick="insertCannedTemplate('${escapeHtml(t.content).replace(/'/g, "\\'")}')" class="w-full text-left p-2 text-xs text-light-text dark:text-white hover:bg-slate-100 dark:hover:bg-dark-header truncate">
+                            ${escapeHtml(t.title)}
+                        </button>
                     `).join('') + `
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item small text-primary" href="javascript:void(0)" onclick="openCannedModal()"><i class="bi bi-gear me-1"></i>Kelola Template</a></li>
+                        <div class="border-t border-light-border dark:border-dark-border my-1"></div>
+                        <button type="button" onclick="toggleTemplatesDropdown(); openCannedModal()" class="w-full text-left p-2 text-xs font-semibold text-cyan-600 dark:text-cyan-400 hover:bg-slate-100 dark:hover:bg-dark-header">
+                            <i class="bi bi-gear mr-1"></i> Kelola Template
+                        </button>
                     `;
                 }
             } catch (err) {
-                menu.innerHTML = '<li><span class="dropdown-item-text text-danger small">Gagal memuat</span></li>';
+                container.innerHTML = '<div class="p-2 text-xs text-rose-500">Gagal memuat</div>';
             }
         }
 
@@ -1856,14 +1847,7 @@
             const editor = document.getElementById('composeEditor');
             editor.innerHTML += '<p>' + content.replace(/\n/g, '<br>') + '</p>';
             triggerAutoSave();
-        }
-
-        function openCannedModal() {
-            if (!cannedModalInstance) {
-                cannedModalInstance = new bootstrap.Modal(document.getElementById('cannedModal'));
-            }
-            loadCannedList();
-            cannedModalInstance.show();
+            document.getElementById('cannedDropdownMenu').classList.add('hidden');
         }
 
         async function loadCannedList() {
@@ -1873,21 +1857,21 @@
                 const data = await res.json();
                 if (res.ok && Array.isArray(data)) {
                     if (data.length === 0) {
-                        list.innerHTML = '<div class="list-group-item text-center text-muted small py-3">Belum ada template dibuat.</div>';
+                        list.innerHTML = '<div class="text-center text-xs text-light-muted dark:text-dark-muted py-3">Belum ada template dibuat.</div>';
                         return;
                     }
                     list.innerHTML = data.map(t => `
-                        <div class="list-group-item d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="fw-bold mb-1 small text-dark">${escapeHtml(t.title)}</h6>
-                                <p class="small text-secondary mb-0 text-truncate" style="max-width: 480px;">${escapeHtml(t.content)}</p>
+                        <div class="p-2.5 rounded-lg border border-light-border dark:border-dark-border bg-slate-50 dark:bg-dark-header flex justify-between items-center">
+                            <div class="truncate pr-2">
+                                <h6 class="text-xs font-bold text-light-text dark:text-white mb-0.5">${escapeHtml(t.title)}</h6>
+                                <p class="text-[11px] text-light-muted dark:text-dark-muted truncate">${escapeHtml(t.content)}</p>
                             </div>
-                            <button class="btn btn-xs btn-outline-danger py-0 px-2" onclick="deleteCannedItem(${t.id})"><i class="bi bi-trash"></i></button>
+                            <button onclick="deleteCannedItem(${t.id})" class="p-1 text-rose-500 hover:text-rose-400 shrink-0"><i class="bi bi-trash"></i></button>
                         </div>
                     `).join('');
                 }
             } catch (err) {
-                list.innerHTML = '<div class="list-group-item text-center text-danger small py-3">Gagal memuat.</div>';
+                list.innerHTML = '<div class="text-center text-xs text-rose-500 py-3">Gagal memuat.</div>';
             }
         }
 
@@ -1905,12 +1889,12 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ title, content })
                 });
-                const data = await res.json();
                 if (res.ok) {
                     document.getElementById('newTemplateTitle').value = '';
                     document.getElementById('newTemplateContent').value = '';
                     loadCannedList();
                 } else {
+                    const data = await res.json();
                     alert(data.error || 'Gagal menyimpan template.');
                 }
             } catch (err) {
