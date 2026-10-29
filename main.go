@@ -86,8 +86,12 @@ func main() {
 		webmail.GET("", mailCtrl.RenderWebmail)
 	}
 
-	// Route Home: Merender template HTML (.tmpl) untuk Admin
+	// Admin Multi-Page Views (Protected or Open for Local Admin Dashboard)
 	r.GET("/", mailCtrl.RenderIndex)
+	r.GET("/admin/domains", mailCtrl.RenderAdminDomains)
+	r.GET("/admin/simulations", mailCtrl.RenderAdminSimulations)
+	r.GET("/admin/logs", mailCtrl.RenderAdminLogs)
+	r.GET("/admin/settings", mailCtrl.RenderAdminSettings)
 	r.GET("/setup", mailCtrl.RenderSetup)
 
 	// 5. REST API & SSE Routes
@@ -132,6 +136,7 @@ func main() {
 			mailAPI.POST("/messages/move", mailCtrl.MoveMessage)
 			mailAPI.POST("/messages/:id/star", mailCtrl.ToggleStarMessage)
 			mailAPI.DELETE("/messages/:id", mailCtrl.DeleteMessage)
+			mailAPI.POST("/trash/empty", mailCtrl.EmptyTrash)
 
 			// Contacts / Address Book API
 			mailAPI.GET("/contacts", mailCtrl.ListContacts)

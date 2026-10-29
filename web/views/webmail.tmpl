@@ -190,9 +190,16 @@
                             {{ .total_items }}
                         </span>
                     </div>
-                    <button onclick="location.reload()" class="p-1 text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white transition-colors" title="Segarkan">
-                        <i class="bi bi-arrow-clockwise text-sm"></i>
-                    </button>
+                    <div class="flex items-center gap-1">
+                        {{ if eq .current_folder "Trash" }}
+                        <button onclick="emptyTrashFolder()" class="px-2 py-0.5 rounded text-[11px] font-semibold text-rose-500 hover:text-white hover:bg-rose-600 border border-rose-500/30 transition-all flex items-center gap-1" title="Kosongkan Seluruh Email di Folder Trash">
+                            <i class="bi bi-trash3"></i> Kosongkan
+                        </button>
+                        {{ end }}
+                        <button onclick="location.reload()" class="p-1 text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white transition-colors" title="Segarkan">
+                            <i class="bi bi-arrow-clockwise text-sm"></i>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Search Input Bar -->
@@ -322,7 +329,17 @@
                             <i class="bi bi-forward-fill text-blue-500"></i>
                             <span>Teruskan</span>
                         </button>
-                        <div class="h-4 w-px bg-light-border dark:bg-dark-border mx-1"></div>
+                        <div class="h-4 w-px bg-light-border dark:border-dark-border mx-1"></div>
+                        {{ if eq .current_folder "Trash" }}
+                        <button onclick="moveCurrentMail('INBOX')" class="px-2.5 py-1.5 rounded-lg text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 border border-emerald-500/20 transition-all flex items-center gap-1.5" title="Pulihkan email ke Kotak Masuk (Inbox)">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                            <span>Pulihkan</span>
+                        </button>
+                        <button onclick="deletePermanentCurrentMail()" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-rose-500 hover:text-white hover:bg-rose-600 border border-rose-500/30 transition-all flex items-center gap-1.5" title="Hapus Permanen dari server">
+                            <i class="bi bi-trash3-fill"></i>
+                            <span>Hapus Permanen</span>
+                        </button>
+                        {{ else }}
                         <button onclick="moveCurrentMail('Spam')" class="px-2.5 py-1.5 rounded-lg text-xs font-medium text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 border border-amber-500/20 transition-all flex items-center gap-1.5">
                             <i class="bi bi-shield-slash"></i>
                             <span>Spam</span>
@@ -331,6 +348,7 @@
                             <i class="bi bi-trash"></i>
                             <span>Hapus</span>
                         </button>
+                        {{ end }}
                     </div>
                     <div>
                         <span id="readMailDate" class="text-xs text-light-muted dark:text-dark-muted font-medium"></span>
@@ -1312,6 +1330,48 @@
                 }
             } catch (err) {
                 alert('Gagal memindahkan pesan');
+            }
+        }
+
+        async function deletePermanentCurrentMail() {
+            if (!currentLoadedMailId) return;
+            if (!confirm('Hapus permanen email ini dari server? Tindakan ini tidak dapat dibatalkan.')) return;
+
+            try {
+                const res = await fetch(`/api/v1/webmail/messages/${currentLoadedMailId}`, {
+                    method: 'DELETE'
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    document.getElementById(`msg-item-${currentLoadedMailId}`)?.remove();
+                    document.getElementById('readerEmptyState').classList.remove('hidden');
+                    document.getElementById('readerContainer').classList.add('hidden');
+                    currentLoadedMailId = null;
+                    alert('Email berhasil dihapus secara permanen.');
+                } else {
+                    alert('Gagal menghapus: ' + (data.error || 'Terjadi kesalahan'));
+                }
+            } catch (err) {
+                alert('Gagal menghubungi server.');
+            }
+        }
+
+        async function emptyTrashFolder() {
+            if (!confirm('Kosongkan seluruh email di folder Trash secara permanen? Seluruh berkas akan dihapus dari server dan tidak dapat dikembalikan.')) return;
+
+            try {
+                const res = await fetch('/api/v1/webmail/trash/empty', {
+                    method: 'POST'
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    alert(data.message || 'Folder Trash berhasil dikosongkan.');
+                    location.reload();
+                } else {
+                    alert('Gagal mengosongkan Trash: ' + (data.error || 'Terjadi kesalahan'));
+                }
+            } catch (err) {
+                alert('Gagal menghubungi server.');
             }
         }
 

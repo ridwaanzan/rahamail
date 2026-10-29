@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ .title }}</title>
+    <!-- Compiled TailwindCSS Dark & Light Mode Theme -->
+    <link rel="stylesheet" href="/static/css/app.min.css">
+    <!-- Embedded Base64 Bootstrap Icons -->
+    <link rel="stylesheet" href="/static/css/bootstrap-icons.min.css">
+    <script>
+        if (localStorage.getItem('theme') === 'light' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: light)').matches)) {
+            document.documentElement.classList.remove('dark');
+        } else {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
+</head>
+<body class="bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text min-h-screen flex flex-col md:flex-row antialiased selection:bg-cyan-500 selection:text-white">
+
+    <!-- SIDEBAR NAVIGATION -->
+    <aside class="w-full md:w-64 bg-light-sidebar dark:bg-dark-sidebar border-r border-light-border dark:border-dark-border flex flex-col justify-between shrink-0 min-h-screen p-4">
+        <div>
+            <!-- Brand / Logo Header -->
+            <div class="flex items-center justify-between px-2 mb-8">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-cyan-glow">
+                        <i class="bi bi-envelope-paper-heart-fill text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-base font-bold tracking-tight text-light-text dark:text-white">Corporate</h1>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-cyan-500/10 text-cyan-500 dark:text-cyan-400 border border-cyan-500/20">
+                            {{ .db_driver }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <div class="px-2 mb-2">
+                <span class="text-[11px] font-semibold tracking-wider uppercase text-light-muted dark:text-dark-muted">Admin Menu</span>
+            </div>
+            <nav class="space-y-1.5">
+                <a href="/" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card">
+                    <i class="bi bi-grid-fill text-base"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="/admin/domains" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card">
+                    <i class="bi bi-globe text-base"></i>
+                    <span>Domain Management</span>
+                </a>
+                <a href="/mail" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card">
+                    <i class="bi bi-inbox-fill text-base"></i>
+                    <span>User Webmail</span>
+                    <span class="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-500 dark:text-blue-400 font-semibold border border-blue-500/20">Open</span>
+                </a>
+                <a href="/admin/simulations" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 shadow-sm">
+                    <i class="bi bi-shield-exclamation text-base"></i>
+                    <span>Spam & Phishing</span>
+                </a>
+                <a href="/admin/logs" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card">
+                    <i class="bi bi-broadcast text-base"></i>
+                    <span>Mail Server SSE Live</span>
+                </a>
+                <a href="/admin/settings" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card">
+                    <i class="bi bi-gear-fill text-base"></i>
+                    <span>Settings & Backup</span>
+                </a>
+            </nav>
+        </div>
+
+        <div class="mt-8 pt-4 border-t border-light-border dark:border-dark-border px-2">
+            <div class="p-3 rounded-xl bg-slate-100 dark:bg-dark-card border border-light-border dark:border-dark-border text-center">
+                <div class="flex items-center justify-center gap-2 text-xs font-semibold text-light-muted dark:text-dark-muted">
+                    <i class="bi bi-cpu-fill text-cyan-500"></i>
+                    <span>Powered by Golang / SSE</span>
+                </div>
+                <div class="mt-1 text-[11px] text-slate-400">Zero Node.js Runtime</div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+        <!-- TOPBAR -->
+        <header class="h-16 bg-light-header dark:bg-dark-header border-b border-light-border dark:border-dark-border px-6 flex items-center justify-between shrink-0 sticky top-0 z-30">
+            <div>
+                <h2 class="text-base font-bold text-light-text dark:text-white">Phishing & Spam Awareness Simulation</h2>
+            </div>
+            <div class="flex items-center gap-3.5">
+                <button onclick="toggleTheme()" class="w-9 h-9 rounded-xl flex items-center justify-center bg-slate-100 dark:bg-dark-card border border-light-border dark:border-dark-border text-light-muted dark:text-dark-muted hover:text-cyan-500 transition-colors" title="Toggle Dark/Light Mode">
+                    <i class="bi bi-moon-stars-fill text-sm hidden dark:inline"></i>
+                    <i class="bi bi-sun-fill text-sm inline dark:hidden text-amber-500"></i>
+                </button>
+                <div class="flex items-center gap-2.5 pl-2 border-l border-light-border dark:border-dark-border">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white text-xs font-bold">
+                        AD
+                    </div>
+                    <div class="hidden sm:block text-left">
+                        <div class="text-xs font-bold text-light-text dark:text-white">Admin</div>
+                        <div class="text-[10px] text-light-muted dark:text-dark-muted">Super Administrator</div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- CONTENT -->
+        <div class="p-6 space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                    <h3 class="text-xl font-bold tracking-tight text-light-text dark:text-white">Phishing & Spam Awareness Simulation</h3>
+                    <p class="text-xs text-light-muted dark:text-dark-muted">Pelatihan keamanan siber karyawan terhadap social engineering dan deceptive links.</p>
+                </div>
+                <button onclick="openNewCampaignModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 shadow-cyan-glow transition-all flex items-center gap-1.5 self-start sm:self-auto">
+                    <i class="bi bi-plus-circle text-sm"></i>
+                    <span>Buat Simulasi Baru</span>
+                </button>
+            </div>
+
+            <!-- Simulation Metrics Summary -->
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <div class="p-4 rounded-2xl bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border">
+                    <span class="text-xs text-light-muted dark:text-dark-muted">Total Target Diuji</span>
+                    <h4 class="text-2xl font-bold mt-1 text-light-text dark:text-white" id="simStatTotalSent">0</h4>
+                </div>
+                <div class="p-4 rounded-2xl bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border">
+                    <span class="text-xs text-rose-500">Gagal (Klik Link)</span>
+                    <h4 class="text-2xl font-bold mt-1 text-rose-500" id="simStatTotalClicked">0</h4>
+                </div>
+                <div class="p-4 rounded-2xl bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border">
+                    <span class="text-xs text-emerald-500">Lolos (Lapor Spam)</span>
+                    <h4 class="text-2xl font-bold mt-1 text-emerald-500" id="simStatTotalReported">0</h4>
+                </div>
+                <div class="p-4 rounded-2xl bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border">
+                    <span class="text-xs text-cyan-500">Failure Rate</span>
+                    <h4 class="text-2xl font-bold mt-1 text-cyan-500" id="simStatFailureRate">0.0%</h4>
+                </div>
+            </div>
+
+            <!-- Visual Ratio Donut & Campaign List Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- SVG Donut Chart Card -->
+                <div class="p-5 rounded-2xl bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border shadow-card-light dark:shadow-card-dark flex flex-col justify-between text-center">
+                    <div>
+                        <h4 class="text-xs font-bold text-light-text dark:text-white text-left flex items-center gap-2 mb-3">
+                            <i class="bi bi-pie-chart-fill text-cyan-500"></i> Rasio Awareness Karyawan
+                        </h4>
+                        <div class="flex justify-center items-center py-2">
+                            <svg width="160" height="160" viewBox="0 0 42 42" class="transform -rotate-90">
+                                <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="currentColor" class="text-slate-200 dark:text-dark-border" stroke-width="5"></circle>
+                                <circle id="donutSegmentLolos" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#10b981" stroke-width="5" stroke-dasharray="0 100" stroke-dashoffset="0" class="transition-all duration-500"></circle>
+                                <circle id="donutSegmentGagal" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#ef4444" stroke-width="5" stroke-dasharray="0 100" stroke-dashoffset="0" class="transition-all duration-500"></circle>
+                            </svg>
+                        </div>
+                        <div class="text-center mt-[-105px] mb-[45px] pointer-events-none">
+                            <div class="text-xl font-bold text-light-text dark:text-white" id="donutCenterRate">0%</div>
+                            <div class="text-[10px] uppercase font-semibold text-light-muted dark:text-dark-muted">Vulnerable</div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 pt-3 border-t border-light-border dark:border-dark-border text-[11px]">
+                        <div>
+                            <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-1"></span>
+                            <span class="text-light-muted dark:text-dark-muted">Lolos:</span> <strong id="lblLolos" class="text-light-text dark:text-white">0</strong>
+                        </div>
+                        <div>
+                            <span class="inline-block w-2 h-2 rounded-full bg-rose-500 mr-1"></span>
+                            <span class="text-light-muted dark:text-dark-muted">Gagal:</span> <strong id="lblGagal" class="text-light-text dark:text-white">0</strong>
+                        </div>
+                        <div>
+                            <span class="inline-block w-2 h-2 rounded-full bg-slate-400 mr-1"></span>
+                            <span class="text-light-muted dark:text-dark-muted">Diam:</span> <strong id="lblDiam" class="text-light-text dark:text-white">0</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Campaign List Table -->
+                <div class="lg:col-span-2 p-5 rounded-2xl bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border shadow-card-light dark:shadow-card-dark flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-xs font-bold text-light-text dark:text-white flex items-center gap-2">
+                                <i class="bi bi-shield-shaded text-cyan-500"></i> Daftar Kampanye Simulasi
+                            </h4>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="text-[11px] uppercase tracking-wider text-light-muted dark:text-dark-muted border-b border-light-border dark:border-dark-border">
+                                    <tr>
+                                        <th class="py-2.5 px-3 font-semibold">Judul Kampanye</th>
+                                        <th class="py-2.5 px-3 font-semibold">Pengirim</th>
+                                        <th class="py-2.5 px-3 font-semibold">Status</th>
+                                        <th class="py-2.5 px-3 font-semibold">Target</th>
+                                        <th class="py-2.5 px-3 font-semibold">Gagal</th>
+                                        <th class="py-2.5 px-3 font-semibold text-right">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="campaignsTableBody" class="divide-y divide-light-border dark:divide-dark-border">
+                                    <tr>
+                                        <td colspan="6" class="py-6 text-center text-slate-400">Memuat kampanye...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Target Breakdown Table -->
+            <div class="p-5 rounded-2xl bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border shadow-card-light dark:shadow-card-dark">
+                <div class="flex items-center justify-between mb-4">
+                    <h4 class="text-xs font-bold text-light-text dark:text-white flex items-center gap-2" id="targetBreakdownTitle">
+                        <i class="bi bi-person-lines-fill text-cyan-500"></i> Rincian Status Karyawan Terpilih
+                    </h4>
+                    <span class="text-[11px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-dark-header border border-light-border dark:border-dark-border text-light-muted dark:text-dark-muted" id="badgeTargetCount">0 Karyawan</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="text-[11px] uppercase tracking-wider text-light-muted dark:text-dark-muted border-b border-light-border dark:border-dark-border">
+                            <tr>
+                                <th class="py-2.5 px-3 font-semibold">Email Karyawan</th>
+                                <th class="py-2.5 px-3 font-semibold">Status Pelatihan</th>
+                                <th class="py-2.5 px-3 font-semibold">Waktu Terkirim</th>
+                                <th class="py-2.5 px-3 font-semibold">Waktu Klik</th>
+                                <th class="py-2.5 px-3 font-semibold">IP / Browser</th>
+                            </tr>
+                        </thead>
+                        <tbody id="simTargetsTableBody" class="divide-y divide-light-border dark:divide-dark-border">
+                            <tr>
+                                <td colspan="5" class="py-4 text-center text-light-muted dark:text-dark-muted">Pilih atau luncurkan kampanye untuk melihat daftar rincian status karyawan.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- MODAL CREATE SIMULATION CAMPAIGN -->
+    <div id="modalNewCampaign" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl w-full max-w-2xl shadow-card-dark overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="px-4 py-3 border-b border-light-border dark:border-dark-border flex items-center justify-between bg-light-header dark:bg-dark-header">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-cyan-500/10 text-cyan-500 flex items-center justify-center">
+                        <i class="bi bi-shield-plus text-sm"></i>
+                    </div>
+                    <h3 class="text-sm font-bold text-light-text dark:text-white">Rancang Kampanye Simulasi Phishing</h3>
+                </div>
+                <button type="button" onclick="closeNewCampaignModal()" class="text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white p-1">
+                    <i class="bi bi-x-lg text-sm"></i>
+                </button>
+            </div>
+            <div class="p-4 overflow-y-auto space-y-3 flex-1">
+                <div>
+                    <label class="block text-[11px] font-bold text-light-muted dark:text-dark-muted mb-1 uppercase tracking-wider">Pilih dari Template Preset Bawaan</label>
+                    <select id="simPresetSelect" onchange="onSelectPresetChange()" class="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-text dark:text-white focus:outline-none focus:border-cyan-500">
+                        <option value="">-- Pilih Skenario Phishing Siap Pakai --</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-bold text-light-muted dark:text-dark-muted mb-1 uppercase tracking-wider">Judul Kampanye (Internal)</label>
+                        <input type="text" id="simCampaignTitle" placeholder="Misal: Uji Coba Q4 HR Payroll" class="w-full px-3 py-1.5 text-xs rounded-xl bg-slate-50 dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-text dark:text-white focus:outline-none focus:border-cyan-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-light-muted dark:text-dark-muted mb-1 uppercase tracking-wider">Nama Pengirim Palsu (Display)</label>
+                        <input type="text" id="simSenderName" placeholder="Misal: HR Support Service" class="w-full px-3 py-1.5 text-xs rounded-xl bg-slate-50 dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-text dark:text-white focus:outline-none focus:border-cyan-500" required>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-bold text-light-muted dark:text-dark-muted mb-1 uppercase tracking-wider">Email Pengirim Palsu</label>
+                        <input type="email" id="simSenderEmail" placeholder="Misal: hr-support@company-portal.xyz" class="w-full px-3 py-1.5 text-xs rounded-xl bg-slate-50 dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-text dark:text-white focus:outline-none focus:border-cyan-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-light-muted dark:text-dark-muted mb-1 uppercase tracking-wider">Subjek Email</label>
+                        <input type="text" id="simSubject" placeholder="Misal: [PENTING] Verifikasi Rekening Anda" class="w-full px-3 py-1.5 text-xs rounded-xl bg-slate-50 dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-text dark:text-white focus:outline-none focus:border-cyan-500" required>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-light-muted dark:text-dark-muted mb-1 uppercase tracking-wider">Body Email HTML (Gunakan <code class="font-mono text-cyan-600 dark:text-cyan-400">\{\{.TrackingLink\}\}</code> untuk tautan uji coba)</label>
+                    <textarea id="simTemplateBody" rows="6" class="w-full p-3 text-xs font-mono rounded-xl bg-slate-50 dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-text dark:text-white focus:outline-none focus:border-cyan-500" required></textarea>
+                </div>
+            </div>
+            <div class="px-4 py-3 border-t border-light-border dark:border-dark-border bg-light-header dark:bg-dark-header flex justify-end gap-2">
+                <button type="button" onclick="closeNewCampaignModal()" class="px-3 py-1.5 rounded-xl text-xs font-medium text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white border border-light-border dark:border-dark-border">
+                    Batal
+                </button>
+                <button type="button" id="btnSubmitCampaign" onclick="submitNewCampaign()" class="px-4 py-1.5 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 shadow-cyan-glow flex items-center gap-1.5">
+                    <i class="bi bi-save"></i>
+                    <span>Simpan Kampanye</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/app.min.js"></script>
+    <script>
+        let availablePresets = [];
+
+        function toggleTheme() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSimulations();
+        });
+
+        async function loadSimulations() {
+            try {
+                const res = await fetch('/api/v1/admin/simulations');
+                const data = await res.json();
+                const tbody = document.getElementById('campaignsTableBody');
+                if (!tbody) return;
+                tbody.innerHTML = '';
+
+                let grandTotalSent = 0;
+                let grandTotalClicked = 0;
+                let grandTotalReported = 0;
+
+                if (!data.campaigns || data.campaigns.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="py-6 text-center text-slate-400">Belum ada simulasi phishing yang dibuat. Klik "Buat Simulasi Baru" untuk memulai!</td></tr>';
+                } else {
+                    data.campaigns.forEach(c => {
+                        grandTotalSent += c.total_sent || 0;
+                        grandTotalClicked += c.total_clicked || 0;
+                        grandTotalReported += c.total_reported || 0;
+
+                        const tr = document.createElement('tr');
+                        tr.className = 'hover:bg-slate-50 dark:hover:bg-dark-cardHover transition-colors';
+                        const statusBadge = c.status === 'running' 
+                            ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">RUNNING</span>'
+                            : '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-500/10 text-slate-400 border border-slate-500/20">DRAFT</span>';
+
+                        const clickPct = c.total_sent ? Math.round((c.total_clicked / c.total_sent) * 100) : 0;
+
+                        tr.innerHTML = `
+                            <td class="py-3 px-3">
+                                <div class="font-bold text-light-text dark:text-white">${escapeHtml(c.title)}</div>
+                                <div class="text-[10px] text-light-muted dark:text-dark-muted truncate max-w-xs">${escapeHtml(c.subject)}</div>
+                            </td>
+                            <td class="py-3 px-3 font-mono text-cyan-600 dark:text-cyan-400 text-[11px]">${escapeHtml(c.sender_email)}</td>
+                            <td class="py-3 px-3">${statusBadge}</td>
+                            <td class="py-3 px-3 text-light-muted dark:text-dark-muted">${c.total_sent || 0} org</td>
+                            <td class="py-3 px-3">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-500 border border-rose-500/20">
+                                    ${c.total_clicked || 0} (${clickPct}%)
+                                </span>
+                            </td>
+                            <td class="py-3 px-3 text-right">
+                                <div class="flex items-center justify-end gap-1.5">
+                                    <button onclick="viewCampaignDetail(${c.id})" class="px-2 py-1 rounded-lg text-xs font-semibold bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 hover:bg-cyan-500/20 transition-all flex items-center gap-1" title="Lihat Detail & Breakdown">
+                                        <i class="bi bi-bar-chart text-[10px]"></i> Detail
+                                    </button>
+                                    ${c.status === 'draft' ? `
+                                    <button onclick="launchCampaignNow(${c.id})" class="px-2.5 py-1 rounded-lg text-xs font-semibold text-white bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 shadow-sm flex items-center gap-1" title="Kirim/Luncurkan Email Simulasi Sekarang">
+                                        <i class="bi bi-play-fill text-xs"></i> Kirim
+                                    </button>` : ''}
+                                </div>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+
+                    if (data.campaigns.length > 0) {
+                        viewCampaignDetail(data.campaigns[0].id);
+                    }
+                }
+
+                document.getElementById('simStatTotalSent').innerText = grandTotalSent;
+                document.getElementById('simStatTotalClicked').innerText = grandTotalClicked;
+                document.getElementById('simStatTotalReported').innerText = grandTotalReported;
+                document.getElementById('simStatFailureRate').innerText = grandTotalSent > 0 ? ((grandTotalClicked / grandTotalSent) * 100).toFixed(1) + '%' : '0.0%';
+
+            } catch (err) {
+                console.error('Failed to load simulations:', err);
+            }
+        }
+
+        async function viewCampaignDetail(id) {
+            try {
+                const res = await fetch(`/api/v1/admin/simulations/${id}/stats`);
+                const data = await res.json();
+                if (!res.ok) return;
+
+                document.getElementById('targetBreakdownTitle').innerHTML = `<i class="bi bi-person-lines-fill text-cyan-500"></i> Rincian Karyawan: <strong>${escapeHtml(data.title)}</strong>`;
+                document.getElementById('badgeTargetCount').innerText = `${data.total_sent} Karyawan`;
+
+                const total = data.total_sent || 1;
+                const lolosPct = Math.round((data.total_reported / total) * 100);
+                const gagalPct = Math.round((data.total_clicked / total) * 100);
+
+                const donutLolos = document.getElementById('donutSegmentLolos');
+                const donutGagal = document.getElementById('donutSegmentGagal');
+                if (donutLolos && donutGagal) {
+                    donutLolos.setAttribute('stroke-dasharray', `${lolosPct} ${100 - lolosPct}`);
+                    donutGagal.setAttribute('stroke-dasharray', `${gagalPct} ${100 - gagalPct}`);
+                    donutGagal.setAttribute('stroke-dashoffset', `${-lolosPct}`);
+                }
+                document.getElementById('donutCenterRate').textContent = data.failure_rate;
+
+                document.getElementById('lblLolos').innerText = data.total_reported;
+                document.getElementById('lblGagal').innerText = data.total_clicked;
+                document.getElementById('lblDiam').innerText = data.total_unresponsive;
+
+                const tbody = document.getElementById('simTargetsTableBody');
+                tbody.innerHTML = '';
+                if (!data.targets || data.targets.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="py-4 text-center text-light-muted dark:text-dark-muted">Belum ada target karyawan pada kampanye ini.</td></tr>';
+                    return;
+                }
+
+                data.targets.forEach(t => {
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-slate-50 dark:hover:bg-dark-cardHover transition-colors';
+                    let statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-500/10 text-slate-400 border border-slate-500/20">Terkirim (Diam)</span>';
+                    if (t.status === 'clicked') {
+                        statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-500 border border-rose-500/20"><i class="bi bi-x-circle mr-1"></i>GAGAL (Klik Link)</span>';
+                    } else if (t.status === 'reported') {
+                        statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"><i class="bi bi-check-circle mr-1"></i>LOLOS (Lapor Spam)</span>';
+                    }
+
+                    const clickedTime = t.clicked_at ? new Date(t.clicked_at).toLocaleString() : '-';
+                    const ipAgent = t.ip_address ? `${t.ip_address} (${t.user_agent ? t.user_agent.substring(0, 24) + '...' : '-'})` : '-';
+
+                    row.innerHTML = `
+                        <td class="py-2.5 px-3 font-semibold text-light-text dark:text-white">${escapeHtml(t.user ? t.user.email : 'User #' + t.user_id)}</td>
+                        <td class="py-2.5 px-3">${statusBadge}</td>
+                        <td class="py-2.5 px-3 text-light-muted dark:text-dark-muted">${new Date(t.sent_at).toLocaleTimeString()}</td>
+                        <td class="py-2.5 px-3 ${t.clicked_at ? 'text-rose-500 font-semibold' : 'text-light-muted dark:text-dark-muted'}">${clickedTime}</td>
+                        <td class="py-2.5 px-3 text-[11px] font-mono text-light-muted dark:text-dark-muted">${escapeHtml(ipAgent)}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+            } catch (err) {
+                console.error("Gagal memuat detail kampanye:", err);
+            }
+        }
+
+        async function launchCampaignNow(id) {
+            if (!confirm('Luncurkan email simulasi ini sekarang ke seluruh karyawan target?')) return;
+            try {
+                const res = await fetch(`/api/v1/admin/simulations/${id}/launch`, { method: 'POST' });
+                const data = await res.json();
+                if (res.ok) {
+                    alert(data.message);
+                    loadSimulations();
+                } else {
+                    alert('Gagal meluncurkan: ' + (data.error || 'Terjadi kesalahan'));
+                }
+            } catch (err) {
+                alert('Kesalahan jaringan: ' + err.message);
+            }
+        }
+
+        async function openNewCampaignModal() {
+            const modal = document.getElementById('modalNewCampaign');
+            if (modal) modal.classList.remove('hidden');
+
+            if (availablePresets.length === 0) {
+                try {
+                    const res = await fetch('/api/v1/admin/simulations/presets');
+                    const data = await res.json();
+                    availablePresets = data.presets || [];
+                    const select = document.getElementById('simPresetSelect');
+                    select.innerHTML = '<option value="">-- Pilih Skenario Phishing Siap Pakai --</option>';
+                    availablePresets.forEach((p, idx) => {
+                        select.innerHTML += `<option value="${idx}">${escapeHtml(p.title)}</option>`;
+                    });
+                } catch (e) {
+                    console.error("Gagal load presets:", e);
+                }
+            }
+        }
+
+        function closeNewCampaignModal() {
+            const modal = document.getElementById('modalNewCampaign');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function onSelectPresetChange() {
+            const idx = document.getElementById('simPresetSelect').value;
+            if (idx === "") return;
+            const preset = availablePresets[idx];
+            if (!preset) return;
+
+            document.getElementById('simCampaignTitle').value = preset.title;
+            document.getElementById('simSenderName').value = preset.sender_name;
+            document.getElementById('simSenderEmail').value = preset.sender_email;
+            document.getElementById('simSubject').value = preset.subject;
+            document.getElementById('simTemplateBody').value = preset.template_html;
+        }
+
+        async function submitNewCampaign() {
+            const title = document.getElementById('simCampaignTitle').value.trim();
+            const sender_name = document.getElementById('simSenderName').value.trim();
+            const sender_email = document.getElementById('simSenderEmail').value.trim();
+            const subject = document.getElementById('simSubject').value.trim();
+            const template_body = document.getElementById('simTemplateBody').value.trim();
+
+            if (!title || !sender_name || !sender_email || !subject || !template_body) {
+                alert('Seluruh field form wajib diisi!');
+                return;
+            }
+
+            const btn = document.getElementById('btnSubmitCampaign');
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/v1/admin/simulations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, sender_name, sender_email, subject, template_body })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    closeNewCampaignModal();
+                    alert('Kampanye simulasi berhasil dibuat!');
+                    loadSimulations();
+                } else {
+                    alert('Gagal: ' + (data.error || 'Terjadi kesalahan sistem'));
+                }
+            } catch (err) {
+                alert('Kesalahan jaringan: ' + err.message);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return String(text)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
