@@ -1,0 +1,17 @@
+{
+  "name": "rahamail-frontend",
+  "version": "1.4.1",
+  "private": true,
+  "description": "TailwindCSS and Modern UI assets for RaHaMail",
+  "scripts": {
+    "build:css": "bunx tailwindcss -i ./src/input.css -o ../static/css/app.min.css --minify",
+    "build:js": "bun build ./src/js/app.js --outfile ../static/js/app.min.js --minify",
+    "build": "bun run build:css && bun run build:js",
+    "watch": "bunx tailwindcss -i ./src/input.css -o ../static/css/app.min.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.17",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49"
+  }
+}
