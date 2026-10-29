@@ -2,7 +2,7 @@
 
 > Modern, ultra-lightweight, high-performance, single-binary Mail Server written in pure Go with Webmail Portal, Admin Dashboard, SMTP Inbound & Submission, IMAP4rev1 Server, Email Scheduler, Server-Sent Events (SSE), and embedded SQLite WAL storage.
 
-[![Release](https://img.shields.io/badge/release-v1.4.0-blue.svg)](RELEASE_NOTES.md)
+[![Release](https://img.shields.io/badge/release-v1.4.1-blue.svg)](RELEASE_NOTES.md)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Go Report Card](https://img.shields.io/badge/Go-1.26+-00ADD8.svg)](https://go.dev/)
 [![Docker Image Size](https://img.shields.io/badge/docker%20image-~51MB-2496ED.svg)](Dockerfile)

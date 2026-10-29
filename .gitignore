@@ -6,3 +6,4 @@ rahamail
 *.db-shm
 *.db-wal
 var/
+node_modules/

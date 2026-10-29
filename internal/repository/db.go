@@ -43,7 +43,8 @@ func InitDB() *gorm.DB {
 		}
 
 		// Optimasi PRAGMA: Write-Ahead Logging (WAL), Busy Timeout 5000ms, synchronous=NORMAL, cache 64MB
-		sqliteDSN := fmt.Sprintf("%s?_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)&_pragma=synchronous(NORMAL)&_pragma=cache_size(-64000)&_pragma=foreign_keys(ON)", dbPath)
+		// Catatan: foreign_keys diatur OFF saat AutoMigrate agar migrator SQLite (yang membuat tabel temporary dan DROP TABLE) tidak memicu 787 FOREIGN KEY constraint failed
+		sqliteDSN := fmt.Sprintf("%s?_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)&_pragma=synchronous(NORMAL)&_pragma=cache_size(-64000)&_pragma=foreign_keys(OFF)", dbPath)
 		log.Printf("🗄️ Menggunakan database SQLite Teroptimasi: %s (Mode: WAL)...", dbPath)
 		dialector = sqlite.Open(sqliteDSN)
 	}
@@ -91,6 +92,10 @@ func InitDB() *gorm.DB {
 	)
 	if err != nil {
 		log.Fatalf("❌ Gagal migrasi database: %v", err)
+	}
+
+	if ActiveDriver == "SQLite (WAL Mode)" {
+		_ = DB.Exec("PRAGMA foreign_keys = ON;").Error
 	}
 
 	log.Printf("✅ Database %s terhubung dan migrasi skema berhasil dijalankan.", ActiveDriver)

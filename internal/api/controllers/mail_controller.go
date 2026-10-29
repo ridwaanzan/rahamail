@@ -2,7 +2,9 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -133,6 +135,34 @@ func (mc *MailController) RenderWebmail(c *gin.Context) {
 	var scheduledCount int64
 	repository.DB.Model(&domain.ScheduledMail{}).Where("user_id = ? AND status = 'pending'", currentUser.ID).Count(&scheduledCount)
 
+	// Hitung total email per folder untuk badge counter di sidebar
+	var inboxCount, sentCount, draftsCount, spamCount, trashCount int64
+	type folderCountResult struct {
+		Mailbox string
+		Count   int64
+	}
+	var folderResults []folderCountResult
+	repository.DB.Model(&domain.Message{}).
+		Select("mailbox, count(*) as count").
+		Where("user_id = ?", currentUser.ID).
+		Group("mailbox").
+		Scan(&folderResults)
+
+	for _, fr := range folderResults {
+		switch fr.Mailbox {
+		case "INBOX":
+			inboxCount = fr.Count
+		case "Sent":
+			sentCount = fr.Count
+		case "Drafts":
+			draftsCount = fr.Count
+		case "Spam":
+			spamCount = fr.Count
+		case "Trash":
+			trashCount = fr.Count
+		}
+	}
+
 	// Format kuota
 	quotaMB := currentUser.QuotaBytes / (1024 * 1024)
 	usedMB := currentUser.UsedBytes / (1024 * 1024)
@@ -159,6 +189,11 @@ func (mc *MailController) RenderWebmail(c *gin.Context) {
 		"messages":        messages,
 		"scheduled_mails": scheduledMails,
 		"scheduled_count": scheduledCount,
+		"inbox_count":     inboxCount,
+		"sent_count":      sentCount,
+		"drafts_count":    draftsCount,
+		"spam_count":      spamCount,
+		"trash_count":     trashCount,
 		"storage_used":    usedMB,
 		"storage_quota":   quotaMB,
 		"page":            page,
@@ -174,7 +209,7 @@ func (mc *MailController) RenderWebmail(c *gin.Context) {
 	})
 }
 
-// RenderIndex merender template Go HTML (.tmpl) dengan data awal
+// RenderIndex merender template Go HTML (.tmpl) untuk Overview Dashboard
 func (mc *MailController) RenderIndex(c *gin.Context) {
 	var domains []domain.Domain
 	var messages []domain.Message
@@ -187,16 +222,57 @@ func (mc *MailController) RenderIndex(c *gin.Context) {
 	repository.DB.Model(&domain.User{}).Count(&userCount)
 	repository.DB.Model(&domain.Message{}).Count(&messageCount)
 
-	c.HTML(http.StatusOK, "index.tmpl", gin.H{
-		"title":     "RaHaMail Server - Live SSE Dashboard",
-		"domains":   domains,
-		"messages":  messages,
-		"db_driver": repository.ActiveDriver,
+	c.HTML(http.StatusOK, "admin_dashboard.tmpl", gin.H{
+		"title":       "RaHaMail Server - Live SSE Dashboard",
+		"active_menu": "dashboard",
+		"domains":     domains,
+		"messages":    messages,
+		"db_driver":   repository.ActiveDriver,
 		"stats": gin.H{
 			"domains":  domainCount,
 			"users":    userCount,
 			"messages": messageCount,
 		},
+	})
+}
+
+// RenderAdminDomains merender halaman manajemen domain
+func (mc *MailController) RenderAdminDomains(c *gin.Context) {
+	var domains []domain.Domain
+	repository.DB.Find(&domains)
+
+	c.HTML(http.StatusOK, "admin_domains.tmpl", gin.H{
+		"title":       "RaHaMail - Domain Management & DKIM",
+		"active_menu": "domains",
+		"domains":     domains,
+		"db_driver":   repository.ActiveDriver,
+	})
+}
+
+// RenderAdminSimulations merender halaman simulasi phishing & spam awareness
+func (mc *MailController) RenderAdminSimulations(c *gin.Context) {
+	c.HTML(http.StatusOK, "admin_simulations.tmpl", gin.H{
+		"title":       "RaHaMail - Phishing & Spam Awareness",
+		"active_menu": "simulations",
+		"db_driver":   repository.ActiveDriver,
+	})
+}
+
+// RenderAdminLogs merender halaman log stream SSE live
+func (mc *MailController) RenderAdminLogs(c *gin.Context) {
+	c.HTML(http.StatusOK, "admin_logs.tmpl", gin.H{
+		"title":       "RaHaMail - Live SSE Log Stream",
+		"active_menu": "logs",
+		"db_driver":   repository.ActiveDriver,
+	})
+}
+
+// RenderAdminSettings merender halaman pengaturan server & backup S3
+func (mc *MailController) RenderAdminSettings(c *gin.Context) {
+	c.HTML(http.StatusOK, "admin_settings.tmpl", gin.H{
+		"title":       "RaHaMail - Server Settings & Cloud Backup",
+		"active_menu": "settings",
+		"db_driver":   repository.ActiveDriver,
 	})
 }
 
@@ -276,11 +352,17 @@ func (mc *MailController) CreateDomain(c *gin.Context) {
 		req.Selector = "mail"
 	}
 
+	privKey, pubTXT, err := delivery.GenerateRSAKeyPair()
+	if err != nil {
+		pubTXT = "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA..."
+	}
+
 	d := domain.Domain{
-		Name:          req.Name,
-		DKIMSelector:  req.Selector,
-		DKIMPublicKey: "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A...",
-		IsActive:      true,
+		Name:           req.Name,
+		DKIMSelector:   req.Selector,
+		DKIMPrivateKey: privKey,
+		DKIMPublicKey:  pubTXT,
+		IsActive:       true,
 	}
 
 	if err := repository.DB.Create(&d).Error; err != nil {
@@ -687,7 +769,7 @@ func (mc *MailController) MoveMessage(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "Email berhasil dipindahkan ke " + req.TargetBox})
 }
 
-// DeleteMessage menghapus email secara permanen
+// DeleteMessage menghapus email secara permanen (database dan file fisik .eml)
 func (mc *MailController) DeleteMessage(c *gin.Context) {
 	val, _ := c.Get("user")
 	currentUser := val.(*domain.User)
@@ -701,8 +783,62 @@ func (mc *MailController) DeleteMessage(c *gin.Context) {
 		return
 	}
 
+	// 1. Hapus file fisik .eml dari disk
+	if msg.StoragePath != "" {
+		_ = os.Remove(msg.StoragePath)
+	}
+
+	// 2. Pulihkan kuota penyimpanan pengguna
+	if msg.Size > 0 {
+		newUsed := currentUser.UsedBytes - msg.Size
+		if newUsed < 0 {
+			newUsed = 0
+		}
+		repository.DB.Model(&domain.User{}).Where("id = ?", currentUser.ID).Update("used_bytes", newUsed)
+	}
+
+	// 3. Hapus attachment terkait di database
+	repository.DB.Where("message_id = ?", msg.ID).Delete(&domain.Attachment{})
+
+	// 4. Hapus record pesan dari database
 	repository.DB.Delete(&msg)
 	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "Email berhasil dihapus permanen"})
+}
+
+// EmptyTrash menghapus seluruh pesan di folder Trash secara permanen
+func (mc *MailController) EmptyTrash(c *gin.Context) {
+	val, _ := c.Get("user")
+	currentUser := val.(*domain.User)
+
+	var messages []domain.Message
+	if err := repository.DB.Where("user_id = ? AND mailbox = 'Trash'", currentUser.ID).Find(&messages).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mencari email di folder Trash"})
+		return
+	}
+
+	var totalFreedBytes int64
+	for _, msg := range messages {
+		if msg.StoragePath != "" {
+			_ = os.Remove(msg.StoragePath)
+		}
+		totalFreedBytes += msg.Size
+		repository.DB.Where("message_id = ?", msg.ID).Delete(&domain.Attachment{})
+		repository.DB.Delete(&msg)
+	}
+
+	if totalFreedBytes > 0 {
+		newUsed := currentUser.UsedBytes - totalFreedBytes
+		if newUsed < 0 {
+			newUsed = 0
+		}
+		repository.DB.Model(&domain.User{}).Where("id = ?", currentUser.ID).Update("used_bytes", newUsed)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": fmt.Sprintf("%d email di folder Trash berhasil dihapus permanen", len(messages)),
+		"count":   len(messages),
+	})
 }
 
 // ToggleStarMessage menandai atau membatalkan tanda bintang (flagged)

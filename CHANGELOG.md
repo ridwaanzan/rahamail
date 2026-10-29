@@ -4,6 +4,15 @@ All notable changes to the **RaHaMail** project will be documented in this file.
 
 ---
 
+## [1.4.1] - 2026-10-29
+
+### Fixed
+- **Database Auto-Migration (SQLite WAL Mode)**:
+  - Temporarily disable `PRAGMA foreign_keys` during startup schema `AutoMigrate` and re-enable it immediately after table synchronization.
+  - Eliminates `FOREIGN KEY constraint failed (787)` errors caused by SQLite's table recreation and temporary table dropping when existing domains and foreign keys are populated.
+
+---
+
 ## [1.4.0] - 2026-10-29
 
 ### Added

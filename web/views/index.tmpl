@@ -1,1008 +1,289 @@
 <!DOCTYPE html>
-<html lang="id" data-bs-theme="light">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ .title }}</title>
-    <!-- Bootstrap CSS v5.3.8 -->
-    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
-    <!-- Bootstrap Icons v1.13.2 -->
+    <!-- Compiled TailwindCSS Dark & Light Mode Theme -->
+    <link rel="stylesheet" href="/static/css/app.min.css">
+    <!-- Embedded Base64 Bootstrap Icons -->
     <link rel="stylesheet" href="/static/css/bootstrap-icons.min.css">
-    <style>
-        :root {
-            --sidebar-width: 260px;
+    <script>
+        if (localStorage.getItem('theme') === 'light' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: light)').matches)) {
+            document.documentElement.classList.remove('dark');
+        } else {
+            document.documentElement.classList.add('dark');
         }
-        body {
-            min-height: 100vh;
-            background-color: #f1f5f9;
-            color: #0f172a;
-            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-        }
-        .sidebar {
-            width: var(--sidebar-width);
-            min-height: 100vh;
-            background-color: #ffffff;
-            border-right: 1px solid #e2e8f0;
-            position: fixed;
-            top: 0;
-            bottom: 0;
-            left: 0;
-            z-index: 1000;
-        }
-        .main-content {
-            margin-left: var(--sidebar-width);
-            padding: 2rem;
-        }
-        .card {
-            background-color: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 0.75rem;
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
-        }
-        .stat-icon {
-            width: 48px;
-            height: 48px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 0.5rem;
-            font-size: 1.5rem;
-        }
-        .nav-link {
-            color: #8b949e;
-            border-radius: 0.5rem;
-            padding: 0.65rem 1rem;
-            margin-bottom: 0.25rem;
-            transition: all 0.2s ease;
-        }
-        .nav-link:hover, .nav-link.active {
-            color: #58a6ff;
-            background-color: rgba(56, 139, 253, 0.1);
-        }
-        .table {
-            color: #e6edf3;
-        }
-        .table th {
-            border-color: #30363d;
-            color: #8b949e;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.05em;
-        }
-        .table td {
-            border-color: #30363d;
-            vertical-align: middle;
-        }
-        .badge-status {
-            font-size: 0.75rem;
-            padding: 0.35em 0.65em;
-        }
-        .live-indicator {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background-color: #238636;
-            display: inline-block;
-            margin-right: 6px;
-            box-shadow: 0 0 8px #2ea043;
-        }
-    </style>
+    </script>
 </head>
-<body>
+<body class="bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text min-h-screen flex flex-col md:flex-row antialiased selection:bg-cyan-500 selection:text-white">
 
-    <!-- Sidebar Navigation -->
-    <aside class="sidebar d-flex flex-column p-3">
-        <div class="d-flex align-items-center mb-4 px-2">
-            <i class="bi bi-envelope-paper-heart-fill text-primary fs-3 me-2"></i>
-            <div>
-                <h5 class="mb-0 fw-bold tracking-tight">RaHaMail Server</h5>
-                <span class="badge text-bg-info-subtle text-info border border-info-subtle" style="font-size: 0.65rem;">
-                    <i class="bi bi-database me-1"></i> {{ .db_driver }}
-                </span>
+    <!-- SIDEBAR NAVIGATION -->
+    <aside class="w-full md:w-64 bg-light-sidebar dark:bg-dark-sidebar border-r border-light-border dark:border-dark-border flex flex-col justify-between shrink-0 min-h-screen p-4">
+        <div>
+            <!-- Brand / Logo Header -->
+            <div class="flex items-center justify-between px-2 mb-8">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-cyan-glow">
+                        <i class="bi bi-envelope-paper-heart-fill text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-base font-bold tracking-tight text-light-text dark:text-white">Corporate</h1>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-cyan-500/10 text-cyan-500 dark:text-cyan-400 border border-cyan-500/20">
+                            {{ .db_driver }}
+                        </span>
+                    </div>
+                </div>
             </div>
+
+            <!-- Navigation Links -->
+            <div class="px-2 mb-2">
+                <span class="text-[11px] font-semibold tracking-wider uppercase text-light-muted dark:text-dark-muted">Admin Menu</span>
+            </div>
+            <nav class="space-y-1.5">
+                <a href="/" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 shadow-sm">
+                    <i class="bi bi-grid-fill text-base"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="/admin/domains" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card">
+                    <i class="bi bi-globe text-base"></i>
+                    <span>Domain Management</span>
+                </a>
+                <a href="/mail" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card">
+                    <i class="bi bi-inbox-fill text-base"></i>
+                    <span>User Webmail</span>
+                    <span class="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-500 dark:text-blue-400 font-semibold border border-blue-500/20">Open</span>
+                </a>
+                <a href="/admin/simulations" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card">
+                    <i class="bi bi-shield-exclamation text-base"></i>
+                    <span>Spam & Phishing</span>
+                </a>
+                <a href="/admin/logs" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card">
+                    <i class="bi bi-broadcast text-base"></i>
+                    <span>Mail Server SSE Live</span>
+                </a>
+                <a href="/admin/settings" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card">
+                    <i class="bi bi-gear-fill text-base"></i>
+                    <span>Settings & Backup</span>
+                </a>
+            </nav>
         </div>
 
-        <ul class="nav nav-pills flex-column mb-auto">
-            <li class="nav-item">
-                <a href="#dashboard" class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-dashboard">
-                    <i class="bi bi-speedometer2 me-2"></i> Dashboard
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="#webmail" class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-webmail">
-                    <i class="bi bi-inbox-fill me-2"></i> Mailbox (Inbox)
-                    <span id="unreadBadge" class="badge rounded-pill bg-danger float-end" style="display: none;">0</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="#compose" class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-compose">
-                    <i class="bi bi-send-plus-fill me-2"></i> Kirim Email (REST)
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="#domains" class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-domains">
-                    <i class="bi bi-globe me-2"></i> Domains & DKIM
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="#simulations" class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-simulations" onclick="loadSimulationsTab()">
-                    <i class="bi bi-shield-exclamation me-2"></i> Phishing Awareness
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="#logs" class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-logs">
-                    <i class="bi bi-broadcast me-2"></i> Live SSE Stream
-                </a>
-            </li>
-        </ul>
-
-        <hr class="border-secondary my-3">
-
-        <div class="px-2 mb-3">
-            <span class="badge text-bg-secondary w-100 py-2 d-flex align-items-center justify-content-center mb-1" style="font-size: 0.65rem;">
-                <i class="bi bi-shield-check me-1"></i> GNU GPLv3 / Commercial
-            </span>
-            <a href="https://www.paypal.com/paypalme" target="_blank" class="text-decoration-none text-secondary d-block text-center" style="font-size: 0.65rem;">
-                <i class="bi bi-paypal text-primary me-1"></i> Donate via PayPal
-            </a>
-        </div>
-
-        <div class="dropdown px-2">
-            <a href="#" class="d-flex align-items-center text-dark text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
-                <i class="bi bi-person-circle fs-4 me-2 text-primary"></i>
-                <strong class="small">admin@example.com</strong>
-            </a>
-            <ul class="dropdown-menu text-small shadow">
-                <li><a class="dropdown-item" href="/mail"><i class="bi bi-envelope me-2"></i> Buka Webmail</a></li>
-                <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item text-danger" href="/logout"><i class="bi bi-box-arrow-right me-2"></i> Keluar</a></li>
-            </ul>
+        <div class="mt-8 pt-4 border-t border-light-border dark:border-dark-border px-2">
+            <div class="p-3 rounded-xl bg-slate-100 dark:bg-dark-card border border-light-border dark:border-dark-border text-center">
+                <div class="flex items-center justify-center gap-2 text-xs font-semibold text-light-muted dark:text-dark-muted">
+                    <i class="bi bi-cpu-fill text-cyan-500"></i>
+                    <span>Powered by Golang / SSE</span>
+                </div>
+                <div class="mt-1 text-[11px] text-slate-400">Zero Node.js Runtime</div>
+            </div>
         </div>
     </aside>
 
-    <!-- Main Content Area -->
-    <main class="main-content">
-        <!-- Top Navigation Bar -->
-        <header class="d-flex justify-content-between align-items-center pb-3 mb-4 border-bottom">
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+        <!-- TOPBAR -->
+        <header class="h-16 bg-light-header dark:bg-dark-header border-b border-light-border dark:border-dark-border px-6 flex items-center justify-between shrink-0 sticky top-0 z-30">
             <div>
-                <h4 class="fw-bold mb-0 text-dark" id="page-title">{{ .title }}</h4>
-                <p class="text-secondary mb-0 small">Server email real-time bertenaga Server-Sent Events (SSE)</p>
+                <h2 class="text-base font-bold text-light-text dark:text-white">Admin Dashboard</h2>
             </div>
-            <div class="d-flex gap-2 align-items-center">
-                <!-- Link ke Webmail User -->
-                <a href="/mail" class="btn btn-primary btn-sm fw-semibold">
-                    <i class="bi bi-envelope-at-fill me-1"></i> Buka Webmail
-                </a>
-                <!-- Status SSE Connection -->
-                <span class="badge text-bg-light border d-flex align-items-center py-2 px-3" id="sseBadge">
-                    <span class="live-indicator" id="sseIndicator"></span>
-                    <span id="sseStatusText" class="text-dark">SSE: CONNECTING...</span>
-                </span>
+            <div class="flex items-center gap-3.5">
+                <button onclick="toggleTheme()" class="w-9 h-9 rounded-xl flex items-center justify-center bg-slate-100 dark:bg-dark-card border border-light-border dark:border-dark-border text-light-muted dark:text-dark-muted hover:text-cyan-500 transition-colors" title="Toggle Dark/Light Mode">
+                    <i class="bi bi-moon-stars-fill text-sm hidden dark:inline"></i>
+                    <i class="bi bi-sun-fill text-sm inline dark:hidden text-amber-500"></i>
+                </button>
+                <div class="flex items-center gap-2.5 pl-2 border-l border-light-border dark:border-dark-border">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white text-xs font-bold">
+                        AD
+                    </div>
+                    <div class="hidden sm:block text-left">
+                        <div class="text-xs font-bold text-light-text dark:text-white">Admin</div>
+                        <div class="text-[10px] text-light-muted dark:text-dark-muted">Super Administrator</div>
+                    </div>
+                </div>
             </div>
         </header>
 
-        <!-- Tab Contents -->
-        <div class="tab-content">
-            <!-- TAB 1: DASHBOARD -->
-            <div class="tab-pane fade show active" id="tab-dashboard">
-                <!-- Stats Row -->
-                <div class="row g-4 mb-4">
-                    <div class="col-12 col-md-6 col-xl-3">
-                        <div class="card p-3 shadow-sm h-100">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div>
-                                    <span class="text-secondary small fw-medium">Total Messages</span>
-                                    <h3 class="fw-bold my-1" id="statEmails">{{ .stats.messages }}</h3>
-                                    <span class="text-success small"><i class="bi bi-lightning-charge-fill"></i> Live Sync via SSE</span>
-                                </div>
-                                <div class="stat-icon bg-primary-subtle text-primary">
-                                    <i class="bi bi-inbox-fill"></i>
-                                </div>
-                            </div>
-                        </div>
+        <!-- DASHBOARD CONTENT -->
+        <div class="p-6 space-y-6">
+            <!-- TOP 4 KPI CARDS -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Card 1: Active Domains -->
+                <div class="p-4 rounded-2xl bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border shadow-card-light dark:shadow-card-dark flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold text-light-muted dark:text-dark-muted">Active Domains</span>
+                        <span class="w-2 h-2 rounded-full bg-cyan-500"></span>
                     </div>
-                    <div class="col-12 col-md-6 col-xl-3">
-                        <div class="card p-3 shadow-sm h-100">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div>
-                                    <span class="text-secondary small fw-medium">Active Domains</span>
-                                    <h3 class="fw-bold my-1" id="statDomains">{{ .stats.domains }}</h3>
-                                    <span class="text-info small"><i class="bi bi-key-fill"></i> DKIM 2048-bit</span>
-                                </div>
-                                <div class="stat-icon bg-info-subtle text-info">
-                                    <i class="bi bi-hdd-network-fill"></i>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="flex items-baseline justify-between mt-3">
+                        <h4 class="text-3xl font-extrabold text-light-text dark:text-white" id="statDomains">{{ .stats.domains }}</h4>
+                        <div class="w-24 h-9" id="sparklineDomains"></div>
                     </div>
-                    <div class="col-12 col-md-6 col-xl-3">
-                        <div class="card p-3 shadow-sm h-100">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div>
-                                    <span class="text-secondary small fw-medium">Total Users</span>
-                                    <h3 class="fw-bold my-1" id="statUsers">{{ .stats.users }}</h3>
-                                    <span class="text-success small"><i class="bi bi-people-fill"></i> Registered Accounts</span>
-                                </div>
-                                <div class="stat-icon bg-success-subtle text-success">
-                                    <i class="bi bi-people-fill"></i>
-                                </div>
-                            </div>
-                        </div>
+                </div>
+
+                <!-- Card 2: Total Mail Users -->
+                <div class="p-4 rounded-2xl bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border shadow-card-light dark:shadow-card-dark flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold text-light-muted dark:text-dark-muted">Total Mail Users</span>
+                        <span class="w-2 h-2 rounded-full bg-blue-500"></span>
                     </div>
-                    <div class="col-12 col-md-6 col-xl-3">
-                        <div class="card p-3 shadow-sm h-100">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div>
-                                    <span class="text-secondary small fw-medium">MTA Delivery Rate</span>
-                                    <h3 class="fw-bold my-1">99.8%</h3>
-                                    <span class="text-success small"><i class="bi bi-check-all"></i> High Reputation</span>
-                                </div>
-                                <div class="stat-icon bg-warning-subtle text-warning">
-                                    <i class="bi bi-send-check-fill"></i>
-                                </div>
-                            </div>
+                    <div class="flex items-baseline justify-between mt-3">
+                        <h4 class="text-3xl font-extrabold text-light-text dark:text-white" id="statUsers">{{ .stats.users }}</h4>
+                        <div class="w-24 h-9" id="sparklineUsers"></div>
+                    </div>
+                </div>
+
+                <!-- Card 3: Storage Used -->
+                <div class="p-4 rounded-2xl bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border shadow-card-light dark:shadow-card-dark flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold text-light-muted dark:text-dark-muted">Storage Used</span>
+                        <span class="text-[11px] font-bold text-cyan-600 dark:text-cyan-400">1.2%</span>
+                    </div>
+                    <div class="mt-2">
+                        <h4 class="text-2xl font-extrabold text-light-text dark:text-white">2.6 GB</h4>
+                        <div class="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full mt-2 overflow-hidden">
+                            <div class="bg-gradient-to-r from-cyan-500 to-blue-500 h-full rounded-full" style="width: 12%"></div>
+                        </div>
+                        <div class="text-[10px] text-light-muted dark:text-dark-muted mt-1.5 flex justify-between">
+                            <span>Used Storage</span>
+                            <span>220 GB Quota</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Server Listeners & Health -->
-                <div class="row g-4 mb-4">
-                    <div class="col-12 col-lg-8">
-                        <div class="card p-4 h-100 shadow-sm">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="fw-bold mb-0">Status Protokol & Port Listener</h5>
-                                <span class="badge text-bg-success"><i class="bi bi-check-circle-fill me-1"></i> Running</span>
-                            </div>
-                            <div class="table-responsive">
-                                <table class="table align-middle">
-                                    <thead>
-                                        <tr>
-                                            <th>Protokol</th>
-                                            <th>Port</th>
-                                            <th>Enkripsi (TLS)</th>
-                                            <th>Backend Go Handler</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td><i class="bi bi-envelope text-primary me-2"></i><strong>SMTP Inbound</strong></td>
-                                            <td><span class="badge text-bg-dark border border-secondary">25</span></td>
-                                            <td>STARTTLS (Opportunistic)</td>
-                                            <td><code>emersion/go-smtp</code></td>
-                                            <td><span class="badge text-bg-success badge-status">READY (FASE 3)</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td><i class="bi bi-envelope-arrow-up text-info me-2"></i><strong>SMTP Submission</strong></td>
-                                            <td><span class="badge text-bg-dark border border-secondary">587 / 465</span></td>
-                                            <td>STARTTLS / Implicit TLS</td>
-                                            <td><code>emersion/go-smtp</code></td>
-                                            <td><span class="badge text-bg-success badge-status">READY (FASE 3)</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td><i class="bi bi-folder2-open text-warning me-2"></i><strong>IMAP Server</strong></td>
-                                            <td><span class="badge text-bg-dark border border-secondary">993 / 143</span></td>
-                                            <td>SSL/TLS / STARTTLS</td>
-                                            <td><code>emersion/go-imap/v2</code></td>
-                                            <td><span class="badge text-bg-secondary badge-status">FASE 5</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td><i class="bi bi-broadcast text-danger me-2"></i><strong>REST API & SSE</strong></td>
-                                            <td><span class="badge text-bg-dark border border-secondary">8080</span></td>
-                                            <td>HTTP/SSE Stream</td>
-                                            <td><code>gin-gonic/gin + .tmpl</code></td>
-                                            <td><span class="badge text-bg-success badge-status">LIVE STREAM</span></td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
+                <!-- Card 4: SSE Live Connection -->
+                <div class="p-4 rounded-2xl bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border shadow-card-light dark:shadow-card-dark flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold text-light-muted dark:text-dark-muted">SSE Live Status</span>
+                        <div class="relative flex items-center justify-center">
+                            <span id="ssePulseIndicator" class="w-3 h-3 rounded-full bg-emerald-500 animate-ping"></span>
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 absolute"></span>
                         </div>
                     </div>
-
-                    <div class="col-12 col-lg-4">
-                        <div class="card p-4 h-100 shadow-sm">
-                            <h5 class="fw-bold mb-3">Status Autentikasi DNS</h5>
-                            <div class="list-group list-group-flush bg-transparent">
-                                <div class="list-group-item bg-transparent text-white px-0 d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>SPF Record</strong>
-                                        <div class="text-secondary small">v=spf1 mx ~all</div>
-                                    </div>
-                                    <span class="badge text-bg-success"><i class="bi bi-check-lg"></i> Valid</span>
-                                </div>
-                                <div class="list-group-item bg-transparent text-white px-0 d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>DKIM Signature</strong>
-                                        <div class="text-secondary small">Selector: mail._domainkey</div>
-                                    </div>
-                                    <span class="badge text-bg-success"><i class="bi bi-check-lg"></i> Valid</span>
-                                </div>
-                                <div class="list-group-item bg-transparent text-white px-0 d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>DMARC Policy</strong>
-                                        <div class="text-secondary small">p=quarantine; pct=100</div>
-                                    </div>
-                                    <span class="badge text-bg-success"><i class="bi bi-check-lg"></i> Valid</span>
-                                </div>
-                            </div>
+                    <div class="mt-2 text-center py-1">
+                        <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-xl font-bold animate-pulse-glow">
+                            <i class="bi bi-activity"></i>
+                        </div>
+                        <div class="mt-1" id="sseStatusPill">
+                            <span id="sseConnectionStatus" class="text-xs font-bold text-emerald-500">Connected</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- TAB 2: WEBMAIL / INBOX -->
-            <div class="tab-pane fade" id="tab-webmail">
-                <div class="card p-4 shadow-sm">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="fw-bold mb-0"><i class="bi bi-inbox me-2"></i> Kotak Masuk (INBOX)</h5>
-                        <span class="badge text-bg-primary-subtle text-primary border border-primary-subtle">Auto-Updated via SSE</span>
+            <!-- MIDDLE SECTION: CHARTS -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Left: SSE Live Traffic Spline Chart -->
+                <div class="lg:col-span-2 p-5 rounded-2xl bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border shadow-card-light dark:shadow-card-dark">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h4 class="text-sm font-bold text-light-text dark:text-white">SSE Live Traffic</h4>
+                            <p class="text-[11px] text-light-muted dark:text-dark-muted">Real-time traffic SSE driven events feed</p>
+                        </div>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-cyan-500/10 text-cyan-500 border border-cyan-500/20">
+                            <span class="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse"></span> Live Stream
+                        </span>
                     </div>
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle">
-                            <thead>
-                                <tr>
-                                    <th width="40"><input type="checkbox" class="form-check-input"></th>
-                                    <th>Pengirim</th>
-                                    <th>Subjek</th>
-                                    <th>SPF/DKIM</th>
-                                    <th>Waktu</th>
-                                    <th>Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody id="inboxTableBody">
-                                {{ range .messages }}
-                                <tr>
-                                    <td><input type="checkbox" class="form-check-input"></td>
-                                    <td><strong>{{ .From }}</strong></td>
-                                    <td>{{ .Subject }}<br><span class="text-secondary small">{{ .Snippet }}</span></td>
-                                    <td><span class="badge text-bg-success-subtle text-success border border-success-subtle">{{ .SPFStatus }}/{{ .DKIMStatus }} PASS</span></td>
-                                    <td>{{ .CreatedAt.Format "15:04:05" }}</td>
-                                    <td><button class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i> Baca</button></td>
-                                </tr>
-                                {{ else }}
-                                <tr>
-                                    <td colspan="6" class="text-center text-secondary py-4">Belum ada email yang diterima</td>
-                                </tr>
-                                {{ end }}
-                            </tbody>
-                        </table>
+                    <div class="h-48 w-full" id="sseTrafficChart"></div>
+                </div>
+
+                <!-- Right: Spam Awareness Metrics -->
+                <div class="p-5 rounded-2xl bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border shadow-card-light dark:shadow-card-dark flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="text-sm font-bold text-light-text dark:text-white">Spam Awareness</h4>
+                        <span class="text-xs text-light-muted dark:text-dark-muted"><i class="bi bi-shield-check text-cyan-500"></i></span>
+                    </div>
+
+                    <div class="flex items-center justify-center py-2">
+                        <div class="relative w-36 h-36 flex items-center justify-center">
+                            <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                                <path class="text-slate-200 dark:text-slate-800" stroke-width="3.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                                <path class="text-cyan-500" stroke-width="3.5" stroke-dasharray="35, 100" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                            </svg>
+                            <div class="absolute flex flex-col items-center">
+                                <span class="text-xl font-black text-light-text dark:text-white">65%</span>
+                                <span class="text-[9px] uppercase tracking-wider text-light-muted dark:text-dark-muted font-bold">Passed</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 pt-3 border-t border-light-border dark:border-dark-border text-center">
+                        <div class="p-2 rounded-xl bg-slate-50 dark:bg-dark-bg border border-light-border dark:border-dark-border">
+                            <span class="text-[10px] text-light-muted dark:text-dark-muted block">Simulations</span>
+                            <span class="text-xs font-bold text-cyan-500">Active</span>
+                        </div>
+                        <div class="p-2 rounded-xl bg-slate-50 dark:bg-dark-bg border border-light-border dark:border-dark-border">
+                            <span class="text-[10px] text-light-muted dark:text-dark-muted block">Action</span>
+                            <a href="/admin/simulations" class="text-xs font-bold text-emerald-500 hover:underline">Kelola &rarr;</a>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- TAB 3: COMPOSE EMAIL -->
-            <div class="tab-pane fade" id="tab-compose">
-                <div class="card p-4 shadow-sm" style="max-width: 800px; margin: auto;">
-                    <div class="d-flex align-items-center mb-3">
-                        <i class="bi bi-send text-primary fs-4 me-2"></i>
-                        <h5 class="fw-bold mb-0">Kirim Email Cepat (REST API + SSE Broadcast)</h5>
+            <!-- BOTTOM SECTION: LIVE LOGS TABLE -->
+            <div class="p-5 rounded-2xl bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border shadow-card-light dark:shadow-card-dark">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h4 class="text-sm font-bold text-light-text dark:text-white">Live Inbound & Outbound Logs</h4>
+                        <p class="text-[11px] text-light-muted dark:text-dark-muted">Aktivitas transmisi email terkini</p>
                     </div>
-                    <form id="composeForm">
-                        <div class="mb-3">
-                            <label class="form-label text-secondary small fw-bold">DARI (FROM)</label>
-                            <input type="email" class="form-control bg-dark text-white border-secondary" id="fromEmail" value="admin@example.com" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label text-secondary small fw-bold">KEPADA (TO)</label>
-                            <input type="email" class="form-control bg-dark text-white border-secondary" id="toEmail" placeholder="penerima@tujuan.com" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label text-secondary small fw-bold">SUBJEK</label>
-                            <input type="text" class="form-control bg-dark text-white border-secondary" id="subject" placeholder="Subjek email..." required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label text-secondary small fw-bold">PESAN (HTML / PLAIN TEXT)</label>
-                            <textarea class="form-control bg-dark text-white border-secondary" id="messageBody" rows="6" placeholder="Tulis isi email di sini..."></textarea>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="text-secondary small"><i class="bi bi-broadcast text-success"></i> Pengiriman akan disiarkan ke dashboard via SSE stream</span>
-                            <button type="button" class="btn btn-primary px-4" id="btnSubmitSend" onclick="sendEmailAjax()">
-                                <i class="bi bi-send-fill me-1"></i> Kirim Sekarang
-                            </button>
-                        </div>
-                    </form>
-                    <div id="alertSuccess" class="alert alert-success mt-3 d-none" role="alert">
-                        <i class="bi bi-check-circle-fill me-2"></i> <span id="alertMsg"></span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TAB 4: DOMAIN MANAGEMENT -->
-            <div class="tab-pane fade" id="tab-domains">
-                <div class="card p-4 shadow-sm">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="fw-bold mb-0"><i class="bi bi-globe me-2"></i> Daftar Domain & DKIM Key</h5>
-                        <button class="btn btn-sm btn-primary"><i class="bi bi-plus-lg"></i> Tambah Domain Baru</button>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table align-middle">
-                            <thead>
-                                <tr>
-                                    <th>Domain</th>
-                                    <th>DKIM Selector</th>
-                                    <th>Panjang Kunci</th>
-                                    <th>Status DKIM</th>
-                                    <th>Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody id="domainTableBody">
-                                {{ range .domains }}
-                                <tr>
-                                    <td><strong>{{ .Name }}</strong></td>
-                                    <td><code>{{ .DKIMSelector }}</code></td>
-                                    <td>RSA 2048-bit</td>
-                                    <td><span class="badge text-bg-success">ACTIVE</span></td>
-                                    <td>
-                                        <button class="btn btn-sm btn-outline-info me-1"><i class="bi bi-key"></i> DNS TXT</button>
-                                    </td>
-                                </tr>
-                                {{ end }}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TAB 5: PHISHING & SPAM AWARENESS SIMULATION (PHASE 3) -->
-            <div class="tab-pane fade" id="tab-simulations">
-                <!-- Top Metrics Bar -->
-                <div class="row g-3 mb-4">
-                    <div class="col-md-3">
-                        <div class="card p-3 d-flex flex-row align-items-center">
-                            <div class="stat-icon bg-primary-subtle text-primary me-3">
-                                <i class="bi bi-people-fill"></i>
-                            </div>
-                            <div>
-                                <small class="text-secondary fw-semibold">TOTAL TARGET DIUJI</small>
-                                <h4 id="simStatTotalSent" class="fw-bold mb-0 text-dark">0</h4>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card p-3 d-flex flex-row align-items-center">
-                            <div class="stat-icon bg-danger-subtle text-danger me-3">
-                                <i class="bi bi-shield-x"></i>
-                            </div>
-                            <div>
-                                <small class="text-secondary fw-semibold">GAGAL (KLIK LINK)</small>
-                                <h4 id="simStatTotalClicked" class="fw-bold mb-0 text-danger">0</h4>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card p-3 d-flex flex-row align-items-center">
-                            <div class="stat-icon bg-success-subtle text-success me-3">
-                                <i class="bi bi-shield-check"></i>
-                            </div>
-                            <div>
-                                <small class="text-secondary fw-semibold">LOLOS (LAPOR SPAM)</small>
-                                <h4 id="simStatTotalReported" class="fw-bold mb-0 text-success">0</h4>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card p-3 d-flex flex-row align-items-center">
-                            <div class="stat-icon bg-warning-subtle text-warning me-3">
-                                <i class="bi bi-graph-down-arrow"></i>
-                            </div>
-                            <div>
-                                <small class="text-secondary fw-semibold">FAILURE RATE (%)</small>
-                                <h4 id="simStatFailureRate" class="fw-bold mb-0 text-dark">0.0%</h4>
-                            </div>
-                        </div>
+                    <div class="flex items-center gap-2">
+                        <a href="/admin/logs" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-dark-header border border-light-border dark:border-dark-border text-light-muted dark:text-dark-muted hover:text-cyan-500 transition-colors">
+                            <i class="bi bi-broadcast mr-1"></i> Buka Terminal SSE
+                        </a>
                     </div>
                 </div>
 
-                <!-- Main Section: Visual Chart & Active Campaigns -->
-                <div class="row g-4 mb-4">
-                    <!-- Visual Result Ratio Card (SVG Donut Chart) -->
-                    <div class="col-lg-4">
-                        <div class="card p-4 h-100 shadow-sm text-center">
-                            <h6 class="fw-bold text-dark mb-3 text-start"><i class="bi bi-pie-chart-fill text-primary me-2"></i>Rasio Awareness Karyawan</h6>
-                            <div class="d-flex justify-content-center align-items-center py-2">
-                                <svg width="180" height="180" viewBox="0 0 42 42" class="donut">
-                                    <circle class="donut-ring" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#f1f5f9" stroke-width="5"></circle>
-                                    <circle id="donutSegmentLolos" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#22c55e" stroke-width="5" stroke-dasharray="0 100" stroke-dashoffset="25"></circle>
-                                    <circle id="donutSegmentGagal" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#ef4444" stroke-width="5" stroke-dasharray="0 100" stroke-dashoffset="25"></circle>
-                                    <g class="chart-text">
-                                        <text x="50%" y="46%" class="chart-number" text-anchor="middle" font-size="6" font-weight="bold" fill="#0f172a" id="donutCenterRate">0%</text>
-                                        <text x="50%" y="58%" class="chart-label" text-anchor="middle" font-size="2.6" fill="#64748b">Vulnerable</text>
-                                    </g>
-                                </svg>
-                            </div>
-                            <div class="d-flex justify-content-around mt-3 small">
-                                <div><span class="badge bg-success me-1">&nbsp;</span> Lolos: <strong id="lblLolos">0</strong></div>
-                                <div><span class="badge bg-danger me-1">&nbsp;</span> Gagal: <strong id="lblGagal">0</strong></div>
-                                <div><span class="badge bg-secondary me-1">&nbsp;</span> Diam: <strong id="lblDiam">0</strong></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Campaign Actions & List -->
-                    <div class="col-lg-8">
-                        <div class="card p-4 h-100 shadow-sm">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <div>
-                                    <h5 class="fw-bold mb-1"><i class="bi bi-shield-shaded text-primary me-2"></i>Kampanye Simulasi Phishing</h5>
-                                    <p class="text-secondary small mb-0">Uji ketahanan keamanan siber karyawan terhadap social engineering.</p>
-                                </div>
-                                <button class="btn btn-primary btn-sm fw-semibold" onclick="openNewCampaignModal()">
-                                    <i class="bi bi-plus-circle me-1"></i> Buat Simulasi Baru
-                                </button>
-                            </div>
-
-                            <div class="table-responsive">
-                                <table class="table table-hover align-middle mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Judul Kampanye</th>
-                                            <th>Pengirim Uji Coba</th>
-                                            <th>Status</th>
-                                            <th>Target</th>
-                                            <th>Gagal (Klik)</th>
-                                            <th>Aksi</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="campaignsTableBody">
-                                        <tr>
-                                            <td colspan="6" class="text-center py-4 text-secondary">
-                                                <div class="spinner-border spinner-border-sm me-2" role="status"></div>Memuat data kampanye...
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Detailed Target Breakdown Table -->
-                <div class="card p-4 shadow-sm">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="fw-bold mb-0 text-dark" id="targetBreakdownTitle"><i class="bi bi-person-lines-fill text-primary me-2"></i>Rincian Status Karyawan Terpilih</h6>
-                        <span class="badge bg-light text-secondary border" id="badgeTargetCount">0 Karyawan</span>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table table-sm table-hover align-middle mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Email Karyawan</th>
-                                    <th>Status Pelatihan</th>
-                                    <th>Waktu Terkirim</th>
-                                    <th>Waktu Klik (Gagal)</th>
-                                    <th>IP / Browser</th>
-                                </tr>
-                            </thead>
-                            <tbody id="simTargetsTableBody">
-                                <tr>
-                                    <td colspan="5" class="text-center py-3 text-muted">Pilih atau luncurkan kampanye untuk melihat daftar rincian status karyawan.</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TAB 6: LIVE SSE STREAM LOGS -->
-            <div class="tab-pane fade" id="tab-logs">
-                <div class="card p-4 shadow-sm">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="fw-bold mb-0"><i class="bi bi-broadcast text-danger me-2"></i> Real-time Server-Sent Events (SSE) Feed</h5>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="clearLogs()"><i class="bi bi-trash"></i> Bersihkan Log</button>
-                    </div>
-                    <div id="sseTerminal" class="bg-black p-3 rounded font-monospace small text-light" style="max-height: 420px; overflow-y: auto;">
-                        <div><span class="text-secondary">[*]</span> Menginisialisasi koneksi EventSource ke <code>/api/v1/sse</code>...</div>
-                    </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="text-[11px] uppercase tracking-wider text-light-muted dark:text-dark-muted border-b border-light-border dark:border-dark-border">
+                            <tr>
+                                <th class="py-2.5 px-4 font-semibold">Time</th>
+                                <th class="py-2.5 px-4 font-semibold">Sender / From</th>
+                                <th class="py-2.5 px-4 font-semibold">Subject</th>
+                                <th class="py-2.5 px-4 font-semibold">Status</th>
+                                <th class="py-2.5 px-4 font-semibold text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="liveLogsTableBody" class="divide-y divide-light-border dark:divide-dark-border">
+                            {{ range .messages }}
+                            <tr class="hover:bg-slate-50 dark:hover:bg-dark-cardHover transition-colors">
+                                <td class="py-3 px-4 text-slate-500 dark:text-dark-muted font-mono whitespace-nowrap">{{ .ReceivedAt.Format "15:04:05" }}</td>
+                                <td class="py-3 px-4 font-medium text-light-text dark:text-dark-text whitespace-nowrap">{{ .From }}</td>
+                                <td class="py-3 px-4 text-slate-500 dark:text-dark-muted truncate max-w-xs">{{ .Subject }}</td>
+                                <td class="py-3 px-4 whitespace-nowrap">
+                                    {{ if eq .Mailbox "Spam" }}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-rose-500/10 text-rose-500 border border-rose-500/20">Blocked</span>
+                                    {{ else }}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">Received</span>
+                                    {{ end }}
+                                </td>
+                                <td class="py-3 px-4 text-right">
+                                    <a href="/mail" class="text-cyan-500 hover:text-cyan-400 font-semibold"><i class="bi bi-eye"></i> View</a>
+                                </td>
+                            </tr>
+                            {{ else }}
+                            <tr>
+                                <td colspan="5" class="py-8 text-center text-slate-400">Belum ada aktivitas email tercatat.</td>
+                            </tr>
+                            {{ end }}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- MODAL CREATE SIMULATION CAMPAIGN -->
-    <div class="modal fade" id="modalNewCampaign" tabindex="-1" aria-labelledby="modalNewCampaignLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title fw-bold" id="modalNewCampaignLabel"><i class="bi bi-shield-plus text-primary me-2"></i>Rancang Kampanye Simulasi Phishing</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold text-secondary">PILIH DARI TEMPLATE PRESET BAWAAN</label>
-                        <select class="form-select" id="simPresetSelect" onchange="onSelectPresetChange()">
-                            <option value="">-- Pilih Skenario Phishing Siap Pakai --</option>
-                        </select>
-                    </div>
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold text-secondary">JUDUL KAMPANYE (INTERNAL)</label>
-                            <input type="text" class="form-control" id="simCampaignTitle" placeholder="Misal: Uji Coba Q4 HR Payroll" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold text-secondary">NAMA PENGIRIM PALSU (DISPLAY NAME)</label>
-                            <input type="text" class="form-control" id="simSenderName" placeholder="Misal: HR Support Service" required>
-                        </div>
-                    </div>
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold text-secondary">EMAIL PENGIRIM PALSU</label>
-                            <input type="email" class="form-control" id="simSenderEmail" placeholder="Misal: hr-support@company-portal.xyz" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold text-secondary">SUBJEK EMAIL</label>
-                            <input type="text" class="form-control" id="simSubject" placeholder="Misal: [PENTING] Verifikasi Rekening Anda" required>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold text-secondary">BODY EMAIL HTML (Gunakan <code>{{`{{.TrackingLink}}`}}</code> untuk link uji coba)</label>
-                        <textarea class="form-control font-monospace small" id="simTemplateBody" rows="7" required></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
-                    <button type="button" class="btn btn-primary btn-sm fw-semibold" id="btnSubmitCampaign" onclick="submitNewCampaign()">
-                        <i class="bi bi-save me-1"></i> Simpan Kampanye
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Bootstrap Bundle JS v5.3.8 (via npm install) -->
-    <script src="/static/js/bootstrap.bundle.min.js"></script>
-
+    <script src="/static/js/app.min.js"></script>
     <script>
-        // Update Page Title on Tab Switch
-        const triggerTabList = document.querySelectorAll('.sidebar .nav-link');
-        triggerTabList.forEach(triggerEl => {
-            triggerEl.addEventListener('shown.bs.tab', event => {
-                const text = event.target.innerText.trim();
-                document.getElementById('page-title').innerText = text;
-            });
-        });
-
-        function appendLog(category, message, colorClass = 'text-info') {
-            const terminal = document.getElementById('sseTerminal');
-            const time = new Date().toLocaleTimeString();
-            const logLine = document.createElement('div');
-            logLine.innerHTML = `<span class="text-secondary">[${time}]</span> <span class="${colorClass}">[${category}]</span> ${message}`;
-            terminal.appendChild(logLine);
-            terminal.scrollTop = terminal.scrollHeight;
-        }
-
-        function clearLogs() {
-            document.getElementById('sseTerminal').innerHTML = '<div><span class="text-secondary">[*]</span> Log dibersihkan. Menunggu event baru...</div>';
-        }
-
-        // ==========================================
-        // SERVER-SENT EVENTS (SSE) CLIENT SETUP
-        // ==========================================
-        let evtSource;
-        function initSSE() {
-            const sseBadge = document.getElementById('sseBadge');
-            const sseIndicator = document.getElementById('sseIndicator');
-            const sseStatusText = document.getElementById('sseStatusText');
-
-            evtSource = new EventSource('/api/v1/sse');
-
-            evtSource.onopen = function() {
-                sseBadge.className = 'badge text-bg-success d-flex align-items-center py-2 px-3';
-                sseIndicator.style.backgroundColor = '#3fb950';
-                sseStatusText.innerText = 'SSE: CONNECTED (LIVE)';
-                appendLog('SSE-SYSTEM', 'Koneksi stream real-time aktif', 'text-success');
-            };
-
-            evtSource.onerror = function(err) {
-                sseBadge.className = 'badge text-bg-danger d-flex align-items-center py-2 px-3';
-                sseIndicator.style.backgroundColor = '#f85149';
-                sseStatusText.innerText = 'SSE: DISCONNECTED';
-                appendLog('SSE-SYSTEM', 'Koneksi terputus, mencoba reconnect otomatis...', 'text-danger');
-            };
-
-            // Listener event pesan sambutan
-            evtSource.addEventListener('connected', function(e) {
-                const data = JSON.parse(e.data);
-                appendLog('SSE-INIT', data.message, 'text-primary');
-            });
-
-            // Listener event pembaruan statistik
-            evtSource.addEventListener('stats', function(e) {
-                const stats = JSON.parse(e.data);
-                if (stats.messages !== undefined) document.getElementById('statEmails').innerText = stats.messages;
-                if (stats.domains !== undefined) document.getElementById('statDomains').innerText = stats.domains;
-                if (stats.users !== undefined) document.getElementById('statUsers').innerText = stats.users;
-                appendLog('SSE-STATS', `Statistik diperbarui: Total Pesan=${stats.messages}, Domains=${stats.domains}`, 'text-warning');
-            });
-
-            // Listener event email baru yang masuk / terkirim
-            evtSource.addEventListener('new_email', function(e) {
-                const email = JSON.parse(e.data);
-                appendLog('SSE-EMAIL', `Email Baru: Dari [${email.from}] ke [${email.to}] - "${email.subject}"`, 'text-success');
-
-                // Tambahkan baris baru ke tabel Inbox secara real-time
-                const tbody = document.getElementById('inboxTableBody');
-                const newRow = document.createElement('tr');
-                newRow.innerHTML = `
-                    <td><input type="checkbox" class="form-check-input"></td>
-                    <td><strong>${email.from}</strong></td>
-                    <td>${email.subject}<br><span class="text-secondary small">${email.snippet || ''}</span></td>
-                    <td><span class="badge text-bg-success-subtle text-success border border-success-subtle">SPF/DKIM PASS</span></td>
-                    <td>Baru saja</td>
-                    <td><button class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i> Baca</button></td>
-                `;
-                tbody.insertBefore(newRow, tbody.firstChild);
-
-                // Efek visual update badge
-                const unreadBadge = document.getElementById('unreadBadge');
-                unreadBadge.style.display = 'inline-block';
-                unreadBadge.innerText = parseInt(unreadBadge.innerText || '0') + 1;
-            });
-        }
-
-        // Send Email Handler
-        async function sendEmailAjax() {
-            const from = document.getElementById('fromEmail').value;
-            const to = document.getElementById('toEmail').value;
-            const subject = document.getElementById('subject').value;
-            const body = document.getElementById('messageBody').value;
-
-            if (!to || !subject) {
-                alert('Penerima dan Subjek wajib diisi!');
-                return;
-            }
-
-            const btn = document.getElementById('btnSubmitSend');
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Mengirim...';
-
-            try {
-                const res = await fetch('/api/v1/email/send', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ from, to, subject, body })
-                });
-
-                const data = await res.json();
-                if (res.ok) {
-                    const alertBox = document.getElementById('alertSuccess');
-                    document.getElementById('alertMsg').innerText = `${data.message} (Message ID: #${data.data.id})`;
-                    alertBox.classList.remove('d-none');
-                    document.getElementById('subject').value = '';
-                    document.getElementById('messageBody').value = '';
-                    setTimeout(() => alertBox.classList.add('d-none'), 5000);
-                } else {
-                    alert('Gagal: ' + (data.error || 'Terjadi kesalahan sistem'));
-                }
-            } catch (err) {
-                alert('Kesalahan jaringan: ' + err.message);
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="bi bi-send-fill me-1"></i> Kirim Sekarang';
+        function toggleTheme() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
             }
         }
-
-        // ==========================================
-        // PHISHING AWARENESS SIMULATION (PHASE 3)
-        // ==========================================
-        let availablePresets = [];
-        let newCampaignModalInstance = null;
-
-        async function loadSimulationsTab() {
-            try {
-                const res = await fetch('/api/v1/admin/simulations');
-                const data = await res.json();
-                const tbody = document.getElementById('campaignsTableBody');
-                tbody.innerHTML = '';
-
-                let grandTotalSent = 0;
-                let grandTotalClicked = 0;
-                let grandTotalReported = 0;
-
-                if (!data.campaigns || data.campaigns.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-secondary">Belum ada kampanye simulasi. Silakan buat kampanye pertama Anda!</td></tr>';
-                } else {
-                    data.campaigns.forEach(c => {
-                        grandTotalSent += (c.total_sent || 0);
-                        grandTotalClicked += (c.total_clicked || 0);
-                        grandTotalReported += (c.total_reported || 0);
-
-                        const row = document.createElement('tr');
-                        const statusBadge = c.status === 'running' 
-                            ? '<span class="badge bg-success-subtle text-success border border-success-subtle">RUNNING</span>'
-                            : '<span class="badge bg-secondary-subtle text-secondary border">DRAFT</span>';
-
-                        row.innerHTML = `
-                            <td><strong>${escapeHtml(c.title)}</strong><br><small class="text-secondary">${escapeHtml(c.subject)}</small></td>
-                            <td><code>${escapeHtml(c.sender_email)}</code></td>
-                            <td>${statusBadge}</td>
-                            <td><span class="badge bg-light text-dark border">${c.total_sent || 0} orang</span></td>
-                            <td><span class="badge bg-danger-subtle text-danger border border-danger-subtle">${c.total_clicked || 0} (${c.total_sent ? Math.round((c.total_clicked / c.total_sent) * 100) : 0}%)</span></td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary me-1" onclick="viewCampaignDetail(${c.id})"><i class="bi bi-bar-chart"></i> Detail</button>
-                                ${c.status === 'draft' ? `<button class="btn btn-sm btn-primary" onclick="launchCampaignNow(${c.id})"><i class="bi bi-play-fill"></i> Luncurkan</button>` : ''}
-                            </td>
-                        `;
-                        tbody.appendChild(row);
-                    });
-
-                    // Auto-load details of the first campaign
-                    if (data.campaigns.length > 0) {
-                        viewCampaignDetail(data.campaigns[0].id);
-                    }
-                }
-
-                // Update Overall Summary Cards
-                document.getElementById('simStatTotalSent').innerText = grandTotalSent;
-                document.getElementById('simStatTotalClicked').innerText = grandTotalClicked;
-                document.getElementById('simStatTotalReported').innerText = grandTotalReported;
-
-                const overallFailureRate = grandTotalSent > 0 ? ((grandTotalClicked / grandTotalSent) * 100).toFixed(1) : "0.0";
-                document.getElementById('simStatFailureRate').innerText = overallFailureRate + "%";
-
-            } catch (err) {
-                console.error("Gagal memuat kampanye:", err);
-            }
-        }
-
-        async function viewCampaignDetail(id) {
-            try {
-                const res = await fetch(`/api/v1/admin/simulations/${id}/stats`);
-                const data = await res.json();
-                if (!res.ok) return;
-
-                document.getElementById('targetBreakdownTitle').innerHTML = `<i class="bi bi-person-lines-fill text-primary me-2"></i>Rincian Karyawan: <strong>${escapeHtml(data.title)}</strong>`;
-                document.getElementById('badgeTargetCount').innerText = `${data.total_sent} Karyawan`;
-
-                // Update Donut Chart
-                const total = data.total_sent || 1;
-                const lolosPct = Math.round((data.total_reported / total) * 100);
-                const gagalPct = Math.round((data.total_clicked / total) * 100);
-
-                document.getElementById('donutSegmentLolos').setAttribute('stroke-dasharray', `${lolosPct} ${100 - lolosPct}`);
-                document.getElementById('donutSegmentGagal').setAttribute('stroke-dasharray', `${gagalPct} ${100 - gagalPct}`);
-                document.getElementById('donutSegmentGagal').setAttribute('stroke-dashoffset', `${25 - lolosPct}`);
-                document.getElementById('donutCenterRate').textContent = data.failure_rate;
-
-                document.getElementById('lblLolos').innerText = data.total_reported;
-                document.getElementById('lblGagal').innerText = data.total_clicked;
-                document.getElementById('lblDiam').innerText = data.total_unresponsive;
-
-                // Render Targets Table
-                const tbody = document.getElementById('simTargetsTableBody');
-                tbody.innerHTML = '';
-                if (!data.targets || data.targets.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-muted">Belum ada target karyawan.</td></tr>';
-                    return;
-                }
-
-                data.targets.forEach(t => {
-                    const row = document.createElement('tr');
-                    let statusBadge = '<span class="badge bg-secondary-subtle text-secondary">Terkirim (Diam)</span>';
-                    if (t.status === 'clicked') {
-                        statusBadge = '<span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>NOT PASSED (Klik Link)</span>';
-                    } else if (t.status === 'reported') {
-                        statusBadge = '<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>PASSED (Lapor Spam)</span>';
-                    }
-
-                    const clickedTime = t.clicked_at ? new Date(t.clicked_at).toLocaleString() : '-';
-                    const ipAgent = t.ip_address ? `${t.ip_address} (${t.user_agent ? t.user_agent.substring(0, 24) + '...' : '-'})` : '-';
-
-                    row.innerHTML = `
-                        <td><strong>${escapeHtml(t.user ? t.user.email : 'User #' + t.user_id)}</strong></td>
-                        <td>${statusBadge}</td>
-                        <td>${new Date(t.sent_at).toLocaleTimeString()}</td>
-                        <td class="${t.clicked_at ? 'text-danger fw-semibold' : 'text-muted'}">${clickedTime}</td>
-                        <td class="small text-muted font-monospace">${escapeHtml(ipAgent)}</td>
-                    `;
-                    tbody.appendChild(row);
-                });
-
-            } catch (err) {
-                console.error("Gagal memuat detail kampanye:", err);
-            }
-        }
-
-        async function launchCampaignNow(id) {
-            if (!confirm('Luncurkan email simulasi ini sekarang ke seluruh karyawan target?')) return;
-            try {
-                const res = await fetch(`/api/v1/admin/simulations/${id}/launch`, { method: 'POST' });
-                const data = await res.json();
-                if (res.ok) {
-                    alert(data.message);
-                    loadSimulationsTab();
-                } else {
-                    alert('Gagal meluncurkan: ' + (data.error || 'Terjadi kesalahan'));
-                }
-            } catch (err) {
-                alert('Kesalahan jaringan: ' + err.message);
-            }
-        }
-
-        async function openNewCampaignModal() {
-            if (!newCampaignModalInstance) {
-                newCampaignModalInstance = new bootstrap.Modal(document.getElementById('modalNewCampaign'));
-            }
-
-            // Load presets jika belum ada
-            if (availablePresets.length === 0) {
-                try {
-                    const res = await fetch('/api/v1/admin/simulations/presets');
-                    const data = await res.json();
-                    availablePresets = data.presets || [];
-                    const select = document.getElementById('simPresetSelect');
-                    select.innerHTML = '<option value="">-- Pilih Skenario Phishing Siap Pakai --</option>';
-                    availablePresets.forEach((p, idx) => {
-                        select.innerHTML += `<option value="${idx}">${escapeHtml(p.title)}</option>`;
-                    });
-                } catch (e) {
-                    console.error("Gagal load presets:", e);
-                }
-            }
-
-            newCampaignModalInstance.show();
-        }
-
-        function onSelectPresetChange() {
-            const idx = document.getElementById('simPresetSelect').value;
-            if (idx === "") return;
-            const preset = availablePresets[idx];
-            if (!preset) return;
-
-            document.getElementById('simCampaignTitle').value = preset.title;
-            document.getElementById('simSenderName').value = preset.sender_name;
-            document.getElementById('simSenderEmail').value = preset.sender_email;
-            document.getElementById('simSubject').value = preset.subject;
-            document.getElementById('simTemplateBody').value = preset.template_html;
-        }
-
-        async function submitNewCampaign() {
-            const title = document.getElementById('simCampaignTitle').value.trim();
-            const sender_name = document.getElementById('simSenderName').value.trim();
-            const sender_email = document.getElementById('simSenderEmail').value.trim();
-            const subject = document.getElementById('simSubject').value.trim();
-            const template_body = document.getElementById('simTemplateBody').value.trim();
-
-            if (!title || !sender_name || !sender_email || !subject || !template_body) {
-                alert('Seluruh field form wajib diisi!');
-                return;
-            }
-
-            const btn = document.getElementById('btnSubmitCampaign');
-            btn.disabled = true;
-
-            try {
-                const res = await fetch('/api/v1/admin/simulations', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title, sender_name, sender_email, subject, template_body })
-                });
-                const data = await res.json();
-                if (res.ok) {
-                    newCampaignModalInstance.hide();
-                    alert('Kampanye simulasi berhasil dibuat!');
-                    loadSimulationsTab();
-                } else {
-                    alert('Gagal: ' + (data.error || 'Terjadi kesalahan sistem'));
-                }
-            } catch (err) {
-                alert('Kesalahan jaringan: ' + err.message);
-            } finally {
-                btn.disabled = false;
-            }
-        }
-
-        function escapeHtml(text) {
-            if (!text) return '';
-            return String(text)
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
-        }
-
-        document.addEventListener('DOMContentLoaded', initSSE);
     </script>
 </body>
 </html>
