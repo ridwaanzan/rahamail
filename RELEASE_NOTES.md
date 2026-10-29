@@ -4,6 +4,18 @@ This document tracks all official releases of **RaHaMail**, highlighting new fea
 
 ---
 
+## 📦 Version 1.4.1 (October 29, 2026) — Database Migration Stability Patch
+
+Patch release resolving SQLite table recreation foreign key constraint failures during server startup.
+
+### 🌟 Release Highlights
+- **SQLite WAL Mode Auto-Migration Stability**:
+  - Configured `_pragma=foreign_keys(OFF)` during initial connection setup for non-blocking GORM table recreation and temporary table drops.
+  - Automatically re-enables `PRAGMA foreign_keys = ON;` immediately after schema synchronization.
+  - Fixes `constraint failed: FOREIGN KEY constraint failed (787)` on `DROP TABLE domains` when existing relations are present.
+
+---
+
 ## 📦 Version 1.4.0 (October 29, 2026) — Security Awareness Simulation & Enterprise Threat Defenses
 
 Release 1.4.0 introduces an internal Phishing & Spam Awareness Simulation engine for employee training, alongside ClamAV/Rspamd scanner milters, Inbound DMARC verification, and S3-compatible cloud disaster recovery.
