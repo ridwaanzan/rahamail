@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"mail-server/internal/api/controllers"
 	"mail-server/internal/api/middleware"
@@ -29,19 +30,25 @@ func main() {
 	queue.InitQueue()
 	scheduler.InitScheduler()
 
-	// 4. Jalankan Core SMTP Server di background goroutine
-	smtpPort := os.Getenv("SMTP_PORT")
-	if smtpPort == "" {
-		smtpPort = ":2525" // Port non-root untuk testing lokal (port 25 membutuhkan akses root)
+	// Helper untuk menormalisasi format port (misal "25" -> ":25", ":25" -> ":25")
+	normalizePort := func(envVal, defaultPort string) string {
+		p := strings.TrimSpace(os.Getenv(envVal))
+		if p == "" {
+			return defaultPort
+		}
+		if !strings.HasPrefix(p, ":") && !strings.Contains(p, ":") {
+			return ":" + p
+		}
+		return p
 	}
+
+	// 4. Jalankan Core SMTP Server di background goroutine
+	smtpPort := normalizePort("SMTP_PORT", ":2525")
 	smtpServer := smtpserver.StartSMTPServer(smtpPort, "mail.example.com")
 	defer smtpServer.Close()
 
 	// 5. Jalankan IMAP Server di background goroutine
-	imapPort := os.Getenv("IMAP_PORT")
-	if imapPort == "" {
-		imapPort = ":1143" // Port non-root untuk testing lokal (port 143/993 membutuhkan akses root)
-	}
+	imapPort := normalizePort("IMAP_PORT", ":1143")
 	imapServer := imapserver.StartIMAPServer(imapPort)
 	defer imapServer.Close()
 
@@ -199,10 +206,7 @@ func main() {
 		api.POST("/email/send", mailCtrl.SendEmail)
 	}
 
-	webPort := os.Getenv("PORT")
-	if webPort == "" {
-		webPort = ":8080"
-	}
+	webPort := normalizePort("PORT", ":9000")
 	log.Printf("🚀 RaHaMail Server berjalan: Web UI di http://localhost%s | SMTP di %s | IMAP di %s", webPort, smtpPort, imapPort)
 	if err := r.Run(webPort); err != nil {
 		log.Fatalf("Gagal menjalankan web server: %v", err)

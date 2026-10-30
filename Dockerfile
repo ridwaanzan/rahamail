@@ -27,10 +27,10 @@ COPY --from=builder /app/rahamail /app/rahamail
 # Buat direktori volume persisten (Database SQLite & Penyimpanan Fisik Email)
 RUN mkdir -p /app/data /app/var/mail/inbox
 
-EXPOSE 8080 25 587 143 993
+EXPOSE 9000 25 587 143 993
 
 ENV GIN_MODE=release
-ENV PORT=:8080
+ENV PORT=:9000
 ENV SMTP_PORT=:25
 ENV IMAP_PORT=:143
 ENV DB_DRIVER=sqlite

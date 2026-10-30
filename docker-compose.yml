@@ -10,7 +10,7 @@ services:
     container_name: rahamail_sqlite_app
     restart: unless-stopped
     ports:
-      - "8080:8080" # Web Dashboard UI & REST API
+      - "9000:9000" # Web Dashboard UI & REST API
       - "25:25"     # SMTP Inbound Port 25
       - "587:587"   # SMTP Submission Port 587
       - "143:143"   # IMAP Server Port 143
@@ -19,7 +19,7 @@ services:
       - DB_DRIVER=sqlite
       - SQLITE_PATH=/app/data/rahamail.db
       - GIN_MODE=release
-      - PORT=:8080
+      - PORT=:9000
       - SMTP_PORT=:25
       - IMAP_PORT=:143
     volumes:

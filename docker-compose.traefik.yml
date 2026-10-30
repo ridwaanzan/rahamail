@@ -11,12 +11,12 @@ services:
       - "587:587"   # SMTP Submission dari mail client
       - "143:143"   # IMAP
       - "993:993"   # IMAPS
-      # Port 8080 TIDAK perlu diexpose ke host karena diakses Traefik lewat internal docker network
+      # Port 9000 TIDAK perlu diexpose ke host karena diakses Traefik lewat internal docker network
     environment:
       - DB_DRIVER=sqlite
       - SQLITE_PATH=/app/data/rahamail.db
       - GIN_MODE=release
-      - PORT=:8080
+      - PORT=:9000
       - SMTP_PORT=:25
       - IMAP_PORT=:143
     volumes:
@@ -32,8 +32,8 @@ services:
       - "traefik.http.routers.rahamail.tls=true"
       - "traefik.http.routers.rahamail.tls.certresolver=myresolver"
 
-      # Menghubungkan ke port Gin Web (8080)
-      - "traefik.http.services.rahamail.loadbalancer.server.port=8080"
+      # Menghubungkan ke port Gin Web (9000)
+      - "traefik.http.services.rahamail.loadbalancer.server.port=9000"
 
       # Middleware khusus SSE: Nonaktifkan buffer agar event-stream real-time langsung sampai ke browser
       - "traefik.http.middlewares.rahamail-sse.headers.customresponseheaders.X-Accel-Buffering=no"
