@@ -91,7 +91,7 @@
         <div class="absolute inset-0 bg-gradient-to-b from-cyan-500/5 via-transparent to-transparent pointer-events-none"></div>
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
             <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 mb-6">
-                <i class="bi bi-stars"></i> Version 1.4.1 Released — Modular Multi-Page UI & Permanent Trash Purge
+                <i class="bi bi-shield-check"></i> Version 1.4.1 Released — Super Admin RBAC, Port 9000 & Modular Multi-Page UI
             </div>
             <h1 class="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6">
                 Modern, Autonomous, <br class="hidden sm:inline" />
@@ -279,6 +279,14 @@
                         <div class="flex items-start gap-3">
                             <div class="w-6 h-6 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center text-xs mt-0.5"><i class="bi bi-check2"></i></div>
                             <div>
+                                <h5 class="text-xs font-bold text-light-text dark:text-white">Super Admin Authentication & RBAC</h5>
+                                <p class="text-[11px] text-light-muted dark:text-dark-muted">Gated routes (<code>/</code>, <code>/admin/*</code>) and management APIs via <code>AdminAuthMiddleware</code>, preventing unauthenticated access with one-time setup wizard locking.</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-3">
+                            <div class="w-6 h-6 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center text-xs mt-0.5"><i class="bi bi-check2"></i></div>
+                            <div>
                                 <h5 class="text-xs font-bold text-light-text dark:text-white">Anti-SMTP Smuggling Protection</h5>
                                 <p class="text-[11px] text-light-muted dark:text-dark-muted">Enforces strict RFC 5321 CRLF delimiters via <code>SmugglingReader</code>, preventing CVE-2023-51764 and CVE-2023-51765 pipe bypasses.</p>
                             </div>
@@ -351,22 +359,28 @@
                         <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/10 text-cyan-500 border border-cyan-500/20 mb-1">
                             Latest Release
                         </div>
-                        <h4 class="text-base font-bold text-light-text dark:text-white">v1.4.1 — Modular Templates & Permanent Trash Purge</h4>
-                        <span class="text-xs text-light-muted dark:text-dark-muted">October 29, 2026</span>
+                        <h4 class="text-base font-bold text-light-text dark:text-white">v1.4.1 — Super Admin RBAC, Port 9000 & Modular Templates</h4>
+                        <span class="text-xs text-light-muted dark:text-dark-muted">October 31, 2026</span>
                     </div>
                     <div class="mt-2 sm:mt-0 sm:w-1/2 sm:pl-8">
                         <div class="p-5 rounded-2xl border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card shadow-sm space-y-2 text-xs">
-                            <p class="font-bold text-emerald-500"><i class="bi bi-plus-circle mr-1"></i> Multi-Page Architecture:</p>
+                            <p class="font-bold text-indigo-500"><i class="bi bi-shield-lock-fill mr-1"></i> Super Admin Auth & Role-Based Access Control:</p>
+                            <p class="text-light-muted dark:text-dark-muted">Protected dashboard views (<code>/</code>, <code>/admin/*</code>) and administrative APIs with <code>AdminAuthMiddleware</code> and <code>UserAuthMiddleware</code>. Replaced open setup with a one-time setup wizard lockout.</p>
+
+                            <p class="font-bold text-blue-500 pt-1"><i class="bi bi-hdd-network mr-1"></i> Port 9000 Migration & TCP Normalizer:</p>
+                            <p class="text-light-muted dark:text-dark-muted">Relocated default Web UI port from <code>8080</code> to <code>9000</code> to prevent collisions with existing reverse proxies. Hardened TCP address normalization for SMTP/IMAP listeners.</p>
+
+                            <p class="font-bold text-emerald-500 pt-1"><i class="bi bi-plus-circle mr-1"></i> Multi-Page Architecture:</p>
                             <p class="text-light-muted dark:text-dark-muted">Decoupled monolithic templates into dedicated views for Dashboard, Domains, Phishing Simulation, Logs, and System Settings.</p>
                             
-                            <p class="font-bold text-cyan-500 pt-1"><i class="bi bi-shield-lock mr-1"></i> Full DKIM Modal & Copy Tool:</p>
+                            <p class="font-bold text-cyan-500 pt-1"><i class="bi bi-key mr-1"></i> Full DKIM Modal & Copy Tool:</p>
                             <p class="text-light-muted dark:text-dark-muted">Resolved key truncation in the domain manager. Generates genuine RSA 2048-bit keys with one-click copy buttons.</p>
 
                             <p class="font-bold text-rose-500 pt-1"><i class="bi bi-trash3 mr-1"></i> Trash Purge & Storage Reclaim:</p>
                             <p class="text-light-muted dark:text-dark-muted">Added permanent deletion and "Empty Trash" buttons that automatically unlink physical <code>.eml</code> files and restore user storage quotas.</p>
 
-                            <p class="font-bold text-amber-500 pt-1"><i class="bi bi-wrench mr-1"></i> SQLite WAL Foreign Key AutoMigrate Fix:</p>
-                            <p class="text-light-muted dark:text-dark-muted">Safely toggles <code>PRAGMA foreign_keys</code> during startup table synchronization, resolving error 787.</p>
+                            <p class="font-bold text-amber-500 pt-1"><i class="bi bi-shield-check mr-1"></i> Production Traefik & UFW Automated Firewall:</p>
+                            <p class="text-light-muted dark:text-dark-muted">Integrated Traefik reverse proxy support and automated UFW firewall configuration directly into <code>deploy.sh</code>.</p>
                         </div>
                     </div>
                 </div>
@@ -472,7 +486,7 @@
   -p 587:587 \
   -p 143:143 \
   -p 993:993 \
-  -p 8080:8080 \
+  -p 9000:9000 \
   -v $(pwd)/data:/var/mail \
   -v $(pwd)/gomail.db:/app/gomail.db \
   --restart unless-stopped \
@@ -490,7 +504,7 @@ cd rahamail
 go build -o rahamail main.go
 ./rahamail
 
-# Open your browser at http://localhost:8080 to complete setup</pre>
+# Open your browser at http://localhost:9000/setup to complete one-time admin setup</pre>
             </div>
 
             <!-- Tab 3: DNS -->
