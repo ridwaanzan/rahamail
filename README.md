@@ -28,6 +28,7 @@
 - **Catch-All Mailboxes & Domain Aliases**: Route unmatched incoming emails (`*@domain.com`) directly to a designated administrative or support mailbox without triggering 550 bounces.
 
 ### 🛡️ Security & Authentication Hardening
+- **Super Admin RBAC & Route Protection (v1.4.1)**: Full role-based authentication guarding all Admin Web Views (`/`, `/admin/domains`, `/admin/simulations`, `/admin/logs`, `/admin/settings`) and Admin REST APIs. Includes one-time gated setup protection (`/setup`), dynamic active admin profile topbar, and session logout.
 - **Employee Phishing & Spam Awareness Simulation (v1.4.0)**: Built-in human risk management training platform. Enables security administrators to dispatch controlled phishing simulations, inject encrypted tracking tokens (`/sim/c/:code`), record non-compliance (*NOT PASSED* vs *PASSED*), present instant educational landing pages (*Teachable Moments*), and view interactive failure rate analytics dashboards.
 - **Inbound Trust & Unknown Domain Warning Banner**: Automatic sender reputation analysis engine (`internal/trust`). Detects first-time external senders, scans payloads for suspicious URLs and attachments, and renders interactive warning banners in Webmail with one-click **"Mark as Trusted / Add to Contacts"** and **"Move to Spam"** actions.
 - **Antivirus & Anti-Spam Filtering (ClamAV & Rspamd)**: Real-time scan of incoming emails via ClamAV INSTREAM socket (blocking malware with `554 5.7.1`) and Rspamd HTTP checks routing spam to `Spam` folders.
@@ -41,6 +42,9 @@
 - **SHA-256 Hashed Storage Paths**: Eliminates directory traversal and Zip-Slip risks by persisting raw `.eml` Maildir files under isolated cryptographic paths: `var/mail/{folder}/{userID}/{sha256}.eml`.
 
 ### 💻 Webmail & Productivity
+- **Modular Multi-Page Admin Architecture (v1.4.1)**: Dedicated templates for Dashboard Overview, Domain Management, Phishing Simulation, Live SSE Stream, and Settings with full Dark/Light theme support.
+- **Permanent Trash Purge & Storage Reclaim (v1.4.1)**: One-click permanent email destruction and "Empty Trash" feature unlinking physical `.eml` files from storage disk and reclaiming user quota.
+- **Modern UI Modals & Toast System (v1.4.1)**: Clean replacement of native browser `alert()` and `confirm()` dialogs with custom responsive modals and toast alerts.
 - **Address Book & Contact Auto-Complete**: Integrated contact management portal with auto-suggest dropdowns in composer `To`/`Cc`/`Bcc` fields and background auto-harvesting from sent messages.
 - **Vacation Notice / Out-of-Office Responder**: Scheduled automated reply engine with anti-looping protection and a 24-hour rate limit per sender.
 - **Canned Responses & Quick Templates**: Reusable email snippets that can be inserted into the composer with one click.
@@ -71,11 +75,11 @@ go build -o rahamail main.go
 # Start RaHaMail server
 ./rahamail
 ```
-Open **`http://localhost:8080/setup`** in your browser to complete the initial setup wizard.
+Open **`http://localhost:9000/setup`** in your browser to complete the initial setup wizard.
 
 ### 2. Deploy with Podman / Docker & Traefik
 ```bash
-# Automated production deployment with Traefik reverse proxy
+# Automated production deployment with Traefik reverse proxy & UFW firewall setup
 chmod +x deploy.sh
 ./deploy.sh
 ```
@@ -86,7 +90,7 @@ chmod +x deploy.sh
 
 | Port | Protocol | Purpose / Description |
 |---|---|---|
-| **8080** | HTTP | Webmail Portal, Admin Dashboard, REST API & Live SSE Stream |
+| **9000** | HTTP | Webmail Portal, Admin Dashboard, REST API & Live SSE Stream |
 | **25** | SMTP | Core Inbound Mail Transfer (Server-to-Server MX) |
 | **587** | SMTP | Authenticated Mail Submission (Client-to-Server) |
 | **143** | IMAP | Mailbox Synchronization for IMAP Clients |

@@ -4,15 +4,33 @@ This document tracks all official releases of **RaHaMail**, highlighting new fea
 
 ---
 
-## 📦 Version 1.4.1 (October 29, 2026) — Database Migration Stability Patch
+## 📦 Version 1.4.1 (October 31, 2026) — Super Admin Security, Modular Architecture & Production Traefik Hardening
 
-Patch release resolving SQLite table recreation foreign key constraint failures during server startup.
+Version 1.4.1 brings comprehensive security hardening for administrative operations, multi-page admin architecture, permanent trash cleanup with disk storage reclamation, full DKIM key export modals, port migration to 9000, and automated UFW firewall configuration for production Traefik deployments.
 
 ### 🌟 Release Highlights
-- **SQLite WAL Mode Auto-Migration Stability**:
-  - Configured `_pragma=foreign_keys(OFF)` during initial connection setup for non-blocking GORM table recreation and temporary table drops.
-  - Automatically re-enables `PRAGMA foreign_keys = ON;` immediately after schema synchronization.
-  - Fixes `constraint failed: FOREIGN KEY constraint failed (787)` on `DROP TABLE domains` when existing relations are present.
+- **Super Admin Authentication & Role-Based Access Control (RBAC)**:
+  - Enforced dual-layer middleware (`UserAuthMiddleware` + `AdminAuthMiddleware`) across all Admin views (`/`, `/admin/domains`, `/admin/simulations`, `/admin/logs`, `/admin/settings`) and all administrative APIs (`/api/v1/domains`, `/api/v1/users`, `/api/v1/admin/backup/*`, `/api/v1/admin/simulations/*`).
+  - Strict redirect security: Unauthenticated users are sent to `/login?next=...`, while non-admin authenticated users are safely routed to their personal mailbox (`/mail`).
+  - One-time initial setup protection: `/setup` and `/api/v1/setup/complete` are automatically locked once an admin account is created, preventing hostile configuration overrides.
+  - Topbar admin status display with real-time active email identity and dedicated one-click **Logout** button.
+- **Modular Multi-Page Admin Architecture**:
+  - Replaced single monolithic template with dedicated, focused pages for Dashboard Overview, Domain Management, Phishing Simulation, Live SSE Streaming Logs, and System Settings.
+- **Dedicated DKIM TXT Modal (No Truncation)**:
+  - Added full-sized DNS record inspection modal showing complete RSA 2048-bit public keys, Host/Name, and Record Type with one-click **Copy Host** and **Copy Value** actions.
+  - Automatic RSA 2048-bit keypair generation upon domain registration.
+- **Permanent Trash Deletion & Storage Reclamation**:
+  - Added "Delete Permanently" and "Restore to Inbox" options in the Webmail reader toolbar for Trash messages.
+  - Added "Empty Trash" button to message headers that unlinks physical `.eml` files from server disk storage and restores user storage quotas (`UsedBytes`).
+- **Modern Modal & Toast Notification System**:
+  - Replaced legacy browser `alert()` and `confirm()` dialogs across the application with Tailwind-styled, responsive Dark/Light mode modals and non-blocking floating toast notifications.
+- **Web Port Relocation & Port Normalizer**:
+  - Default Gin Web/API/SSE port moved from `8080` to `9000` to avoid port contention on multi-service servers.
+  - Smart port normalizer (`normalizePort`) automatically ensures valid TCP listen formats (supporting both `9000` and `:9000`).
+- **Production Traefik & UFW Firewall Deployment**:
+  - Enhanced `deploy.sh` script with interactive domain and ACME email prompts, zero hardcoded vendor domains, multi-network auto-creation (`traefik_default` & `backbone-network`), and automated UFW firewall rule creation for ports `25`, `587`, `143`, `993`, `80`, and `443`.
+- **Database Auto-Migration Stability**:
+  - Resolves SQLite WAL mode foreign key constraint conflicts (`FOREIGN KEY constraint failed 787`) during schema auto-migration.
 
 ---
 

@@ -4,12 +4,39 @@ All notable changes to the **RaHaMail** project will be documented in this file.
 
 ---
 
-## [1.4.1] - 2026-10-29
+## [1.4.1] - 2026-10-31
+
+### Added
+- **Super Admin Authentication & Role-Based Access Control (RBAC)**:
+  - Enforced dual middleware protection (`UserAuthMiddleware` & `AdminAuthMiddleware`) across all Admin HTML views (`/`, `/admin/domains`, `/admin/simulations`, `/admin/logs`, `/admin/settings`).
+  - Unauthenticated visitors are automatically redirected to `/login?next=...`. Non-admin authenticated users attempting to access admin routes are safely redirected to their personal mailbox (`/mail`).
+  - Secured all administrative REST APIs (`/api/v1/domains`, `/api/v1/users`, `/api/v1/admin/backup/*`, and `/api/v1/admin/simulations/*`) under the `adminAPI` group.
+  - One-time setup guard on `/setup` and `/api/v1/setup/complete`: Automatically redirects to `/login` and blocks setup override attempts if an admin already exists in the system.
+  - Dynamic Super Admin profile display and dedicated **Logout** button on all admin dashboard topbars.
+- **Modular Multi-Page Admin Architecture**:
+  - Decoupled monolithic admin templates into dedicated, self-contained views for Dashboard Overview, Domain Management, Phishing Simulation, Live SSE Logs, and System Settings.
+- **Full DKIM TXT Modal & Public Key Display**:
+  - Dedicated DNS TXT modal showing untruncated RSA 2048-bit public keys with one-click **"Copy Host"** and **"Copy TXT Value"** buttons.
+  - Automatic cryptographic RSA 2048-bit keypair generation upon domain registration.
+- **Permanent Trash Deletion & Storage Quota Reclaim**:
+  - Interactive "Delete Permanently" and "Restore to Inbox" actions in the email reader for Trash messages.
+  - Header "Empty Trash" action with automatic physical `.eml` file unlinking (`os.Remove`) from disk storage and user `UsedBytes` recalculation.
+- **Modern UI Modals & Toast Notification System**:
+  - Complete elimination of legacy browser `alert()` and `confirm()` popups across Webmail and Admin dashboards, replaced with modern Tailwind-styled modals and non-blocking floating toast notifications.
+
+### Changed
+- **Default Web Port Relocation**:
+  - Default Gin Web, REST API, and SSE live stream port updated from `8080` to `9000` to prevent port collisions on multi-service VPS environments.
+  - Added smart port normalizer (`normalizePort`) automatically handling both `:9000` and `9000` syntax across environment variables.
+- **Production Traefik & UFW Deployment Script**:
+  - Updated `deploy.sh` with interactive domain and ACME email prompts, zero hardcoded vendor domains, multi-network auto-creation (`traefik_default` & `backbone-network`), and automated UFW firewall configuration for all required mail and web ports (`25`, `587`, `143`, `993`, `80`, `443`).
 
 ### Fixed
 - **Database Auto-Migration (SQLite WAL Mode)**:
   - Temporarily disable `PRAGMA foreign_keys` during startup schema `AutoMigrate` and re-enable it immediately after table synchronization.
   - Eliminates `FOREIGN KEY constraint failed (787)` errors caused by SQLite's table recreation and temporary table dropping when existing domains and foreign keys are populated.
+- **TCP Listener Address Formatting**:
+  - Resolved `missing port in address` startup panic when numeric-only ports (e.g. `25`, `143`) were provided via environment variables.
 
 ---
 
