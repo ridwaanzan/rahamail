@@ -33,6 +33,14 @@ func NewMailController() *MailController {
 
 // RenderSetup merender wizard konfigurasi awal
 func (mc *MailController) RenderSetup(c *gin.Context) {
+	// Jika admin sudah ada, jangan izinkan setup ulang, redirect ke login
+	var adminCount int64
+	repository.DB.Model(&domain.User{}).Where("is_admin = ?", true).Count(&adminCount)
+	if adminCount > 0 {
+		c.Redirect(http.StatusFound, "/login")
+		return
+	}
+
 	c.HTML(http.StatusOK, "setup.tmpl", gin.H{
 		"title": "RaHaMail Server - Initial Setup Wizard",
 	})
@@ -40,6 +48,14 @@ func (mc *MailController) RenderSetup(c *gin.Context) {
 
 // CompleteSetup menerima konfigurasi wizard dari browser
 func (mc *MailController) CompleteSetup(c *gin.Context) {
+	// Proteksi one-time setup: Tolak jika sudah ada Super Admin
+	var adminCount int64
+	repository.DB.Model(&domain.User{}).Where("is_admin = ?", true).Count(&adminCount)
+	if adminCount > 0 {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Setup telah selesai sebelumnya. Silakan login melalui halaman login."})
+		return
+	}
+
 	var req struct {
 		DBDriver      string `json:"db_driver"`
 		PostgresDSN   string `json:"postgres_dsn"`
@@ -211,6 +227,7 @@ func (mc *MailController) RenderWebmail(c *gin.Context) {
 
 // RenderIndex merender template Go HTML (.tmpl) untuk Overview Dashboard
 func (mc *MailController) RenderIndex(c *gin.Context) {
+	currentUser, _ := c.Get("user")
 	var domains []domain.Domain
 	var messages []domain.Message
 	var domainCount, userCount, messageCount int64
@@ -225,6 +242,7 @@ func (mc *MailController) RenderIndex(c *gin.Context) {
 	c.HTML(http.StatusOK, "admin_dashboard.tmpl", gin.H{
 		"title":       "RaHaMail Server - Live SSE Dashboard",
 		"active_menu": "dashboard",
+		"currentUser": currentUser,
 		"domains":     domains,
 		"messages":    messages,
 		"db_driver":   repository.ActiveDriver,
@@ -238,12 +256,14 @@ func (mc *MailController) RenderIndex(c *gin.Context) {
 
 // RenderAdminDomains merender halaman manajemen domain
 func (mc *MailController) RenderAdminDomains(c *gin.Context) {
+	currentUser, _ := c.Get("user")
 	var domains []domain.Domain
 	repository.DB.Find(&domains)
 
 	c.HTML(http.StatusOK, "admin_domains.tmpl", gin.H{
 		"title":       "RaHaMail - Domain Management & DKIM",
 		"active_menu": "domains",
+		"currentUser": currentUser,
 		"domains":     domains,
 		"db_driver":   repository.ActiveDriver,
 	})
@@ -251,27 +271,33 @@ func (mc *MailController) RenderAdminDomains(c *gin.Context) {
 
 // RenderAdminSimulations merender halaman simulasi phishing & spam awareness
 func (mc *MailController) RenderAdminSimulations(c *gin.Context) {
+	currentUser, _ := c.Get("user")
 	c.HTML(http.StatusOK, "admin_simulations.tmpl", gin.H{
 		"title":       "RaHaMail - Phishing & Spam Awareness",
 		"active_menu": "simulations",
+		"currentUser": currentUser,
 		"db_driver":   repository.ActiveDriver,
 	})
 }
 
 // RenderAdminLogs merender halaman log stream SSE live
 func (mc *MailController) RenderAdminLogs(c *gin.Context) {
+	currentUser, _ := c.Get("user")
 	c.HTML(http.StatusOK, "admin_logs.tmpl", gin.H{
 		"title":       "RaHaMail - Live SSE Log Stream",
 		"active_menu": "logs",
+		"currentUser": currentUser,
 		"db_driver":   repository.ActiveDriver,
 	})
 }
 
 // RenderAdminSettings merender halaman pengaturan server & backup S3
 func (mc *MailController) RenderAdminSettings(c *gin.Context) {
+	currentUser, _ := c.Get("user")
 	c.HTML(http.StatusOK, "admin_settings.tmpl", gin.H{
 		"title":       "RaHaMail - Server Settings & Cloud Backup",
 		"active_menu": "settings",
+		"currentUser": currentUser,
 		"db_driver":   repository.ActiveDriver,
 	})
 }

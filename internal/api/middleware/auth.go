@@ -123,7 +123,11 @@ func AdminAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		val, exists := c.Get("user")
 		if !exists {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Akses ditolak."})
+			if strings.HasPrefix(c.Request.URL.Path, "/api/") {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "Autentikasi diperlukan. Silakan login."})
+			} else {
+				c.Redirect(http.StatusFound, "/login?next="+c.Request.URL.Path)
+			}
 			c.Abort()
 			return
 		}
@@ -133,7 +137,8 @@ func AdminAuthMiddleware() gin.HandlerFunc {
 			if strings.HasPrefix(c.Request.URL.Path, "/api/") {
 				c.JSON(http.StatusForbidden, gin.H{"error": "Hanya Super Admin yang diizinkan."})
 			} else {
-				c.String(http.StatusForbidden, "403 Forbidden: Akses khusus Super Admin.")
+				// Redirect user non-admin ke webmail miliknya sendiri
+				c.Redirect(http.StatusFound, "/mail")
 			}
 			c.Abort()
 			return

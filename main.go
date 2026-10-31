@@ -93,13 +93,18 @@ func main() {
 		webmail.GET("", mailCtrl.RenderWebmail)
 	}
 
-	// Admin Multi-Page Views (Protected or Open for Local Admin Dashboard)
-	r.GET("/", mailCtrl.RenderIndex)
-	r.GET("/admin/domains", mailCtrl.RenderAdminDomains)
-	r.GET("/admin/simulations", mailCtrl.RenderAdminSimulations)
-	r.GET("/admin/logs", mailCtrl.RenderAdminLogs)
-	r.GET("/admin/settings", mailCtrl.RenderAdminSettings)
+	// Setup Wizard (Public, tapi otomatis redirect ke /login jika admin sudah pernah dibuat)
 	r.GET("/setup", mailCtrl.RenderSetup)
+
+	// Admin Multi-Page Views (Diproteksi penuh oleh Session + Super Admin Role)
+	admin := r.Group("", middleware.UserAuthMiddleware(), middleware.AdminAuthMiddleware())
+	{
+		admin.GET("/", mailCtrl.RenderIndex)
+		admin.GET("/admin/domains", mailCtrl.RenderAdminDomains)
+		admin.GET("/admin/simulations", mailCtrl.RenderAdminSimulations)
+		admin.GET("/admin/logs", mailCtrl.RenderAdminLogs)
+		admin.GET("/admin/settings", mailCtrl.RenderAdminSettings)
+	}
 
 	// 5. REST API & SSE Routes
 	api := r.Group("/api/v1")
@@ -177,31 +182,35 @@ func main() {
 
 		api.GET("/stats", mailCtrl.GetStats)
 
-		// Setup Wizard API
+		// Setup Wizard API (Diproteksi: hanya bisa dieksekusi jika belum ada admin)
 		api.POST("/setup/complete", mailCtrl.CompleteSetup)
 
-		// Cloud Backup & S3 API (Super Admin)
-		api.GET("/admin/backup/config", mailCtrl.GetBackupConfig)
-		api.POST("/admin/backup/config", mailCtrl.SaveBackupConfig)
-		api.POST("/admin/backup/trigger", mailCtrl.TriggerManualBackup)
+		// Super Admin Protected REST APIs
+		adminAPI := api.Group("", middleware.UserAuthMiddleware(), middleware.AdminAuthMiddleware())
+		{
+			// Cloud Backup & S3 API (Super Admin)
+			adminAPI.GET("/admin/backup/config", mailCtrl.GetBackupConfig)
+			adminAPI.POST("/admin/backup/config", mailCtrl.SaveBackupConfig)
+			adminAPI.POST("/admin/backup/trigger", mailCtrl.TriggerManualBackup)
 
-		// Phishing & Spam Awareness Simulation Management (Admin)
-		api.GET("/admin/simulations/presets", simCtrl.ListPresets)
-		api.GET("/admin/simulations", simCtrl.ListCampaigns)
-		api.POST("/admin/simulations", simCtrl.CreateCampaign)
-		api.POST("/admin/simulations/:id/launch", simCtrl.LaunchCampaign)
-		api.GET("/admin/simulations/:id/stats", simCtrl.GetCampaignStats)
+			// Phishing & Spam Awareness Simulation Management (Admin)
+			adminAPI.GET("/admin/simulations/presets", simCtrl.ListPresets)
+			adminAPI.GET("/admin/simulations", simCtrl.ListCampaigns)
+			adminAPI.POST("/admin/simulations", simCtrl.CreateCampaign)
+			adminAPI.POST("/admin/simulations/:id/launch", simCtrl.LaunchCampaign)
+			adminAPI.GET("/admin/simulations/:id/stats", simCtrl.GetCampaignStats)
 
-		// Domain Management
-		api.GET("/domains", mailCtrl.ListDomains)
-		api.POST("/domains", mailCtrl.CreateDomain)
-		api.POST("/domains/:id/catch-all", mailCtrl.SetCatchAll)
+			// Domain Management (Admin)
+			adminAPI.GET("/domains", mailCtrl.ListDomains)
+			adminAPI.POST("/domains", mailCtrl.CreateDomain)
+			adminAPI.POST("/domains/:id/catch-all", mailCtrl.SetCatchAll)
 
-		// User/Mailbox Management
-		api.GET("/users", mailCtrl.ListUsers)
-		api.POST("/users", mailCtrl.CreateUser)
+			// User/Mailbox Management (Admin)
+			adminAPI.GET("/users", mailCtrl.ListUsers)
+			adminAPI.POST("/users", mailCtrl.CreateUser)
+		}
 
-		// Messages / Webmail
+		// Messages / Webmail API (Protected by UserAuthMiddleware inside mailAPI group or fallback)
 		api.GET("/messages", mailCtrl.ListMessages)
 		api.POST("/email/send", mailCtrl.SendEmail)
 	}

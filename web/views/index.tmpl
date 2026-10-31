@@ -94,12 +94,15 @@
                 </button>
                 <div class="flex items-center gap-2.5 pl-2 border-l border-light-border dark:border-dark-border">
                     <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white text-xs font-bold">
-                        AD
+                        <i class="bi bi-shield-check"></i>
                     </div>
                     <div class="hidden sm:block text-left">
-                        <div class="text-xs font-bold text-light-text dark:text-white">Admin</div>
-                        <div class="text-[10px] text-light-muted dark:text-dark-muted">Super Administrator</div>
+                        <div class="text-xs font-bold text-light-text dark:text-white truncate max-w-[140px]">{{ if .currentUser }}{{ .currentUser.Email }}{{ else }}Super Admin{{ end }}</div>
+                        <div class="text-[10px] text-cyan-600 dark:text-cyan-400 font-medium">Super Administrator</div>
                     </div>
+                    <a href="/logout" class="ml-1 p-2 rounded-xl text-light-muted dark:text-dark-muted hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-500/10 transition-colors" title="Keluar / Logout">
+                        <i class="bi bi-box-arrow-right text-base"></i>
+                    </a>
                 </div>
             </div>
         </header>
