@@ -4,6 +4,29 @@ This document tracks all official releases of **RaHaMail**, highlighting new fea
 
 ---
 
+## 📦 Version 1.4.2 (November 1, 2026) — Third-Party Mail Client Compatibility, SASL LOGIN & Auto-TLS Engine
+
+Version 1.4.2 delivers comprehensive out-of-the-box compatibility with third-party email clients (Mozilla Thunderbird, Microsoft Outlook, Apple Mail), implementing full SASL `LOGIN` authentication, concurrent multi-port listeners (Submission 587 and IMAPS 993), and an automated TLS/STARTTLS engine with fallback certificate generation.
+
+### 🌟 Release Highlights
+- **Third-Party Email Client SASL LOGIN Support**:
+  - Implemented 2-step challenge-response authentication for SASL `LOGIN` (`draft-murchison-sasl-login`) alongside standard `PLAIN`.
+  - Fixes authentication failures and `504 5.7.4 Unrecognized authentication type` errors with Outlook and legacy clients.
+- **Automated TLS & STARTTLS Engine**:
+  - Built `internal/tlsconfig/tls.go` to seamlessly load external certificates (`TLS_CERT_FILE` / `TLS_KEY_FILE` or default Traefik/Let's Encrypt locations).
+  - Automatically provisions self-signed RSA 2048-bit certificates if custom certs are absent, enabling **STARTTLS** on ports 25, 587, and 143, and **Direct TLS** on port 993.
+  - Ensures mail clients never block password transmission due to plaintext warnings.
+- **Concurrent Multi-Port Listeners (Submission 587 & IMAPS 993)**:
+  - `main.go` concurrently launches independent background listeners for:
+    - **Port 25**: SMTP Inbound (Server-to-Server MX)
+    - **Port 587**: SMTP Submission (Client-to-Server STARTTLS)
+    - **Port 143**: IMAP (Client-to-Server STARTTLS)
+    - **Port 993**: IMAPS (Client-to-Server Direct SSL/TLS)
+- **Deployment & Compose Synchronization**:
+  - Updated `deploy.sh`, `docker-compose.yml`, and `docker-compose.traefik.yml` with `SUBMISSION_PORT` and `IMAPS_PORT` configuration.
+
+---
+
 ## 📦 Version 1.4.1 (October 31, 2026) — Super Admin Security, Modular Architecture & Production Traefik Hardening
 
 Version 1.4.1 brings comprehensive security hardening for administrative operations, multi-page admin architecture, permanent trash cleanup with disk storage reclamation, full DKIM key export modals, port migration to 9000, and automated UFW firewall configuration for production Traefik deployments.

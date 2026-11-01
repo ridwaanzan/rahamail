@@ -4,6 +4,25 @@ All notable changes to the **RaHaMail** project will be documented in this file.
 
 ---
 
+## [1.4.2] - 2026-11-01
+
+### Added
+- **Third-Party Email Client Authentication (Thunderbird, Outlook, Apple Mail)**:
+  - Implemented SASL `LOGIN` mechanism (`draft-murchison-sasl-login`) alongside `PLAIN` in `internal/smtpserver/sasl_login.go`. Clients that require 2-step username/password challenge-response can now authenticate seamlessly without error `504 5.7.4`.
+  - Built an automated TLS & STARTTLS engine in `internal/tlsconfig/tls.go` supporting external certificates via `TLS_CERT_FILE` / `TLS_KEY_FILE` with automated fallback to self-signed RSA 2048-bit certificates.
+  - Enabled **STARTTLS** on SMTP Inbound (Port 25), SMTP Submission (Port 587), and IMAP (Port 143).
+  - Added dedicated **IMAPS Direct SSL/TLS (Port 993)** listener via `StartIMAPServerTLS`.
+- **Concurrent Multi-Port Daemon Listeners**:
+  - `main.go` now concurrently spawns:
+    - SMTP Inbound on `SMTP_PORT` (Default `:25`)
+    - SMTP Submission on `SUBMISSION_PORT` (Default `:587`)
+    - IMAP on `IMAP_PORT` (Default `:143`)
+    - IMAPS on `IMAPS_PORT` (Default `:993`)
+- **Container & Deployment Configuration**:
+  - Updated `deploy.sh`, `docker-compose.yml`, and `docker-compose.traefik.yml` to supply `SUBMISSION_PORT=:587` and `IMAPS_PORT=:993`, ensuring complete port exposure and binding for desktop/mobile clients.
+
+---
+
 ## [1.4.1] - 2026-10-31
 
 ### Added

@@ -21,7 +21,9 @@ services:
       - GIN_MODE=release
       - PORT=:9000
       - SMTP_PORT=:25
+      - SUBMISSION_PORT=:587
       - IMAP_PORT=:143
+      - IMAPS_PORT=:993
     volumes:
       - sqlite_data:/app/data
       - mail_storage:/app/var/mail

@@ -2,6 +2,7 @@ package imapserver
 
 import (
 	"bytes"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
@@ -210,17 +211,53 @@ func (m *IMAPMailbox) Expunge() error {
 	return nil
 }
 
-// StartIMAPServer menjalankan IMAP daemon di port tertentu
-func StartIMAPServer(addr string) *server.Server {
+// StartIMAPServer menjalankan IMAP daemon di port tertentu dengan dukungan STARTTLS
+func StartIMAPServer(addr string, tlsConfig *tls.Config) *server.Server {
 	be := NewIMAPBackend()
 	s := server.New(be)
 	s.Addr = addr
-	s.AllowInsecureAuth = true // Diizinkan tanpa TLS untuk pengujian port 1143/143 lokal
+	s.AllowInsecureAuth = true // Diizinkan untuk fallback klien yang tidak menggunakan STARTTLS
+	if tlsConfig != nil {
+		s.TLSConfig = tlsConfig
+	}
+
+	l, err := net.Listen("tcp", addr)
+	if err != nil {
+		log.Printf("❌ Gagal listen IMAP di %s: %v", addr, err)
+		return nil
+	}
 
 	go func() {
-		log.Printf("📬 [IMAP SERVER] Mendengarkan koneksi di %s...", addr)
-		if err := s.ListenAndServe(); err != nil && !errors.Is(err, net.ErrClosed) {
-			log.Printf("❌ IMAP Server error: %v", err)
+		log.Printf("📬 [IMAP SERVER] Mendengarkan koneksi di %s (STARTTLS: %v)...", addr, tlsConfig != nil)
+		if err := s.Serve(l); err != nil && !errors.Is(err, net.ErrClosed) {
+			log.Printf("❌ IMAP Server error di %s: %v", addr, err)
+		}
+	}()
+
+	return s
+}
+
+// StartIMAPServerTLS menjalankan IMAP daemon langsung melalui koneksi TLS murni (Port 993 IMAPS)
+func StartIMAPServerTLS(addr string, tlsConfig *tls.Config) *server.Server {
+	if tlsConfig == nil {
+		log.Printf("⚠️ [IMAPS SERVER] TLSConfig tidak tersedia, IMAPS di %s tidak dijalankan.", addr)
+		return nil
+	}
+	be := NewIMAPBackend()
+	s := server.New(be)
+	s.Addr = addr
+	s.TLSConfig = tlsConfig
+
+	l, err := tls.Listen("tcp", addr, tlsConfig)
+	if err != nil {
+		log.Printf("❌ Gagal listen IMAPS di %s: %v", addr, err)
+		return nil
+	}
+
+	go func() {
+		log.Printf("🔒 [IMAPS SERVER] Mendengarkan koneksi SSL/TLS murni di %s...", addr)
+		if err := s.Serve(l); err != nil && !errors.Is(err, net.ErrClosed) {
+			log.Printf("❌ IMAPS Server error di %s: %v", addr, err)
 		}
 	}()
 
