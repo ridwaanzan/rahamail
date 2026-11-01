@@ -2,7 +2,7 @@
 
 > Modern, ultra-lightweight, high-performance, single-binary Mail Server written in pure Go with Webmail Portal, Admin Dashboard, SMTP Inbound & Submission, IMAP4rev1 Server, Email Scheduler, Server-Sent Events (SSE), and embedded SQLite WAL storage.
 
-[![Release](https://img.shields.io/badge/release-v1.4.1-blue.svg)](RELEASE_NOTES.md)
+[![Release](https://img.shields.io/badge/release-v1.4.2-blue.svg)](RELEASE_NOTES.md)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Go Report Card](https://img.shields.io/badge/Go-1.26+-00ADD8.svg)](https://go.dev/)
 [![Docker Image Size](https://img.shields.io/badge/docker%20image-~51MB-2496ED.svg)](Dockerfile)
@@ -21,8 +21,9 @@
 
 ### 📬 Complete Mail Protocols & Outbound MTA
 - **SMTP Inbound (Port 25)**: Direct server-to-server mail ingestion with strict Anti-Open-Relay validation and automatic RFC 5322 MIME parsing.
-- **SMTP Submission (Port 587 / 2525)**: SASL `PLAIN` / `LOGIN` authenticated transmission powered by `bcrypt` for desktop and mobile clients (Thunderbird, Apple Mail, Outlook).
-- **IMAP Server (Port 143 / 993 / 1143)**: Bidirectional mailbox synchronization conforming to IMAP v4rev1 for `INBOX`, `Sent`, `Trash`, and `Spam` folders.
+- **SMTP Submission (Port 587 / 2525)**: SASL `PLAIN` / `LOGIN` authenticated transmission powered by `bcrypt` with STARTTLS support for desktop and mobile clients (Thunderbird, Apple Mail, Outlook).
+- **IMAP / IMAPS Server (Port 143 / 993 / 1143)**: Bidirectional mailbox synchronization conforming to IMAP v4rev1 with STARTTLS on Port 143 and Direct SSL/TLS on Port 993 for `INBOX`, `Sent`, `Trash`, and `Spam` folders.
+- **Automated TLS & STARTTLS Engine (v1.4.2)**: Automated certificate discovery (`TLS_CERT_FILE` / `TLS_KEY_FILE`) and self-signed RSA 2048-bit fallback generation, providing encrypted transport across all mail ports out of the box.
 - **Direct Outbound MTA Delivery**: Automated DNS MX record resolver sorting target MTAs by preference priority with automatic fallback to DNS A-records.
 - **DKIM RSA 2048-bit Signer**: Automatic generation of 2048-bit RSA key pairs upon domain creation, instant DNS TXT record export (`v=DKIM1; k=rsa; p=...`), and automated digital signing on outbound email headers.
 - **Catch-All Mailboxes & Domain Aliases**: Route unmatched incoming emails (`*@domain.com`) directly to a designated administrative or support mailbox without triggering 550 bounces.

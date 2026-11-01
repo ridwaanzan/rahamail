@@ -2,6 +2,7 @@ package smtpserver
 
 import (
 	"bytes"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
@@ -50,34 +51,46 @@ type Session struct {
 	to            []string
 }
 
-// AuthMechanisms mendefinisikan mekanisme otentikasi yang didukung
+// AuthMechanisms mendefinisikan mekanisme otentikasi yang didukung (PLAIN & LOGIN)
 func (s *Session) AuthMechanisms() []string {
-	return []string{sasl.Plain}
+	return []string{sasl.Plain, sasl.Login}
 }
 
-// Auth memvalidasi username dan password user saat mengirim lewat submission
-func (s *Session) Auth(mech string) (sasl.Server, error) {
-	if mech != sasl.Plain {
-		return nil, errors.New("504 5.7.4 Unrecognized authentication type")
+// validateUserCredentials memverifikasi kredensial username & password terhadap database
+func (s *Session) validateUserCredentials(username, password string) error {
+	var user domain.User
+	if err := repository.DB.Where("email = ? AND is_active = true", username).First(&user).Error; err != nil {
+		log.Printf("⚠️ [SMTP-AUTH] User tidak ditemukan atau non-aktif: %s", username)
+		return errors.New("535 5.7.8 Authentication credentials invalid")
 	}
 
-	return sasl.NewPlainServer(func(identity, username, password string) error {
-		var user domain.User
-		if err := repository.DB.Where("email = ? AND is_active = true", username).First(&user).Error; err != nil {
-			log.Printf("⚠️ [SMTP-AUTH] User tidak ditemukan atau non-aktif: %s", username)
-			return errors.New("535 5.7.8 Authentication credentials invalid")
-		}
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
+		log.Printf("⚠️ [SMTP-AUTH] Password salah untuk user: %s", username)
+		return errors.New("535 5.7.8 Authentication credentials invalid")
+	}
 
-		if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
-			log.Printf("⚠️ [SMTP-AUTH] Password salah untuk user: %s", username)
-			return errors.New("535 5.7.8 Authentication credentials invalid")
-		}
+	s.authenticated = true
+	s.authUser = &user
+	log.Printf("✅ [SMTP-AUTH] User berhasil terotentikasi: %s", username)
+	return nil
+}
 
-		s.authenticated = true
-		s.authUser = &user
-		log.Printf("✅ [SMTP-AUTH] User berhasil terotentikasi: %s", username)
-		return nil
-	}), nil
+// Auth memvalidasi username dan password user saat mengirim lewat submission (PLAIN / LOGIN)
+func (s *Session) Auth(mech string) (sasl.Server, error) {
+	switch mech {
+	case sasl.Plain:
+		return sasl.NewPlainServer(func(identity, username, password string) error {
+			return s.validateUserCredentials(username, password)
+		}), nil
+
+	case sasl.Login:
+		return NewLoginServer(func(username, password string) error {
+			return s.validateUserCredentials(username, password)
+		}), nil
+
+	default:
+		return nil, errors.New("504 5.7.4 Unrecognized authentication type")
+	}
 }
 
 // Mail menangani perintah MAIL FROM:<sender@domain.com>
@@ -384,8 +397,8 @@ func sanitizeFilename(s string) string {
 	return s
 }
 
-// StartSMTPServer menjalankan daemon SMTP server di port tertentu (goroutine)
-func StartSMTPServer(addr, domainName string) *smtp.Server {
+// StartSMTPServer menjalankan daemon SMTP server di port tertentu (goroutine) dengan dukungan STARTTLS
+func StartSMTPServer(addr, domainName string, tlsConfig *tls.Config) *smtp.Server {
 	s := smtp.NewServer(NewBackend())
 	s.Addr = addr
 	s.Domain = domainName
@@ -393,12 +406,21 @@ func StartSMTPServer(addr, domainName string) *smtp.Server {
 	s.WriteTimeout = 30 * time.Second
 	s.MaxMessageBytes = 25 * 1024 * 1024 // Maksimum ukuran lampiran/email 25MB
 	s.MaxRecipients = 50
-	s.AllowInsecureAuth = true // Untuk pengujian lokal tanpa TLS aktif
+	s.AllowInsecureAuth = true // Tetap izinkan untuk kompatibilitas klien yang belum mengaktifkan TLS
+	if tlsConfig != nil {
+		s.TLSConfig = tlsConfig
+	}
+
+	l, err := net.Listen("tcp", addr)
+	if err != nil {
+		log.Printf("❌ Gagal listen SMTP di %s: %v", addr, err)
+		return nil
+	}
 
 	go func() {
-		log.Printf("📬 [SMTP SERVER] Mendengarkan koneksi di %s (Domain: %s)...", addr, domainName)
-		if err := s.ListenAndServe(); err != nil && !errors.Is(err, net.ErrClosed) {
-			log.Fatalf("❌ SMTP Server error: %v", err)
+		log.Printf("📬 [SMTP SERVER] Mendengarkan koneksi di %s (Domain: %s, TLS: %v)...", addr, domainName, tlsConfig != nil)
+		if err := s.Serve(l); err != nil && !errors.Is(err, net.ErrClosed) && !errors.Is(err, smtp.ErrServerClosed) {
+			log.Printf("❌ SMTP Server error di %s: %v", addr, err)
 		}
 	}()
 

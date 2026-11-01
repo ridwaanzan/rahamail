@@ -14,6 +14,7 @@ import (
 	"mail-server/internal/scheduler"
 	"mail-server/internal/smtpserver"
 	"mail-server/internal/sse"
+	"mail-server/internal/tlsconfig"
 	"mail-server/web"
 
 	"github.com/gin-gonic/gin"
@@ -42,17 +43,43 @@ func main() {
 		return p
 	}
 
-	// 4. Jalankan Core SMTP Server di background goroutine
+	// 4. Inisialisasi TLS Engine untuk STARTTLS & Direct SSL/TLS
+	domainName := os.Getenv("MAIL_DOMAIN")
+	if domainName == "" {
+		domainName = "mail.example.com"
+	}
+	tlsConfig, err := tlsconfig.LoadOrGenerateTLSConfig(domainName)
+	if err != nil {
+		log.Printf("⚠️ Gagal menyiapkan TLSConfig: %v. Server akan berjalan tanpa TLS.", err)
+	}
+
+	// 5. Jalankan SMTP Server (Inbound Port 25) di background goroutine
 	smtpPort := normalizePort("SMTP_PORT", ":2525")
-	smtpServer := smtpserver.StartSMTPServer(smtpPort, "mail.example.com")
+	smtpServer := smtpserver.StartSMTPServer(smtpPort, domainName, tlsConfig)
 	defer smtpServer.Close()
 
-	// 5. Jalankan IMAP Server di background goroutine
+	// Jalankan SMTP Submission Server (Port 587) untuk third-party email clients jika port berbeda
+	submissionPort := normalizePort("SUBMISSION_PORT", ":587")
+	if submissionPort != smtpPort {
+		submissionServer := smtpserver.StartSMTPServer(submissionPort, domainName, tlsConfig)
+		defer submissionServer.Close()
+	}
+
+	// 6. Jalankan IMAP Server (Port 143 STARTTLS) di background goroutine
 	imapPort := normalizePort("IMAP_PORT", ":1143")
-	imapServer := imapserver.StartIMAPServer(imapPort)
+	imapServer := imapserver.StartIMAPServer(imapPort, tlsConfig)
 	defer imapServer.Close()
 
-	// 6. Setup Gin Web Server
+	// Jalankan IMAPS Server (Direct TLS Port 993) untuk email clients
+	imapsPort := normalizePort("IMAPS_PORT", ":993")
+	if imapsPort != imapPort && tlsConfig != nil {
+		imapsServer := imapserver.StartIMAPServerTLS(imapsPort, tlsConfig)
+		if imapsServer != nil {
+			defer imapsServer.Close()
+		}
+	}
+
+	// 7. Setup Gin Web Server
 	ginMode := os.Getenv("GIN_MODE")
 	if ginMode == "" {
 		ginMode = gin.ReleaseMode
