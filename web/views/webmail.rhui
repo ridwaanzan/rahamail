@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ .title }}</title>
+    <title>{{ title }}</title>
     <!-- Compiled TailwindCSS Dark & Light Mode Theme -->
     <link rel="stylesheet" href="/static/css/app.min.css">
     <!-- Embedded Base64 Bootstrap Icons -->
@@ -43,20 +43,20 @@
                 <i class="bi bi-sun-fill inline dark:hidden text-sm text-amber-500"></i>
             </button>
 
-            {{ if .current_user.IsAdmin }}
+            <if test="current_user.IsAdmin">
             <!-- Admin Dashboard Link -->
             <a href="/" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-cyan-600 dark:text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 hover:bg-cyan-500/20 transition-all">
                 <i class="bi bi-speedometer2"></i>
                 <span>Dashboard</span>
             </a>
-            {{ end }}
+            </if>
 
             <!-- User Menu & Logout -->
             <div class="flex items-center gap-2 pl-2 border-l border-light-border dark:border-dark-border">
                 <div class="w-7 h-7 rounded-full bg-slate-200 dark:bg-dark-card border border-light-border dark:border-dark-border flex items-center justify-center text-xs font-bold text-light-text dark:text-white">
-                    {{ slice .current_user.Email 0 1 }}
+                    {{ user_initial }}
                 </div>
-                <span class="text-xs font-medium text-light-text dark:text-slate-200 hidden md:inline truncate max-w-[150px]">{{ .current_user.Email }}</span>
+                <span class="text-xs font-medium text-light-text dark:text-slate-200 hidden md:inline truncate max-w-[150px]">{{ current_user.Email }}</span>
                 <button onclick="openSecuritySettingsModal()" class="p-1.5 text-light-muted dark:text-dark-muted hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors" title="Keamanan Akun & 2FA / API Keys">
                     <i class="bi bi-shield-lock text-sm"></i>
                 </button>
@@ -83,64 +83,64 @@
                 <div>
                     <span class="text-[10px] font-semibold uppercase tracking-wider text-light-muted dark:text-dark-muted px-2 mb-1 block">Folders</span>
                     <nav class="space-y-1">
-                        <a href="/mail?folder=INBOX" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all {{ if eq .current_folder "INBOX" }}bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-semibold border border-cyan-500/20{{ else }}text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card{{ end }}">
+                        <a href="/mail?folder=INBOX" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all <if test="current_folder == 'INBOX'">bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-semibold border border-cyan-500/20</if><else>text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card</else>">
                             <div class="flex items-center gap-2.5">
                                 <i class="bi bi-inbox-fill text-sm"></i>
                                 <span>Inbox</span>
                             </div>
-                            {{ if gt .inbox_count 0 }}
-                            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold {{ if eq .current_folder "INBOX" }}bg-cyan-500 text-white{{ else }}bg-slate-200 dark:bg-dark-border text-light-muted dark:text-dark-muted{{ end }}" id="inboxCountBadge">{{ .inbox_count }}</span>
-                            {{ end }}
+                            <if test="inbox_count > 0">
+                            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold <if test="current_folder == 'INBOX'">bg-cyan-500 text-white</if><else>bg-slate-200 dark:bg-dark-border text-light-muted dark:text-dark-muted</else>" id="inboxCountBadge">{{ inbox_count }}</span>
+                            </if>
                         </a>
 
-                        <a href="/mail?folder=Sent" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all {{ if eq .current_folder "Sent" }}bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-semibold border border-cyan-500/20{{ else }}text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card{{ end }}">
+                        <a href="/mail?folder=Sent" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all <if test="current_folder == 'Sent'">bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-semibold border border-cyan-500/20</if><else>text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card</else>">
                             <div class="flex items-center gap-2.5">
                                 <i class="bi bi-send-fill text-sm"></i>
                                 <span>Sent</span>
                             </div>
-                            {{ if gt .sent_count 0 }}
-                            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold {{ if eq .current_folder "Sent" }}bg-cyan-500 text-white{{ else }}bg-slate-200 dark:bg-dark-border text-light-muted dark:text-dark-muted{{ end }}">{{ .sent_count }}</span>
-                            {{ end }}
+                            <if test="sent_count > 0">
+                            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold <if test="current_folder == 'Sent'">bg-cyan-500 text-white</if><else>bg-slate-200 dark:bg-dark-border text-light-muted dark:text-dark-muted</else>">{{ sent_count }}</span>
+                            </if>
                         </a>
 
-                        <a href="/mail?folder=Scheduled" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all {{ if eq .current_folder "Scheduled" }}bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-semibold border border-cyan-500/20{{ else }}text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card{{ end }}">
+                        <a href="/mail?folder=Scheduled" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all <if test="current_folder == 'Scheduled'">bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-semibold border border-cyan-500/20</if><else>text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card</else>">
                             <div class="flex items-center gap-2.5">
                                 <i class="bi bi-clock-history text-sm text-amber-500"></i>
                                 <span>Scheduled</span>
                             </div>
-                            {{ if gt .scheduled_count 0 }}
-                            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-500 border border-amber-500/30">{{ .scheduled_count }}</span>
-                            {{ end }}
+                            <if test="scheduled_count > 0">
+                            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-500 border border-amber-500/30">{{ scheduled_count }}</span>
+                            </if>
                         </a>
 
-                        <a href="/mail?folder=Drafts" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all {{ if eq .current_folder "Drafts" }}bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-semibold border border-cyan-500/20{{ else }}text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card{{ end }}">
+                        <a href="/mail?folder=Drafts" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all <if test="current_folder == 'Drafts'">bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-semibold border border-cyan-500/20</if><else>text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card</else>">
                             <div class="flex items-center gap-2.5">
                                 <i class="bi bi-file-earmark-text-fill text-sm"></i>
                                 <span>Drafts</span>
                             </div>
-                            {{ if gt .drafts_count 0 }}
-                            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold {{ if eq .current_folder "Drafts" }}bg-cyan-500 text-white{{ else }}bg-slate-200 dark:bg-dark-border text-light-muted dark:text-dark-muted{{ end }}">{{ .drafts_count }}</span>
-                            {{ end }}
+                            <if test="drafts_count > 0">
+                            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold <if test="current_folder == 'Drafts'">bg-cyan-500 text-white</if><else>bg-slate-200 dark:bg-dark-border text-light-muted dark:text-dark-muted</else>">{{ drafts_count }}</span>
+                            </if>
                         </a>
 
-                        <a href="/mail?folder=Spam" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all {{ if eq .current_folder "Spam" }}bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-semibold border border-cyan-500/20{{ else }}text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card{{ end }}">
+                        <a href="/mail?folder=Spam" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all <if test="current_folder == 'Spam'">bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-semibold border border-cyan-500/20</if><else>text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card</else>">
                             <div class="flex items-center gap-2.5">
                                 <i class="bi bi-shield-slash-fill text-sm text-rose-500"></i>
                                 <span>Spam</span>
                             </div>
-                            {{ if gt .spam_count 0 }}
-                            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-500 border border-rose-500/30">{{ .spam_count }}</span>
-                            {{ end }}
+                            <if test="spam_count > 0">
+                            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-500 border border-rose-500/30">{{ spam_count }}</span>
+                            </if>
                         </a>
 
-                        <a href="/mail?folder=Trash" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all {{ if eq .current_folder "Trash" }}bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-semibold border border-cyan-500/20{{ else }}text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card{{ end }}">
+                        <a href="/mail?folder=Trash" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all <if test="current_folder == 'Trash'">bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-semibold border border-cyan-500/20</if><else>text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card</else>">
                             <div class="flex items-center gap-2.5">
                                 <i class="bi bi-trash-fill text-sm"></i>
                                 <span>Trash</span>
                             </div>
-                            {{ if gt .trash_count 0 }}
-                            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold {{ if eq .current_folder "Trash" }}bg-cyan-500 text-white{{ else }}bg-slate-200 dark:bg-dark-border text-light-muted dark:text-dark-muted{{ end }}">{{ .trash_count }}</span>
-                            {{ end }}
+                            <if test="trash_count > 0">
+                            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold <if test="current_folder == 'Trash'">bg-cyan-500 text-white</if><else>bg-slate-200 dark:bg-dark-border text-light-muted dark:text-dark-muted</else>">{{ trash_count }}</span>
+                            </if>
                         </a>
                     </nav>
                 </div>
@@ -165,7 +165,7 @@
             <div class="pt-3 border-t border-light-border dark:border-dark-border mt-auto">
                 <div class="flex items-center justify-between text-[11px] text-light-muted dark:text-dark-muted mb-1.5">
                     <span class="flex items-center gap-1"><i class="bi bi-hdd-fill text-[10px]"></i> Storage</span>
-                    <span>{{ .storage_used }}MB / {{ .storage_quota }}MB</span>
+                    <span>{{ storage_used }}MB / {{ storage_quota }}MB</span>
                 </div>
                 <div class="w-full bg-slate-200 dark:bg-dark-border rounded-full h-1.5 overflow-hidden">
                     <div class="bg-cyan-500 h-1.5 rounded-full" style="width: 2%"></div>
@@ -180,22 +180,22 @@
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
                         <span class="text-xs font-bold text-light-text dark:text-white uppercase tracking-wider">
-                            {{ if eq .current_folder "Scheduled" }}
+                            <if test="current_folder == 'Scheduled'">
                             <i class="bi bi-clock-history text-amber-500 mr-1"></i>Email Terjadwal
-                            {{ else }}
-                            {{ .current_folder }}
-                            {{ end }}
+                            </if><else>
+                            {{ current_folder }}
+                            </else>
                         </span>
                         <span class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-semibold border border-cyan-500/20">
-                            {{ .total_items }}
+                            {{ total_items }}
                         </span>
                     </div>
                     <div class="flex items-center gap-1">
-                        {{ if eq .current_folder "Trash" }}
+                        <if test="current_folder == 'Trash'">
                         <button onclick="emptyTrashFolder()" class="px-2 py-0.5 rounded text-[11px] font-semibold text-rose-500 hover:text-white hover:bg-rose-600 border border-rose-500/30 transition-all flex items-center gap-1" title="Kosongkan Seluruh Email di Folder Trash">
                             <i class="bi bi-trash3"></i> Kosongkan
                         </button>
-                        {{ end }}
+                        </if>
                         <button onclick="location.reload()" class="p-1 text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white transition-colors" title="Segarkan">
                             <i class="bi bi-arrow-clockwise text-sm"></i>
                         </button>
@@ -211,96 +211,104 @@
 
             <!-- Mail Items List (Scrollable) -->
             <div class="flex-1 overflow-y-auto divide-y divide-light-border dark:divide-dark-border/60" id="mailListContainer">
-                {{ if eq .current_folder "Scheduled" }}
+                <if test="current_folder == 'Scheduled'">
                     <!-- List Email Terjadwal -->
-                    {{ range .scheduled_mails }}
-                    <div class="mail-item p-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-dark-card/60 transition-colors" id="sched-item-{{ .ID }}">
+                    <if test="len(scheduled_mails) > 0">
+                    <each items="scheduled_mails" as="item">
+                    <div class="mail-item p-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-dark-card/60 transition-colors" id="sched-item-{{ item.ID }}">
                         <div class="flex items-center justify-between mb-1">
                             <span class="text-[11px] text-amber-500 font-semibold flex items-center gap-1">
-                                <i class="bi bi-clock text-[10px]"></i>{{ .ScheduledAt.Format "02 Jan 15:04" }}
+                                <i class="bi bi-clock text-[10px]"></i>{{ item.ScheduledAt | dateFormat("02 Jan 15:04") }}
                             </span>
-                            <span class="text-[10px] px-1.5 py-0.2 rounded font-medium {{ if eq .Status "pending" }}bg-amber-500/10 text-amber-500 border border-amber-500/20{{ else if eq .Status "sent" }}bg-emerald-500/10 text-emerald-500 border border-emerald-500/20{{ else }}bg-rose-500/10 text-rose-500 border border-rose-500/20{{ end }}">
-                                {{ .Status }}
+                            <span class="text-[10px] px-1.5 py-0.2 rounded font-medium bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                                {{ item.Status }}
                             </span>
                         </div>
-                        <h4 class="text-xs font-semibold text-light-text dark:text-white truncate mb-0.5">{{ .Subject }}</h4>
-                        <p class="text-[11px] text-light-muted dark:text-dark-muted truncate">Kepada: {{ .To }}</p>
-                        {{ if eq .Status "pending" }}
+                        <h4 class="text-xs font-semibold text-light-text dark:text-white truncate mb-0.5">{{ item.Subject }}</h4>
+                        <p class="text-[11px] text-light-muted dark:text-dark-muted truncate">Kepada: {{ item.To }}</p>
+                        <if test="item.Status == 'pending'">
                         <div class="mt-2 text-right">
-                            <button onclick="cancelSchedule({{ .ID }})" class="px-2 py-0.5 text-[10px] font-medium text-rose-500 hover:text-white hover:bg-rose-600 border border-rose-500/30 rounded transition-all">
+                            <button onclick="cancelSchedule({{ item.ID }})" class="px-2 py-0.5 text-[10px] font-medium text-rose-500 hover:text-white hover:bg-rose-600 border border-rose-500/30 rounded transition-all">
                                 <i class="bi bi-x-circle mr-1"></i>Batalkan
                             </button>
                         </div>
-                        {{ end }}
+                        </if>
                     </div>
-                    {{ else }}
+                    </each>
+                    </if><else>
                     <div class="text-center py-12 px-4 text-light-muted dark:text-dark-muted">
                         <i class="bi bi-clock-history text-3xl opacity-30 block mb-2"></i>
                         <p class="text-xs">Tidak ada email yang sedang dijadwalkan.</p>
                     </div>
-                    {{ end }}
-                {{ else }}
+                    </else>
+                </if><else>
                     <!-- List Email Reguler -->
-                    {{ range .messages }}
-                    <div class="mail-item p-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-dark-card/60 transition-colors {{ if not .IsSeen }}border-l-2 border-cyan-500 bg-cyan-500/[0.02]{{ end }}" id="msg-item-{{ .ID }}" onclick="loadMessageDetail({{ .ID }})">
+                    <if test="len(messages) > 0">
+                    <each items="messages" as="msg">
+                    <div class="mail-item p-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-dark-card/60 transition-colors" id="msg-item-{{ msg.ID }}" onclick="loadMessageDetail({{ msg.ID }})">
                         <div class="flex items-center justify-between mb-1">
-                            <span class="text-xs font-semibold {{ if not .IsSeen }}text-cyan-600 dark:text-cyan-400{{ else }}text-light-text dark:text-slate-300{{ end }} truncate pr-2">
-                                {{ .From }}
+                            <span class="text-xs font-semibold text-light-text dark:text-slate-300 truncate pr-2">
+                                {{ msg.From }}
                             </span>
-                            <span class="text-[10px] text-light-muted dark:text-dark-muted shrink-0">{{ .ReceivedAt.Format "02 Jan 15:04" }}</span>
+                            <span class="text-[10px] text-light-muted dark:text-dark-muted shrink-0">{{ msg.ReceivedAt | dateFormat("02 Jan 15:04") }}</span>
                         </div>
-                        <h4 class="text-xs {{ if not .IsSeen }}font-bold text-light-text dark:text-white{{ else }}font-medium text-slate-700 dark:text-slate-300{{ end }} truncate mb-1">
-                            {{ .Subject }}
+                        <h4 class="text-xs font-medium text-slate-700 dark:text-slate-300 truncate mb-1">
+                            {{ msg.Subject }}
                         </h4>
                         <p class="text-[11px] text-light-muted dark:text-dark-muted truncate line-clamp-1 mb-2">
-                            {{ .Snippet }}
+                            {{ msg.Snippet }}
                         </p>
                         <div class="flex items-center justify-between pt-1">
                             <div class="flex items-center gap-1.5">
                                 <span class="text-[9px] px-1 py-0.2 rounded font-mono bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                                    SPF: {{ .SPFStatus }}
+                                    SPF: {{ msg.SPFStatus }}
                                 </span>
                                 <span class="text-[9px] px-1 py-0.2 rounded font-mono bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
-                                    DKIM: {{ .DKIMStatus }}
+                                    DKIM: {{ msg.DKIMStatus }}
                                 </span>
                             </div>
-                            <button onclick="toggleStar(event, {{ .ID }})" id="star-btn-{{ .ID }}" class="text-light-muted dark:text-dark-muted hover:text-amber-400 p-0.5" title="Bintang">
-                                <i class="bi {{ if .IsFlagged }}bi-star-fill text-amber-400{{ else }}bi-star{{ end }} text-xs"></i>
+                            <button onclick="toggleStar(event, {{ msg.ID }})" id="star-btn-{{ msg.ID }}" class="text-light-muted dark:text-dark-muted hover:text-amber-400 p-0.5" title="Bintang">
+                                <if test="msg.IsFlagged">
+                                    <i class="bi bi-star-fill text-amber-400 text-xs"></i>
+                                </if><else>
+                                    <i class="bi bi-star text-xs"></i>
+                                </else>
                             </button>
                         </div>
                     </div>
-                    {{ else }}
+                    </each>
+                    </if><else>
                     <div class="text-center py-12 px-4 text-light-muted dark:text-dark-muted">
                         <i class="bi bi-inbox text-3xl opacity-30 block mb-2"></i>
                         <p class="text-xs">Belum ada email di folder ini.</p>
                     </div>
-                    {{ end }}
-                {{ end }}
+                    </else>
+                </else>
             </div>
 
             <!-- Pagination Footer -->
             <div class="p-2.5 px-3 border-t border-light-border dark:border-dark-border flex items-center justify-between text-[11px] text-light-muted dark:text-dark-muted bg-slate-50 dark:bg-dark-header">
-                <span>{{ .start_item }}-{{ .end_item }} dari {{ .total_items }}</span>
+                <span>{{ start_item }}-{{ end_item }} dari {{ total_items }}</span>
                 <div class="flex items-center gap-1">
-                    {{ if .has_prev }}
-                    <a href="/mail?folder={{ .current_folder }}&page={{ .prev_page }}&limit={{ .limit }}" class="p-1 rounded text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-200 dark:hover:bg-dark-card border border-light-border dark:border-dark-border" title="Sebelumnya">
+                    <if test="has_prev">
+                    <a href="/mail?folder={{ current_folder }}&page={{ prev_page }}&limit={{ limit }}" class="p-1 rounded text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-200 dark:hover:bg-dark-card border border-light-border dark:border-dark-border" title="Sebelumnya">
                         <i class="bi bi-chevron-left text-xs"></i>
                     </a>
-                    {{ else }}
-                    <button disabled class="p-1 rounded opacity-30 text-light-muted dark:text-dark-muted border border-light-border dark:border-dark-border cursor-not-allowed">
+                    </if><else>
+                    <button disabled="true" class="p-1 rounded opacity-30 text-light-muted dark:text-dark-muted border border-light-border dark:border-dark-border cursor-not-allowed">
                         <i class="bi bi-chevron-left text-xs"></i>
                     </button>
-                    {{ end }}
+                    </else>
 
-                    {{ if .has_next }}
-                    <a href="/mail?folder={{ .current_folder }}&page={{ .next_page }}&limit={{ .limit }}" class="p-1 rounded text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-200 dark:hover:bg-dark-card border border-light-border dark:border-dark-border" title="Berikutnya">
+                    <if test="has_next">
+                    <a href="/mail?folder={{ current_folder }}&page={{ next_page }}&limit={{ limit }}" class="p-1 rounded text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-200 dark:hover:bg-dark-card border border-light-border dark:border-dark-border" title="Berikutnya">
                         <i class="bi bi-chevron-right text-xs"></i>
                     </a>
-                    {{ else }}
-                    <button disabled class="p-1 rounded opacity-30 text-light-muted dark:text-dark-muted border border-light-border dark:border-dark-border cursor-not-allowed">
+                    </if><else>
+                    <button disabled="true" class="p-1 rounded opacity-30 text-light-muted dark:text-dark-muted border border-light-border dark:border-dark-border cursor-not-allowed">
                         <i class="bi bi-chevron-right text-xs"></i>
                     </button>
-                    {{ end }}
+                    </else>
                 </div>
             </div>
         </section>
@@ -330,7 +338,7 @@
                             <span>Teruskan</span>
                         </button>
                         <div class="h-4 w-px bg-light-border dark:border-dark-border mx-1"></div>
-                        {{ if eq .current_folder "Trash" }}
+                        <if test="current_folder == 'Trash'">
                         <button onclick="moveCurrentMail('INBOX')" class="px-2.5 py-1.5 rounded-lg text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 border border-emerald-500/20 transition-all flex items-center gap-1.5" title="Pulihkan email ke Kotak Masuk (Inbox)">
                             <i class="bi bi-arrow-counterclockwise"></i>
                             <span>Pulihkan</span>
@@ -339,7 +347,7 @@
                             <i class="bi bi-trash3-fill"></i>
                             <span>Hapus Permanen</span>
                         </button>
-                        {{ else }}
+                        </if><else>
                         <button onclick="moveCurrentMail('Spam')" class="px-2.5 py-1.5 rounded-lg text-xs font-medium text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 border border-amber-500/20 transition-all flex items-center gap-1.5">
                             <i class="bi bi-shield-slash"></i>
                             <span>Spam</span>
@@ -348,7 +356,7 @@
                             <i class="bi bi-trash"></i>
                             <span>Hapus</span>
                         </button>
-                        {{ end }}
+                        </else>
                     </div>
                     <div>
                         <span id="readMailDate" class="text-xs text-light-muted dark:text-dark-muted font-medium"></span>
@@ -601,7 +609,7 @@
                 <div id="secTab2fa" class="space-y-4">
                     <div id="twoFAAlert" class="hidden p-3 rounded-xl text-xs"></div>
 
-                    {{ if .current_user.TwoFactorEnabled }}
+                    <if test="current_user.TwoFactorEnabled">
                     <div class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between">
                         <div>
                             <h4 class="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 mb-1">
@@ -618,11 +626,11 @@
                         <h5 class="text-xs font-bold text-rose-500">Konfirmasi Penonaktifan 2FA</h5>
                         <p class="text-[11px] text-light-muted dark:text-dark-muted">Masukkan kata sandi akun Anda untuk mengonfirmasi:</p>
                         <div class="flex gap-2 max-w-sm">
-                            <input type="password" id="disable2FAPassword" class="flex-1 px-3 py-1.5 text-xs rounded-lg border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card text-light-text dark:text-white focus:outline-none" placeholder="Kata sandi saat ini">
+                            <input type="password" id="disable2FAPassword" class="flex-1 px-3 py-1.5 text-xs rounded-lg border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card text-light-text dark:text-white focus:outline-none" placeholder="Kata sandi saat ini" />
                             <button onclick="submitDisable2FA()" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-rose-600 hover:bg-rose-500">Nonaktifkan</button>
                         </div>
                     </div>
-                    {{ else }}
+                    </if><else>
                     <div class="p-4 rounded-xl bg-slate-50 dark:bg-dark-header border border-light-border dark:border-dark-border space-y-3">
                         <h4 class="text-xs font-bold text-light-text dark:text-white flex items-center gap-1.5">
                             <i class="bi bi-shield-plus text-cyan-500"></i> Aktifkan Autentikasi Dua Langkah
@@ -632,13 +640,13 @@
                         <div id="setup2FASteps" class="hidden space-y-3">
                             <div class="p-3 bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-xl space-y-2">
                                 <span class="text-[11px] font-semibold text-light-muted dark:text-dark-muted block">1. Masukkan Secret Key ke aplikasi Authenticator:</span>
-                                <input type="text" id="twoFASecretInput" class="w-full px-3 py-1.5 text-xs font-mono font-bold rounded-lg border border-light-border dark:border-dark-border bg-slate-50 dark:bg-dark-header text-cyan-600 dark:text-cyan-400" readonly>
-                                <textarea id="twoFAUriInput" class="w-full px-3 py-1.5 text-[10px] font-mono rounded-lg border border-light-border dark:border-dark-border bg-slate-50 dark:bg-dark-header text-light-muted dark:text-dark-muted" rows="2" readonly></textarea>
+                                <input type="text" id="twoFASecretInput" class="w-full px-3 py-1.5 text-xs font-mono font-bold rounded-lg border border-light-border dark:border-dark-border bg-slate-50 dark:bg-dark-header text-cyan-600 dark:text-cyan-400" readonly="true" />
+                                <textarea id="twoFAUriInput" class="w-full px-3 py-1.5 text-[10px] font-mono rounded-lg border border-light-border dark:border-dark-border bg-slate-50 dark:bg-dark-header text-light-muted dark:text-dark-muted" rows="2" readonly="true"></textarea>
                             </div>
                             <div class="p-3 bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-xl space-y-2">
                                 <span class="text-[11px] font-semibold text-light-muted dark:text-dark-muted block">2. Masukkan 6-digit kode verifikasi:</span>
                                 <div class="flex gap-2 max-w-xs">
-                                    <input type="text" id="twoFAVerifyCode" class="flex-1 px-3 py-1.5 text-center text-xs font-mono font-bold rounded-lg border border-light-border dark:border-dark-border bg-slate-50 dark:bg-dark-header text-light-text dark:text-white focus:outline-none" placeholder="123456" maxlength="6">
+                                    <input type="text" id="twoFAVerifyCode" class="flex-1 px-3 py-1.5 text-center text-xs font-mono font-bold rounded-lg border border-light-border dark:border-dark-border bg-slate-50 dark:bg-dark-header text-light-text dark:text-white focus:outline-none" placeholder="123456" maxlength="6" />
                                     <button onclick="submitEnable2FA()" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-cyan-600 hover:bg-cyan-500">Aktifkan</button>
                                 </div>
                             </div>
@@ -655,7 +663,7 @@
                             <i class="bi bi-qr-code mr-1"></i> Mulai Konfigurasi 2FA
                         </button>
                     </div>
-                    {{ end }}
+                    </else>
                 </div>
 
                 <!-- API Keys Tab Pane -->
@@ -1075,7 +1083,7 @@
 
         function handleFileSelect(event) {
             const files = event.target.files;
-            for (let i = 0; i < files.length; i++) {
+            for (let i = 0; !(i >= files.length); i++) {
                 const file = files[i];
                 if (file.size > 15 * 1024 * 1024) {
                     showModalAlert({ title: 'Ukuran Melebihi Batas', message: `Berkas ${file.name} melebihi batas maksimum 15MB.`, type: 'warning' });
@@ -1515,9 +1523,9 @@
             const fromDisplay = document.getElementById('readMailFrom')?.textContent || senderEmail;
             
             let contactName = senderEmail.split('@')[0];
-            const nameMatch = fromDisplay.match(/^([^<]+)<.+>$/);
-            if (nameMatch) {
-                contactName = nameMatch[1].trim().replace(/^["']|["']$/g, '');
+            const nameParts = fromDisplay.split(String.fromCharCode(60));
+            if (nameParts.length > 1) {
+                contactName = nameParts[0].trim().replace(/^["']|["']$/g, "");
             }
 
             try {
@@ -1547,7 +1555,7 @@
         function escapeHtml(text) {
             return text
                 .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
+                .replaceAll(String.fromCharCode(60), "&lt;")
                 .replace(/>/g, "&gt;")
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#039;");
@@ -1829,7 +1837,7 @@
             const container = document.getElementById(targetSugId);
             const lastToken = val.split(',').pop().trim();
 
-            if (!lastToken || lastToken.length < 1) {
+            if (!lastToken || !(lastToken.length >= 1)) {
                 container.classList.add('hidden');
                 container.innerHTML = '';
                 return;
@@ -1941,11 +1949,10 @@
                         `;
                         return;
                     }
-                    container.innerHTML = data.map(t => `
-                        <button type="button" onclick="insertCannedTemplate('${escapeHtml(t.content).replace(/'/g, "\\'")}')" class="w-full text-left p-2 text-xs text-light-text dark:text-white hover:bg-slate-100 dark:hover:bg-dark-header truncate">
-                            ${escapeHtml(t.title)}
-                        </button>
-                    `).join('') + `
+                    container.innerHTML = data.map(t => {
+                        const safeContent = escapeHtml(t.content).replaceAll("'", "\\'");
+                        return '<button type="button" onclick="insertCannedTemplate(\'' + safeContent + '\')" class="w-full text-left p-2 text-xs text-light-text dark:text-white hover:bg-slate-100 dark:hover:bg-dark-header truncate">' + escapeHtml(t.title) + '</button>';
+                    }).join('') + `
                         <div class="border-t border-light-border dark:border-dark-border my-1"></div>
                         <button type="button" onclick="toggleTemplatesDropdown(); openCannedModal()" class="w-full text-left p-2 text-xs font-semibold text-cyan-600 dark:text-cyan-400 hover:bg-slate-100 dark:hover:bg-dark-header">
                                 <i class="bi bi-gear mr-1"></i> Kelola Template

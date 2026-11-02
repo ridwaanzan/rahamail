@@ -147,7 +147,7 @@
                                 </div>
                                 <span class="badge text-bg-success mt-2 mb-2">Sangat Direkomendasikan</span>
                                 <p class="text-secondary small mb-0">
-                                    Zero-config, embedded, konsumsi RAM <20MB, super cepat untuk puluhan ribu pesan.
+                                    Zero-config, embedded, konsumsi RAM &lt; 20MB, super cepat untuk puluhan ribu pesan.
                                 </p>
                             </div>
                         </div>
@@ -298,13 +298,13 @@
         });
 
         function updateStepUI() {
-            for (let i = 1; i <= totalSteps; i++) {
+            for (let i = 1; !(i > totalSteps); i++) {
                 const stepEl = document.getElementById('step' + i);
                 const pillEl = document.getElementById('pill' + i);
                 if (i === currentStep) {
                     stepEl.classList.remove('d-none');
                     pillEl.className = 'step-pill active';
-                } else if (i < currentStep) {
+                } else if (!(i >= currentStep)) {
                     stepEl.classList.add('d-none');
                     pillEl.className = 'step-pill completed';
                     pillEl.innerHTML = '<i class="bi bi-check-lg"></i>';
@@ -327,7 +327,7 @@
         }
 
         function nextStep() {
-            if (currentStep < totalSteps) {
+            if (!(currentStep >= totalSteps)) {
                 currentStep++;
                 updateStepUI();
             } else {

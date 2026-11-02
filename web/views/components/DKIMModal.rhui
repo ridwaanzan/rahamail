@@ -1,0 +1,52 @@
+<component name="ui:DKIMModal">
+  <div id="dkimModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm hidden transition-opacity">
+    <div class="w-full max-w-2xl rounded-2xl border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card shadow-2xl p-6 relative">
+      <div class="flex items-center justify-between pb-4 border-b border-light-border dark:border-dark-border">
+        <h3 class="text-base font-bold text-light-text dark:text-white flex items-center gap-2">
+          <i class="bi bi-shield-check text-cyan-500"></i>
+          <span>Setup DNS DKIM Record (<span id="dkimDomainName" class="text-cyan-500">domain.com</span>)</span>
+        </h3>
+        <button type="button" onclick="closeDkimModal()" class="w-8 h-8 rounded-lg flex items-center justify-center text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="py-4 space-y-4 text-xs">
+        <p class="text-light-muted dark:text-dark-muted leading-relaxed">
+          Tambahkan TXT record berikut pada DNS Management domain Anda untuk mengaktifkan tanda tangan kriptografis RSA 2048-bit pada setiap email yang dikirim.
+        </p>
+
+        <div>
+          <label class="block font-bold text-light-text dark:text-white mb-1.5">Host / Name</label>
+          <div class="flex items-center gap-2">
+            <input type="text" id="dkimHostInput" readonly class="w-full px-3 py-2 rounded-xl border border-light-border dark:border-dark-border bg-light-bg dark:bg-dark-bg text-light-text dark:text-white font-mono text-xs select-all" value="mail._domainkey">
+            <button type="button" onclick="copyDkimField('dkimHostInput', 'Host record')" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-cyan-500 hover:text-white text-light-text dark:text-white border border-light-border dark:border-dark-border transition-colors flex items-center gap-1.5 shrink-0">
+              <i class="bi bi-copy"></i> Salin
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-light-text dark:text-white mb-1.5">Record Type</label>
+          <input type="text" readonly class="w-32 px-3 py-2 rounded-xl border border-light-border dark:border-dark-border bg-light-bg dark:bg-dark-bg text-light-text dark:text-white font-mono text-xs" value="TXT">
+        </div>
+
+        <div>
+          <label class="block font-bold text-light-text dark:text-white mb-1.5">TXT Value / Data</label>
+          <div class="relative">
+            <textarea id="dkimValueTextarea" readonly rows="5" class="w-full p-3 rounded-xl border border-light-border dark:border-dark-border bg-light-bg dark:bg-dark-bg text-light-text dark:text-white font-mono text-xs leading-relaxed select-all"></textarea>
+            <button type="button" onclick="copyDkimField('dkimValueTextarea', 'TXT Value')" class="absolute top-2.5 right-2.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-cyan-500 hover:bg-cyan-600 text-white shadow-sm transition-colors flex items-center gap-1">
+              <i class="bi bi-copy"></i> Salin Lengkap
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-4 border-t border-light-border dark:border-dark-border flex items-center justify-end">
+        <button type="button" onclick="closeDkimModal()" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-light-text dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+          Tutup
+        </button>
+      </div>
+    </div>
+  </div>
+</component>

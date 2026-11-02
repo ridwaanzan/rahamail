@@ -16,6 +16,7 @@ import (
 	"mail-server/web"
 
 	"github.com/gin-gonic/gin"
+	rhuigin "github.com/suserc0de/rhui/adapter/gin"
 )
 
 func TestPhishingSimulationPhase1Flow(t *testing.T) {
@@ -23,11 +24,11 @@ func TestPhishingSimulationPhase1Flow(t *testing.T) {
 	r := gin.Default()
 	repository.InitDB()
 
-	tmpl, err := web.GetTemplates()
+	engine, err := web.GetRHUIEngine()
 	if err != nil {
-		t.Fatalf("Failed to load embedded templates: %v", err)
+		t.Fatalf("Failed to load embedded RHUI engine: %v", err)
 	}
-	r.SetHTMLTemplate(tmpl)
+	r.HTMLRender = rhuigin.New(engine)
 
 	mailCtrl := NewMailController()
 	simCtrl := NewSimulationController()
@@ -93,6 +94,7 @@ func TestPhishingSimulationPhase1Flow(t *testing.T) {
 	if !strings.Contains(bodyStr, "NOT PASSED") {
 		t.Errorf("Expected Teachable Moment page to show NOT PASSED status")
 	}
+	t.Logf("Response body length: %d, body:\n%s", len(bodyStr), bodyStr)
 	if !strings.Contains(bodyStr, fakeSender) {
 		t.Errorf("Expected Teachable Moment page to show fake sender: %s", fakeSender)
 	}
