@@ -101,6 +101,7 @@ func main() {
 		log.Fatalf("❌ Gagal memuat embedded RHUI templates: %v", err)
 	}
 	r.HTMLRender = rhuigin.New(rhuiEngine)
+	web.SetGlobalRHUIEngine(rhuiEngine)
 
 	// Controller
 	mailCtrl := controllers.NewMailController()

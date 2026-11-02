@@ -1,4 +1,12 @@
 <component name="ui:Modal">
+  <props>
+    <prop name="id" default="modal" />
+    <prop name="title" default="" />
+    <prop name="icon" default="" />
+    <prop name="max_width" default="max-w-lg" />
+    <prop name="close_action" default="" />
+  </props>
+
   <div id="{{ id }}" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm hidden transition-opacity">
     <div class="w-full {{ max_width }} rounded-2xl border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card shadow-2xl p-6 relative">
       <div class="flex items-center justify-between pb-4 border-b border-light-border dark:border-dark-border">

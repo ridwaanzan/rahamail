@@ -11,14 +11,12 @@ require (
 	github.com/gin-gonic/gin v1.12.0
 	github.com/glebarez/sqlite v1.11.0
 	github.com/hibiken/asynq v0.26.0
-	github.com/suserc0de/rhui v1.0.0
+	github.com/suserc0de/rhui v1.0.1
 	golang.org/x/crypto v0.58.0
 	golang.org/x/time v0.14.0
 	gorm.io/driver/postgres v1.6.3
 	gorm.io/gorm v1.31.2
 )
-
-replace github.com/suserc0de/rhui => ../template-engine
 
 require (
 	github.com/bytedance/gopkg v0.1.3 // indirect
