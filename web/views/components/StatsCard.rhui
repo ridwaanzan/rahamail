@@ -1,0 +1,19 @@
+<component name="ui:StatsCard">
+  <div class="p-6 rounded-2xl border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card shadow-sm hover:border-cyan-500/50 transition-all group">
+    <div class="flex items-center justify-between">
+      <span class="text-xs font-bold tracking-wider uppercase text-light-muted dark:text-dark-muted">{{ title }}</span>
+      <div class="w-10 h-10 rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center text-lg group-hover:scale-110 transition-transform">
+        <i class="{{ icon }}"></i>
+      </div>
+    </div>
+    <div class="text-3xl font-extrabold text-light-text dark:text-white mt-3">{{ value }}</div>
+    <div class="flex items-center gap-1.5 mt-2 text-xs text-light-muted dark:text-dark-muted font-medium">
+      <if test="badge != ''">
+        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/10 text-cyan-500 border border-cyan-500/20">
+          {{ badge }}
+        </span>
+      </if>
+      <span>{{ subtitle }}</span>
+    </div>
+  </div>
+</component>

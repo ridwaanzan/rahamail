@@ -1,0 +1,5 @@
+<component name="ui:Toast">
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2.5 max-w-sm pointer-events-none">
+    <!-- Dynamic toast notifications will be injected here via JavaScript showToast() -->
+  </div>
+</component>

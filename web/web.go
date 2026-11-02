@@ -2,20 +2,25 @@ package web
 
 import (
 	"embed"
-	"html/template"
 	"io/fs"
 	"net/http"
+
+	"github.com/suserc0de/rhui"
 )
 
-//go:embed views/*.tmpl
+//go:embed views/*.rhui views/**/*.rhui
 var viewsFS embed.FS
 
 //go:embed static/*
 var staticFS embed.FS
 
-// GetTemplates mem-parsing seluruh file template .tmpl yang disematkan di dalam binary
-func GetTemplates() (*template.Template, error) {
-	return template.ParseFS(viewsFS, "views/*.tmpl")
+// GetRHUIEngine membuat instance RHUI template engine yang membaca langsung dari memory binary (embed.FS)
+func GetRHUIEngine() (*rhui.Engine, error) {
+	return rhui.New(
+		rhui.WithFS(viewsFS),
+		rhui.WithDir("views"),
+		rhui.WithExtension(".rhui"),
+	)
 }
 
 // GetStaticFS mengembalikan http.FileSystem untuk melayani file CSS, JS, dan Fonts dari memory binary

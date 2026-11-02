@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ .title }}</title>
+    <title>{{ title }} - RaHaMail Corporate</title>
     <!-- Compiled TailwindCSS Dark & Light Mode Theme -->
     <link rel="stylesheet" href="/static/css/app.min.css">
     <!-- Embedded Base64 Bootstrap Icons -->
@@ -13,6 +13,15 @@
             document.documentElement.classList.remove('dark');
         } else {
             document.documentElement.classList.add('dark');
+        }
+        function toggleTheme() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            }
         }
     </script>
 </head>
@@ -30,7 +39,7 @@
                     <div>
                         <h1 class="text-base font-bold tracking-tight text-light-text dark:text-white">Corporate</h1>
                         <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-cyan-500/10 text-cyan-500 dark:text-cyan-400 border border-cyan-500/20">
-                            {{ .db_driver }}
+                            {{ db_driver }}
                         </span>
                     </div>
                 </div>
@@ -41,11 +50,11 @@
                 <span class="text-[11px] font-semibold tracking-wider uppercase text-light-muted dark:text-dark-muted">Admin Menu</span>
             </div>
             <nav class="space-y-1.5">
-                <a href="/" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card">
+                <a href="/" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all <if test='active_tab == \"dashboard\"'>bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 shadow-sm</if><else>text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card</else>">
                     <i class="bi bi-grid-fill text-base"></i>
                     <span>Dashboard</span>
                 </a>
-                <a href="/admin/domains" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card">
+                <a href="/admin/domains" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all <if test='active_tab == \"domains\"'>bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 shadow-sm</if><else>text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card</else>">
                     <i class="bi bi-globe text-base"></i>
                     <span>Domain Management</span>
                 </a>
@@ -54,15 +63,15 @@
                     <span>User Webmail</span>
                     <span class="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-500 dark:text-blue-400 font-semibold border border-blue-500/20">Open</span>
                 </a>
-                <a href="/admin/simulations" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card">
+                <a href="/admin/simulations" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all <if test='active_tab == \"simulations\"'>bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 shadow-sm</if><else>text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card</else>">
                     <i class="bi bi-shield-exclamation text-base"></i>
                     <span>Spam & Phishing</span>
                 </a>
-                <a href="/admin/logs" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 shadow-sm">
+                <a href="/admin/logs" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all <if test='active_tab == \"logs\"'>bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 shadow-sm</if><else>text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card</else>">
                     <i class="bi bi-broadcast text-base"></i>
                     <span>Mail Server SSE Live</span>
                 </a>
-                <a href="/admin/settings" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card">
+                <a href="/admin/settings" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all <if test='active_tab == \"settings\"'>bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 shadow-sm</if><else>text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-card</else>">
                     <i class="bi bi-gear-fill text-base"></i>
                     <span>Settings & Backup</span>
                 </a>
@@ -85,7 +94,7 @@
         <!-- TOPBAR -->
         <header class="h-16 bg-light-header dark:bg-dark-header border-b border-light-border dark:border-dark-border px-6 flex items-center justify-between shrink-0 sticky top-0 z-30">
             <div>
-                <h2 class="text-base font-bold text-light-text dark:text-white">Real-time SSE Stream Terminal</h2>
+                <h2 class="text-base font-bold text-light-text dark:text-white">{{ page_title }}</h2>
             </div>
             <div class="flex items-center gap-3.5">
                 <button onclick="toggleTheme()" class="w-9 h-9 rounded-xl flex items-center justify-center bg-slate-100 dark:bg-dark-card border border-light-border dark:border-dark-border text-light-muted dark:text-dark-muted hover:text-cyan-500 transition-colors" title="Toggle Dark/Light Mode">
@@ -97,7 +106,14 @@
                         <i class="bi bi-shield-check"></i>
                     </div>
                     <div class="hidden sm:block text-left">
-                        <div class="text-xs font-bold text-light-text dark:text-white truncate max-w-[140px]">{{ if .currentUser }}{{ .currentUser.Email }}{{ else }}Super Admin{{ end }}</div>
+                        <div class="text-xs font-bold text-light-text dark:text-white truncate max-w-[140px]">
+                            <if test="currentUser != nil">
+                                {{ currentUser.Email }}
+                            </if>
+                            <else>
+                                Super Admin
+                            </else>
+                        </div>
                         <div class="text-[10px] text-cyan-600 dark:text-cyan-400 font-medium">Super Administrator</div>
                     </div>
                     <a href="/logout" class="ml-1 p-2 rounded-xl text-light-muted dark:text-dark-muted hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-500/10 transition-colors" title="Keluar / Logout">
@@ -107,61 +123,61 @@
             </div>
         </header>
 
-        <!-- CONTENT -->
+        <!-- DASHBOARD BODY CONTENT -->
         <div class="p-6 space-y-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h3 class="text-xl font-bold tracking-tight text-light-text dark:text-white">Server-Sent Events (SSE) Live Feed</h3>
-                    <p class="text-xs text-light-muted dark:text-dark-muted">Koneksi stream log diagnostik langsung dari memori backend Golang tanpa polling.</p>
-                </div>
-                <button onclick="document.getElementById('sseTerminal').innerHTML = ''" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-dark-card border border-light-border dark:border-dark-border text-light-muted dark:text-dark-muted hover:text-cyan-500 transition-colors flex items-center gap-1.5">
-                    <i class="bi bi-trash"></i> Bersihkan Log
-                </button>
-            </div>
-
-            <div class="p-4 rounded-2xl bg-black font-mono text-xs text-emerald-400 h-[650px] overflow-y-auto space-y-1.5 border border-slate-800 shadow-2xl" id="sseTerminal">
-                <div class="text-slate-500">[*] Menginisialisasi koneksi EventSource ke /api/v1/sse...</div>
-            </div>
+            <slot />
         </div>
     </main>
 
-    <script src="/static/js/app.min.js"></script>
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <ui:Toast />
+
+    <!-- MODAL DKIM GLOBALLY ACCESSIBLE -->
+    <ui:DKIMModal />
+
+    <!-- COMMON JS UTILS -->
     <script>
-        function toggleTheme() {
-            if (document.documentElement.classList.contains('dark')) {
-                document.documentElement.classList.remove('dark');
-                localStorage.setItem('theme', 'light');
-            } else {
-                document.documentElement.classList.add('dark');
-                localStorage.setItem('theme', 'dark');
-            }
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = `p-3 rounded-xl border shadow-lg text-xs font-semibold flex items-center gap-2 pointer-events-auto transition-all transform translate-y-2 opacity-0 ` +
+                (type === 'success' ? 'bg-emerald-500 text-white border-emerald-600' :
+                 type === 'error' ? 'bg-rose-500 text-white border-rose-600' :
+                 type === 'warning' ? 'bg-amber-500 text-white border-amber-600' :
+                 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 border-slate-700');
+            toast.innerHTML = `<i class="bi bi-info-circle-fill"></i><span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
         }
 
-        // Live Log Stream
-        const sse = new EventSource('/api/v1/sse');
-        sse.onopen = () => {
-            appendLog('SYSTEM', 'Tersambung ke server SSE live stream', 'text-emerald-400');
-        };
-        sse.onerror = () => {
-            appendLog('ERROR', 'Koneksi terputus atau reconnecting...', 'text-rose-400');
-        };
-        sse.onmessage = (e) => {
-            try {
-                const data = JSON.parse(e.data);
-                appendLog(data.type || 'EVENT', JSON.stringify(data), 'text-cyan-400');
-            } catch (err) {
-                appendLog('RAW', e.data, 'text-slate-300');
-            }
-        };
+        function openDkimModal(domainName, selector, dkimRecord) {
+            document.getElementById('dkimDomainName').innerText = domainName;
+            document.getElementById('dkimHostInput').value = `${selector}._domainkey`;
+            document.getElementById('dkimValueTextarea').value = dkimRecord;
+            document.getElementById('dkimModal').classList.remove('hidden');
+        }
 
-        function appendLog(category, msg, color) {
-            const terminal = document.getElementById('sseTerminal');
-            if (!terminal) return;
-            const time = new Date().toLocaleTimeString();
-            const div = document.createElement('div');
-            div.innerHTML = `<span class="text-slate-500">[${time}]</span> <span class="${color}">[${category}]</span> <span class="text-slate-200">${msg}</span>`;
-            terminal.appendChild(div);
-            terminal.scrollTop = terminal.scrollHeight;
+        function closeDkimModal() {
+            document.getElementById('dkimModal').classList.add('hidden');
+        }
+
+        function copyDkimField(elementId, label) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            el.select();
+            navigator.clipboard.writeText(el.value).then(() => {
+                showToast(`${label} berhasil disalin ke clipboard!`, 'success');
+            }).catch(() => {
+                document.execCommand('copy');
+                showToast(`${label} berhasil disalin!`, 'success');
+            });
         }
     </script>
 </body>

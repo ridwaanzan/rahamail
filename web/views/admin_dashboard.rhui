@@ -1,0 +1,139 @@
+<layout:admin page_title="Admin Dashboard" active_tab="dashboard">
+  <!-- TOP 4 KPI CARDS -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <!-- Card 1: Active Domains -->
+    <ui:StatsCard 
+      title="Active Domains" 
+      value="{{ stats.domains }}" 
+      subtitle="Terhubung ke Inbound MX" 
+      badge="Verified" 
+      icon="bi bi-globe" />
+
+    <!-- Card 2: Total Mail Users -->
+    <ui:StatsCard 
+      title="Total Mail Users" 
+      value="{{ stats.users }}" 
+      subtitle="Akun Mailbox Aktif" 
+      badge="Active" 
+      icon="bi bi-people-fill" />
+
+    <!-- Card 3: Storage Quota -->
+    <ui:StatsCard 
+      title="Storage Usage" 
+      value="2.6 GB" 
+      subtitle="Kapasitas dari 220 GB" 
+      badge="1.2%" 
+      icon="bi bi-hdd-network" />
+
+    <!-- Card 4: SSE Live Status -->
+    <ui:StatsCard 
+      title="SSE Live Status" 
+      value="Connected" 
+      subtitle="Event Stream Real-time" 
+      badge="Live" 
+      icon="bi bi-activity" />
+  </div>
+
+  <!-- MIDDLE SECTION: CHARTS -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Left: SSE Live Traffic Visual -->
+    <div class="lg:col-span-2 p-5 rounded-2xl bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border shadow-sm">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h4 class="text-sm font-bold text-light-text dark:text-white">SSE Live Traffic</h4>
+          <p class="text-[11px] text-light-muted dark:text-dark-muted">Real-time traffic SSE driven events feed</p>
+        </div>
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-cyan-500/10 text-cyan-500 border border-cyan-500/20">
+          <span class="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse"></span> Live Stream
+        </span>
+      </div>
+      <div class="h-48 w-full flex items-center justify-center border border-dashed border-light-border dark:border-dark-border rounded-xl bg-slate-50 dark:bg-dark-bg/50">
+        <div class="text-center">
+          <i class="bi bi-broadcast text-3xl text-cyan-500 animate-pulse"></i>
+          <p class="text-xs text-light-muted dark:text-dark-muted mt-2">Menerima sinyal transmisi SSE port 9000</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Spam Awareness Metrics -->
+    <div class="p-5 rounded-2xl bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border shadow-sm flex flex-col justify-between">
+      <div class="flex items-center justify-between mb-2">
+        <h4 class="text-sm font-bold text-light-text dark:text-white">Spam Awareness</h4>
+        <span class="text-xs text-light-muted dark:text-dark-muted"><i class="bi bi-shield-check text-cyan-500"></i></span>
+      </div>
+
+      <div class="flex items-center justify-center py-2">
+        <div class="relative w-36 h-36 flex items-center justify-center">
+          <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+            <path class="text-slate-200 dark:text-slate-800" stroke-width="3.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+            <path class="text-cyan-500" stroke-width="3.5" stroke-dasharray="65, 100" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+          </svg>
+          <div class="absolute flex flex-col items-center">
+            <span class="text-xl font-black text-light-text dark:text-white">65%</span>
+            <span class="text-[9px] uppercase tracking-wider text-light-muted dark:text-dark-muted font-bold">Passed</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 pt-3 border-t border-light-border dark:border-dark-border text-center">
+        <div class="p-2 rounded-xl bg-slate-50 dark:bg-dark-bg border border-light-border dark:border-dark-border">
+          <span class="text-[10px] text-light-muted dark:text-dark-muted block">Simulations</span>
+          <span class="text-xs font-bold text-cyan-500">Active</span>
+        </div>
+        <div class="p-2 rounded-xl bg-slate-50 dark:bg-dark-bg border border-light-border dark:border-dark-border">
+          <span class="text-[10px] text-light-muted dark:text-dark-muted block">Action</span>
+          <a href="/admin/simulations" class="text-xs font-bold text-emerald-500 hover:underline">Kelola &rarr;</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM SECTION: LIVE LOGS TABLE -->
+  <div class="p-5 rounded-2xl bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border shadow-sm">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h4 class="text-sm font-bold text-light-text dark:text-white">Live Inbound & Outbound Logs</h4>
+        <p class="text-[11px] text-light-muted dark:text-dark-muted">Aktivitas transmisi email terkini</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <a href="/admin/logs" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-dark-header border border-light-border dark:border-dark-border text-light-muted dark:text-dark-muted hover:text-cyan-500 transition-colors">
+          <i class="bi bi-broadcast mr-1"></i> Buka Terminal SSE
+        </a>
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead class="text-[11px] uppercase tracking-wider text-light-muted dark:text-dark-muted border-b border-light-border dark:border-dark-border">
+          <tr>
+            <th class="py-2.5 px-4 font-semibold">Time</th>
+            <th class="py-2.5 px-4 font-semibold">Sender / From</th>
+            <th class="py-2.5 px-4 font-semibold">Subject</th>
+            <th class="py-2.5 px-4 font-semibold">Status</th>
+            <th class="py-2.5 px-4 font-semibold text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody id="liveLogsTableBody" class="divide-y divide-light-border dark:divide-dark-border">
+          <each items="messages" as="msg">
+            <tr class="hover:bg-slate-50 dark:hover:bg-dark-cardHover transition-colors">
+              <td class="py-3 px-4 text-slate-500 dark:text-dark-muted font-mono whitespace-nowrap">{{ msg.CreatedAt }}</td>
+              <td class="py-3 px-4 font-medium text-light-text dark:text-dark-text whitespace-nowrap">{{ msg.From }}</td>
+              <td class="py-3 px-4 text-slate-500 dark:text-dark-muted truncate max-w-xs">{{ msg.Subject }}</td>
+              <td class="py-3 px-4 whitespace-nowrap">
+                <if test="msg.Mailbox == 'Spam'">
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-rose-500/10 text-rose-500 border border-rose-500/20">Blocked</span>
+                </if>
+                <else>
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">Received</span>
+                </else>
+              </td>
+              <td class="py-3 px-4 text-right">
+                <a href="/mail" class="text-cyan-500 hover:text-cyan-400 font-semibold"><i class="bi bi-eye"></i> View</a>
+              </td>
+            </tr>
+          </each>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</layout:admin>

@@ -41,7 +41,7 @@ func (mc *MailController) RenderSetup(c *gin.Context) {
 		return
 	}
 
-	c.HTML(http.StatusOK, "setup.tmpl", gin.H{
+	c.HTML(http.StatusOK, "setup", gin.H{
 		"title": "RaHaMail Server - Initial Setup Wizard",
 	})
 }
@@ -198,9 +198,15 @@ func (mc *MailController) RenderWebmail(c *gin.Context) {
 		endItem = int(totalItems)
 	}
 
-	c.HTML(http.StatusOK, "webmail.tmpl", gin.H{
+	userInitial := "U"
+	if len(currentUser.Email) > 0 {
+		userInitial = strings.ToUpper(string(currentUser.Email[0]))
+	}
+
+	c.HTML(http.StatusOK, "webmail", gin.H{
 		"title":           "RaHaMail Webmail - " + currentUser.Email,
 		"current_user":    currentUser,
+		"user_initial":    userInitial,
 		"current_folder":  folder,
 		"messages":        messages,
 		"scheduled_mails": scheduledMails,
@@ -239,7 +245,7 @@ func (mc *MailController) RenderIndex(c *gin.Context) {
 	repository.DB.Model(&domain.User{}).Count(&userCount)
 	repository.DB.Model(&domain.Message{}).Count(&messageCount)
 
-	c.HTML(http.StatusOK, "admin_dashboard.tmpl", gin.H{
+	c.HTML(http.StatusOK, "admin_dashboard", gin.H{
 		"title":       "RaHaMail Server - Live SSE Dashboard",
 		"active_menu": "dashboard",
 		"currentUser": currentUser,
@@ -260,7 +266,7 @@ func (mc *MailController) RenderAdminDomains(c *gin.Context) {
 	var domains []domain.Domain
 	repository.DB.Find(&domains)
 
-	c.HTML(http.StatusOK, "admin_domains.tmpl", gin.H{
+	c.HTML(http.StatusOK, "admin_domains", gin.H{
 		"title":       "RaHaMail - Domain Management & DKIM",
 		"active_menu": "domains",
 		"currentUser": currentUser,
@@ -272,7 +278,7 @@ func (mc *MailController) RenderAdminDomains(c *gin.Context) {
 // RenderAdminSimulations merender halaman simulasi phishing & spam awareness
 func (mc *MailController) RenderAdminSimulations(c *gin.Context) {
 	currentUser, _ := c.Get("user")
-	c.HTML(http.StatusOK, "admin_simulations.tmpl", gin.H{
+	c.HTML(http.StatusOK, "admin_simulations", gin.H{
 		"title":       "RaHaMail - Phishing & Spam Awareness",
 		"active_menu": "simulations",
 		"currentUser": currentUser,
@@ -283,7 +289,7 @@ func (mc *MailController) RenderAdminSimulations(c *gin.Context) {
 // RenderAdminLogs merender halaman log stream SSE live
 func (mc *MailController) RenderAdminLogs(c *gin.Context) {
 	currentUser, _ := c.Get("user")
-	c.HTML(http.StatusOK, "admin_logs.tmpl", gin.H{
+	c.HTML(http.StatusOK, "admin_logs", gin.H{
 		"title":       "RaHaMail - Live SSE Log Stream",
 		"active_menu": "logs",
 		"currentUser": currentUser,
@@ -294,7 +300,7 @@ func (mc *MailController) RenderAdminLogs(c *gin.Context) {
 // RenderAdminSettings merender halaman pengaturan server & backup S3
 func (mc *MailController) RenderAdminSettings(c *gin.Context) {
 	currentUser, _ := c.Get("user")
-	c.HTML(http.StatusOK, "admin_settings.tmpl", gin.H{
+	c.HTML(http.StatusOK, "admin_settings", gin.H{
 		"title":       "RaHaMail - Server Settings & Cloud Backup",
 		"active_menu": "settings",
 		"currentUser": currentUser,
