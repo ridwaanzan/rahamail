@@ -1,10 +1,41 @@
+    <script>
+        // Forward function declarations to guarantee global availability immediately
+        function openNewCampaignModal() {
+            const modal = document.getElementById('modalNewCampaign');
+            if (modal) modal.classList.remove('hidden');
+
+            if (availablePresets.length === 0) {
+                fetch('/api/v1/admin/simulations/presets')
+                    .then(res => res.json())
+                    .then(data => {
+                        availablePresets = data.presets || [];
+                        const select = document.getElementById('simPresetSelect');
+                        if (select) {
+                            select.innerHTML = '<option value="">-- Pilih Skenario Phishing Siap Pakai --</option>';
+                            availablePresets.forEach((p, idx) => {
+                                select.innerHTML += `<option value="${idx}">${escapeHtml(p.title)}</option>`;
+                            });
+                        }
+                    })
+                    .catch(e => console.error("Gagal load presets:", e));
+            }
+        }
+        window.openNewCampaignModal = openNewCampaignModal;
+
+        function closeNewCampaignModal() {
+            const modal = document.getElementById('modalNewCampaign');
+            if (modal) modal.classList.add('hidden');
+        }
+        window.closeNewCampaignModal = closeNewCampaignModal;
+    </script>
+
     <div class="space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
                 <h3 class="text-xl font-bold tracking-tight text-light-text dark:text-white">Phishing &amp; Spam Awareness Simulation</h3>
                 <p class="text-xs text-light-muted dark:text-dark-muted">Pelatihan keamanan siber karyawan terhadap social engineering dan deceptive links.</p>
             </div>
-            <button onclick="openNewCampaignModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 shadow-cyan-glow transition-all flex items-center gap-1.5 self-start sm:self-auto">
+            <button type="button" onclick="openNewCampaignModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 shadow-cyan-glow transition-all flex items-center gap-1.5 self-start sm:self-auto cursor-pointer">
                 <i class="bi bi-plus-circle text-sm"></i>
                 <span>Buat Simulasi Baru</span>
             </button>
@@ -234,11 +265,11 @@
                             </td>
                             <td class="py-3 px-3 text-right">
                                 <div class="flex items-center justify-end gap-1.5">
-                                    <button onclick="viewCampaignDetail(${c.id})" class="px-2 py-1 rounded-lg text-xs font-semibold bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 hover:bg-cyan-500/20 transition-all flex items-center gap-1" title="Lihat Detail & Breakdown">
+                                    <button type="button" onclick="viewCampaignDetail(${c.id})" class="px-2 py-1 rounded-lg text-xs font-semibold bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 hover:bg-cyan-500/20 transition-all flex items-center gap-1 cursor-pointer" title="Lihat Detail & Breakdown">
                                         <i class="bi bi-bar-chart text-[10px]"></i> Detail
                                     </button>
                                     ${c.status === 'draft' ? `
-                                    <button onclick="launchCampaignNow(${c.id})" class="px-2.5 py-1 rounded-lg text-xs font-semibold text-white bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 shadow-sm flex items-center gap-1" title="Kirim/Luncurkan Email Simulasi Sekarang">
+                                    <button type="button" onclick="launchCampaignNow(${c.id})" class="px-2.5 py-1 rounded-lg text-xs font-semibold text-white bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 shadow-sm flex items-center gap-1 cursor-pointer" title="Kirim/Luncurkan Email Simulasi Sekarang">
                                         <i class="bi bi-play-fill text-xs"></i> Kirim
                                     </button>` : ''}
                                 </div>
@@ -428,4 +459,12 @@
                 .replaceAll('"', '&quot;')
                 .replaceAll("'", '&#039;');
         }
+
+        window.openNewCampaignModal = openNewCampaignModal;
+        window.closeNewCampaignModal = closeNewCampaignModal;
+        window.onSelectPresetChange = onSelectPresetChange;
+        window.submitNewCampaign = submitNewCampaign;
+        window.loadSimulations = loadSimulations;
+        window.viewCampaignDetail = viewCampaignDetail;
+        window.launchCampaignNow = launchCampaignNow;
     </script>

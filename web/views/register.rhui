@@ -58,7 +58,7 @@
                         <span class="input-group-text bg-light text-secondary border-end-0">@</span>
                         <select id="domainId" class="form-select border-start-0" onchange="checkUsernameAvailability()">
                             <each items="domains" as="domain">
-                            <option value="{{ domain.ID }}" data-name="{{ domain.Name }}">{{ domain.Name }}</option>
+                            <option :value="domain.ID" :data-name="domain.Name">{{ domain.Name }}</option>
                             </each>
                         </select>
                     </div>
@@ -90,7 +90,7 @@
                     <div class="input-group">
                         <span class="input-group-text bg-white fw-bold small text-dark" id="captchaText">{{ captcha_q }}</span>
                         <input type="number" id="captchaAnswer" class="form-control" placeholder="Jawaban angka" required>
-                        <input type="hidden" id="captchaToken" value="{{ captcha_token }}">
+                        <input type="hidden" id="captchaToken" :value="captcha_token">
                     </div>
                     <div class="form-text small text-muted">Jawab pertanyaan matematika sederhana di atas untuk membuktikan Anda bukan bot.</div>
                 </div>

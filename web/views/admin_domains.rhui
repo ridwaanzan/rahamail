@@ -30,7 +30,7 @@
                                 <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">ACTIVE</span>
                             </td>
                             <td class="py-3.5 px-4 text-right">
-                                <button onclick="showDkimModal('{{ domain.Name }}', '{{ domain.DKIMSelector }}', '{{ domain.DKIMPublicKey }}')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-dark-bg border border-light-border dark:border-dark-border hover:border-cyan-500 text-light-text dark:text-slate-200 transition-colors">
+                                <button type="button" :data-domain="domain.Name" :data-selector="domain.DKIMSelector" :data-key="domain.DKIMPublicKey" onclick="openDkimFromBtn(this)" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-dark-bg border border-light-border dark:border-dark-border hover:border-cyan-500 text-light-text dark:text-slate-200 transition-colors cursor-pointer">
                                     <i class="bi bi-shield-lock text-cyan-500 me-1"></i> DNS TXT
                                 </button>
                             </td>
@@ -75,6 +75,13 @@
     </div>
 
     <script>
+        function openDkimFromBtn(btn) {
+            const domainName = btn.getAttribute('data-domain') || '';
+            const selector = btn.getAttribute('data-selector') || 'mail';
+            const key = btn.getAttribute('data-key') || '';
+            openDkimModal(domainName, selector, key);
+        }
+
         function openAddDomainModal() {
             document.getElementById('modalAddDomain').classList.remove('hidden');
         }
@@ -109,4 +116,9 @@
                 showModalAlert({ title: 'Kesalahan Jaringan', message: 'Gagal menghubungi server.', type: 'error' });
             }
         }
+
+        window.openAddDomainModal = openAddDomainModal;
+        window.closeAddDomainModal = closeAddDomainModal;
+        window.openDkimFromBtn = openDkimFromBtn;
+        window.submitCreateDomain = submitCreateDomain;
     </script>

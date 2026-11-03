@@ -11,7 +11,7 @@ require (
 	github.com/gin-gonic/gin v1.12.0
 	github.com/glebarez/sqlite v1.11.0
 	github.com/hibiken/asynq v0.26.0
-	github.com/suserc0de/rhui v1.0.1
+	github.com/suserc0de/rhui v1.0.4
 	golang.org/x/crypto v0.58.0
 	golang.org/x/time v0.14.0
 	gorm.io/driver/postgres v1.6.3

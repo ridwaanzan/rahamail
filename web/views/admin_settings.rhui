@@ -40,4 +40,6 @@
                 showModalAlert({ title: 'Kesalahan Jaringan', message: 'Gagal menghubungi server.', type: 'error' });
             }
         }
+
+        window.triggerBackupNow = triggerBackupNow;
     </script>

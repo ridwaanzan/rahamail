@@ -68,7 +68,7 @@
                     </div>
                 </div>
 
-                <input type="hidden" id="nextUrl" value="{{ next }}">
+                <input type="hidden" id="nextUrl" :value="next">
 
                 <button type="submit" id="btnSubmit" class="btn btn-primary w-100 py-2 fw-semibold shadow-sm d-flex align-items-center justify-content-center">
                     <i class="bi bi-box-arrow-in-right me-2"></i>Masuk
@@ -117,13 +117,22 @@
 
     <script src="/static/js/bootstrap.bundle.min.js"></script>
     <script>
+        function getSafeNextUrl() {
+            const raw = document.getElementById('nextUrl')?.value?.trim() || '';
+            // Validasi: hanya izinkan relative path yang diawali '/' dan tidak mengandung kurung kurawal atau scheme
+            if (raw && raw.startsWith('/') && !raw.startsWith('//') && !raw.includes('{') && !raw.includes('}')) {
+                return raw;
+            }
+            return '';
+        }
+
         async function handleLogin(e) {
             e.preventDefault();
             const btn = document.getElementById('btnSubmit');
             const alertBox = document.getElementById('alertBox');
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
-            const nextUrl = document.getElementById('nextUrl').value;
+            const nextUrl = getSafeNextUrl();
 
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Memverifikasi...';
@@ -165,7 +174,7 @@
             const btn = document.getElementById('btnSubmit2FA');
             const pendingToken = document.getElementById('pendingToken').value;
             const code = document.getElementById('twoFACode').value.trim();
-            const nextUrl = document.getElementById('nextUrl').value;
+            const nextUrl = getSafeNextUrl();
 
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Memverifikasi 2FA...';

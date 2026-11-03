@@ -215,7 +215,7 @@
                     <!-- List Email Terjadwal -->
                     <if test="len(scheduled_mails) > 0">
                     <each items="scheduled_mails" as="item">
-                    <div class="mail-item p-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-dark-card/60 transition-colors" id="sched-item-{{ item.ID }}">
+                    <div class="mail-item p-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-dark-card/60 transition-colors" :data-id="item.ID">
                         <div class="flex items-center justify-between mb-1">
                             <span class="text-[11px] text-amber-500 font-semibold flex items-center gap-1">
                                 <i class="bi bi-clock text-[10px]"></i>{{ item.ScheduledAt | dateFormat("02 Jan 15:04") }}
@@ -228,7 +228,7 @@
                         <p class="text-[11px] text-light-muted dark:text-dark-muted truncate">Kepada: {{ item.To }}</p>
                         <if test="item.Status == 'pending'">
                         <div class="mt-2 text-right">
-                            <button onclick="cancelSchedule({{ item.ID }})" class="px-2 py-0.5 text-[10px] font-medium text-rose-500 hover:text-white hover:bg-rose-600 border border-rose-500/30 rounded transition-all">
+                            <button type="button" :data-id="item.ID" onclick="cancelSchedule(this.getAttribute('data-id'))" class="px-2 py-0.5 text-[10px] font-medium text-rose-500 hover:text-white hover:bg-rose-600 border border-rose-500/30 rounded transition-all">
                                 <i class="bi bi-x-circle mr-1"></i>Batalkan
                             </button>
                         </div>
@@ -245,7 +245,7 @@
                     <!-- List Email Reguler -->
                     <if test="len(messages) > 0">
                     <each items="messages" as="msg">
-                    <div class="mail-item p-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-dark-card/60 transition-colors" id="msg-item-{{ msg.ID }}" onclick="loadMessageDetail({{ msg.ID }})">
+                    <div class="mail-item p-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-dark-card/60 transition-colors" :data-id="msg.ID" onclick="loadMessageDetail(this.getAttribute('data-id'))">
                         <div class="flex items-center justify-between mb-1">
                             <span class="text-xs font-semibold text-light-text dark:text-slate-300 truncate pr-2">
                                 {{ msg.From }}
@@ -267,7 +267,7 @@
                                     DKIM: {{ msg.DKIMStatus }}
                                 </span>
                             </div>
-                            <button onclick="toggleStar(event, {{ msg.ID }})" id="star-btn-{{ msg.ID }}" class="text-light-muted dark:text-dark-muted hover:text-amber-400 p-0.5" title="Bintang">
+                            <button type="button" :data-id="msg.ID" onclick="toggleStar(event, this.getAttribute('data-id'))" class="text-light-muted dark:text-dark-muted hover:text-amber-400 p-0.5" title="Bintang">
                                 <if test="msg.IsFlagged">
                                     <i class="bi bi-star-fill text-amber-400 text-xs"></i>
                                 </if><else>
@@ -291,7 +291,7 @@
                 <span>{{ start_item }}-{{ end_item }} dari {{ total_items }}</span>
                 <div class="flex items-center gap-1">
                     <if test="has_prev">
-                    <a href="/mail?folder={{ current_folder }}&page={{ prev_page }}&limit={{ limit }}" class="p-1 rounded text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-200 dark:hover:bg-dark-card border border-light-border dark:border-dark-border" title="Sebelumnya">
+                    <a :href="'/mail?folder=' + current_folder + '&page=' + str(prev_page) + '&limit=' + str(limit)" class="p-1 rounded text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-200 dark:hover:bg-dark-card border border-light-border dark:border-dark-border" title="Sebelumnya">
                         <i class="bi bi-chevron-left text-xs"></i>
                     </a>
                     </if><else>
@@ -301,7 +301,7 @@
                     </else>
 
                     <if test="has_next">
-                    <a href="/mail?folder={{ current_folder }}&page={{ next_page }}&limit={{ limit }}" class="p-1 rounded text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-200 dark:hover:bg-dark-card border border-light-border dark:border-dark-border" title="Berikutnya">
+                    <a :href="'/mail?folder=' + current_folder + '&page=' + str(next_page) + '&limit=' + str(limit)" class="p-1 rounded text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-200 dark:hover:bg-dark-card border border-light-border dark:border-dark-border" title="Berikutnya">
                         <i class="bi bi-chevron-right text-xs"></i>
                     </a>
                     </if><else>
@@ -842,8 +842,52 @@
         </div>
     </div>
 
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2.5 max-w-sm pointer-events-none"></div>
+
     <!-- SCRIPT LOGIC (NATIVE JS MODALS & WEBSOCKET/SSE/API INTERFACE) -->
     <script>
+        // Global Toast Notification Helper
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = `p-3 rounded-xl border shadow-lg text-xs font-semibold flex items-center gap-2 pointer-events-auto transition-all transform translate-y-2 opacity-0 ` +
+                (type === 'success' ? 'bg-emerald-500 text-white border-emerald-600' :
+                 type === 'error' || type === 'danger' ? 'bg-rose-500 text-white border-rose-600' :
+                 type === 'warning' ? 'bg-amber-500 text-white border-amber-600' :
+                 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 border-slate-700');
+            toast.innerHTML = `<i class="bi bi-info-circle-fill"></i><span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        window.showToast = showToast;
+
+        // Global Alert Modal
+        function showModalAlert(options) {
+            const title = typeof options === 'string' ? 'Informasi' : (options.title || 'Informasi');
+            const message = typeof options === 'string' ? options : (options.message || '');
+            const type = options.type || 'info';
+            showToast(`${title}: ${message}`, type);
+            return Promise.resolve(true);
+        }
+        window.showModalAlert = showModalAlert;
+
+        // Global Confirm Modal
+        function showModalConfirm(options) {
+            const title = typeof options === 'string' ? 'Konfirmasi' : (options.title || 'Konfirmasi');
+            const message = typeof options === 'string' ? options : (options.message || 'Apakah Anda yakin ingin melanjutkan?');
+            const confirmed = window.confirm(`${title}\n\n${message}`);
+            return Promise.resolve(confirmed);
+        }
+        window.showModalConfirm = showModalConfirm;
+
         let currentLoadedMailId = null;
         let selectedAttachments = [];
         let currentMailAttachments = [];
