@@ -61,7 +61,7 @@
                 </div>
                 <div>
                     <span class="font-extrabold text-lg tracking-tight text-light-text dark:text-white">RaHa<span class="text-cyan-500">Mail</span></span>
-                    <span class="ml-2 px-2 py-0.5 text-[10px] font-bold rounded-full bg-cyan-500/10 text-cyan-500 border border-cyan-500/20">v1.4.1</span>
+                    <span class="ml-2 px-2 py-0.5 text-[10px] font-bold rounded-full bg-cyan-500/10 text-cyan-500 border border-cyan-500/20">v1.4.3</span>
                 </div>
             </div>
 
@@ -91,7 +91,7 @@
         <div class="absolute inset-0 bg-gradient-to-b from-cyan-500/5 via-transparent to-transparent pointer-events-none"></div>
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
             <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 mb-6">
-                <i class="bi bi-shield-check"></i> Version 1.4.1 Released — Super Admin RBAC, Port 9000 & Modular Multi-Page UI
+                <i class="bi bi-shield-check"></i> Version 1.4.3 Released — RHUI v1.0.4, Phishing Reporting, Rspamd Bayesian Training & SASL LOGIN
             </div>
             <h1 class="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6">
                 Modern, Autonomous, <br class="hidden sm:inline" />
@@ -350,7 +350,7 @@
 
             <div class="space-y-8 relative before:absolute before:inset-0 before:left-4 sm:before:left-1/2 before:w-0.5 before:bg-light-border dark:before:bg-dark-border">
                 
-                <!-- Release v1.4.1 -->
+                <!-- Release v1.4.3 -->
                 <div class="relative flex flex-col sm:flex-row items-start group">
                     <div class="flex items-center justify-center w-8 h-8 rounded-full bg-cyan-500 text-white font-bold text-xs shadow-lg shadow-cyan-500/30 z-10 sm:mx-auto">
                         1.4
@@ -359,6 +359,51 @@
                         <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/10 text-cyan-500 border border-cyan-500/20 mb-1">
                             Latest Release
                         </div>
+                        <h4 class="text-base font-bold text-light-text dark:text-white">v1.4.3 — RHUI v1.0.4, Phishing Reporting & Rspamd Learning</h4>
+                        <span class="text-xs text-light-muted dark:text-dark-muted">November 4, 2026</span>
+                    </div>
+                    <div class="mt-2 sm:mt-0 sm:w-1/2 sm:pl-8">
+                        <div class="p-5 rounded-2xl border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card shadow-sm space-y-2 text-xs">
+                            <p class="font-bold text-cyan-500"><i class="bi bi-cpu-fill mr-1"></i> RHUI Template Engine v1.0.4 Migration:</p>
+                            <p class="text-light-muted dark:text-dark-muted">Full SSR migration to pure-Go component template engine with zero Node.js runtime, atomic snapshot caching, and strict HTML5 attribute sanitization.</p>
+
+                            <p class="font-bold text-rose-500 pt-1"><i class="bi bi-shield-exclamation mr-1"></i> Interactive Webmail "Laporkan Phishing":</p>
+                            <p class="text-light-muted dark:text-dark-muted">One-click phishing report button in Webmail reader with instantaneous positive feedback modals for passing company security tests.</p>
+
+                            <p class="font-bold text-emerald-500 pt-1"><i class="bi bi-robot mr-1"></i> Bi-Directional Rspamd Bayesian Machine Learning:</p>
+                            <p class="text-light-muted dark:text-dark-muted">Automatic background training via <code>/learnspam</code> and <code>/learnham</code> based on employee email classifications.</p>
+
+                            <p class="font-bold text-amber-500 pt-1"><i class="bi bi-check2-circle mr-1"></i> Phishing Campaign Presets & Redirect Fixes:</p>
+                            <p class="text-light-muted dark:text-dark-muted">Resolved template preset loading in campaign creator and fixed auth URL redirect decoding issues.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Release v1.4.2 -->
+                <div class="relative flex flex-col sm:flex-row items-start group">
+                    <div class="flex items-center justify-center w-8 h-8 rounded-full bg-slate-700 text-white font-bold text-xs shadow z-10 sm:mx-auto">
+                        1.4
+                    </div>
+                    <div class="mt-4 sm:mt-0 sm:w-1/2 sm:pr-8 sm:text-right">
+                        <h4 class="text-base font-bold text-light-text dark:text-white">v1.4.2 — Third-Party Client Compatibility & SASL LOGIN</h4>
+                        <span class="text-xs text-light-muted dark:text-dark-muted">November 1, 2026</span>
+                    </div>
+                    <div class="mt-2 sm:mt-0 sm:w-1/2 sm:pl-8">
+                        <div class="p-5 rounded-2xl border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card shadow-sm space-y-2 text-xs">
+                            <p class="font-bold text-blue-500"><i class="bi bi-envelope-check mr-1"></i> SASL LOGIN & PLAIN Authentication:</p>
+                            <p class="text-light-muted dark:text-dark-muted">Full 2-step challenge-response authentication for Mozilla Thunderbird, Microsoft Outlook, and Apple Mail.</p>
+                            <p class="font-bold text-indigo-500 pt-1"><i class="bi bi-lock-fill mr-1"></i> Automated TLS & Multi-Port Engine:</p>
+                            <p class="text-light-muted dark:text-dark-muted">Automated TLS certificate loader with self-signed RSA fallback across Port 25, 587 (Submission), 143 (IMAP), and 993 (IMAPS).</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Release v1.4.1 -->
+                <div class="relative flex flex-col sm:flex-row items-start group">
+                    <div class="flex items-center justify-center w-8 h-8 rounded-full bg-slate-700 text-white font-bold text-xs shadow z-10 sm:mx-auto">
+                        1.4
+                    </div>
+                    <div class="mt-4 sm:mt-0 sm:w-1/2 sm:pr-8 sm:text-right">
                         <h4 class="text-base font-bold text-light-text dark:text-white">v1.4.1 — Super Admin RBAC, Port 9000 & Modular Templates</h4>
                         <span class="text-xs text-light-muted dark:text-dark-muted">October 31, 2026</span>
                     </div>
@@ -490,7 +535,7 @@
   -v $(pwd)/data:/var/mail \
   -v $(pwd)/gomail.db:/app/gomail.db \
   --restart unless-stopped \
-  ridwaanzan/rahamail:v1.4.1</pre>
+  ridwaanzan/rahamail:v1.4.3</pre>
             </div>
 
             <!-- Tab 2: Binary -->
