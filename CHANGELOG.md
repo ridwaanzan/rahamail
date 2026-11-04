@@ -4,6 +4,39 @@ All notable changes to the **RaHaMail** project will be documented in this file.
 
 ---
 
+## [1.4.3] - 2026-11-04
+
+### Added
+- **RHUI Template Engine v1.0.4 Integration**:
+  - Full architectural migration of all SSR views and layouts to `github.com/suserc0de/rhui` v1.0.4.
+  - Zero Node.js runtime in production; single Go binary compiled with native Go component templates.
+  - Reusable layout architecture (`web/views/layouts/admin.rhui`) using `<slot />` and component composition (`StatsCard`, `Modal`, `Badge`, `Toast`, `DKIMModal`).
+  - Strict HTML5 attribute sanitization (`IsValidAttributeName`) and blocking of inline script injection in `:attrs`.
+  - Atomic snapshot template caching (`atomic.Pointer[engineState]`) eliminating concurrency race conditions during template reload.
+  - Adopted `<each>` loop metadata syntax (`@index`, `@first`, `@last`, `@even`, `@odd`) and pipe filters.
+- **Interactive "Report Phishing" Action in Webmail**:
+  - Added dedicated **"🛡️ Laporkan Phishing"** action button in the webmail email reader toolbar.
+  - Directly flags suspicious emails and moves them to Spam with real-time feedback modal:
+    - If the reported email is part of an active company security test, the employee receives an instant congratulations modal (*PASSED*).
+    - Status is recorded in real time to the simulation campaign analytics dashboard (`status: reported`).
+- **Bi-Directional Rspamd Bayesian Machine Learning**:
+  - Added `TrainRspamd(data []byte, isSpam bool)` in `internal/antivirus/scanner.go`.
+  - Moving non-simulation emails into the `Spam` folder automatically trains Rspamd via `/learnspam` in a background goroutine.
+  - Moving emails out of `Spam` back into `INBOX` or `Archive` (false positive recovery) automatically trains Rspamd via `/learnham`.
+
+### Fixed
+- **Phishing Simulation Preset Template Fetching**:
+  - Fixed empty preset template dropdown in the "Buat Simulasi Baru" modal on `admin_simulations.rhui`.
+  - Server-side pre-rendering of simulation presets combined with resilient client-side fallback fetching.
+- **Login Redirect URL Encoding Issue**:
+  - Fixed literal `/%7B%7B%20next%20%7D%7D` 404 redirect after login by adopting `:value="next"` dynamic RHUI binding.
+- **Webmail Message Reader Dynamic Event Binding**:
+  - Fixed message detail loading in webmail list by binding IDs with `:data-id` and event listeners.
+- **Domain Management Table Loop Syntax**:
+  - Converted legacy template loop syntax to RHUI v1.0.4 `<each items="domains" as="domain">` and `{{ domain.Name }}` interpolations.
+
+---
+
 ## [1.4.2] - 2026-11-01
 
 ### Added

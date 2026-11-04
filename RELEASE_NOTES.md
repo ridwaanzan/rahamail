@@ -4,6 +4,32 @@ This document tracks all official releases of **RaHaMail**, highlighting new fea
 
 ---
 
+## 📦 Version 1.4.3 (November 4, 2026) — RHUI v1.0.4 Engine, Webmail Phishing Reporting, Rspamd Bayesian Training & Security Hardening
+
+Version 1.4.3 brings a major UI engine modernization by migrating all SSR views and layouts to **RHUI v1.0.4** (`github.com/suserc0de/rhui`), adding an interactive **"Report Phishing"** workflow in Webmail for employee awareness testing, implementing **automated two-way Bayesian machine learning** with Rspamd, and resolving phishing template preset fetching.
+
+### 🌟 Release Highlights
+- **RHUI Template Engine v1.0.4 Migration**:
+  - Full migration of entire SSR frontend to RHUI v1.0.4 with componentized templates (`StatsCard`, `Modal`, `Badge`, `Toast`, `DKIMModal`) and master layout composition (`layouts/admin.rhui`).
+  - Strict security hardening against script injection: attribute sanitizer blocks inline event handlers in `:attrs` and strictly enforces HTML5 attribute naming.
+  - Zero-race atomic snapshot reload engine (`atomic.Pointer[engineState]`) and memory-pooled loop contexts for high-concurrency rendering.
+  - Adopted `<each>` loop metadata syntax (`@index`, `@first`, `@last`, `@even`, `@odd`) and pipe filters.
+- **Interactive "Report Phishing" Action in Webmail**:
+  - Added dedicated **"🛡️ Laporkan Phishing"** button directly to the Webmail email reader toolbar.
+  - Allows employees to report suspicious emails or simulations in one click with a confirmation dialog.
+  - If the message is part of an active company security test, the system recognizes the user's vigilance, immediately records a **`reported` (PASSED)** score, and shows an instant congratulatory educational modal.
+- **Bi-Directional Rspamd Bayesian Machine Learning**:
+  - Automatically trains Rspamd via `/learnspam` when users classify non-simulation emails as Spam.
+  - Automatically trains Rspamd via `/learnham` when users restore false positives from Spam back to `INBOX` or `Archive`.
+  - Background asynchronous execution ensures zero UI latency.
+- **Phishing Simulation Preset Template Fix**:
+  - Resolved an issue where preset templates failed to populate when designing a new phishing campaign.
+  - Combined server-side pre-rendered options with robust asynchronous fallback fetching.
+- **Auth & Route Redirect Fixes**:
+  - Fixed `/login?next=...` URL encoding issues and cleaned dynamic attribute binding across auth views.
+
+---
+
 ## 📦 Version 1.4.2 (November 1, 2026) — Third-Party Mail Client Compatibility, SASL LOGIN & Auto-TLS Engine
 
 Version 1.4.2 delivers comprehensive out-of-the-box compatibility with third-party email clients (Mozilla Thunderbird, Microsoft Outlook, Apple Mail), implementing full SASL `LOGIN` authentication, concurrent multi-port listeners (Submission 587 and IMAPS 993), and an automated TLS/STARTTLS engine with fallback certificate generation.
