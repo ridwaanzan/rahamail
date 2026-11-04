@@ -227,11 +227,13 @@ type PhishingTarget struct {
 	CampaignID   uint              `gorm:"not null;index" json:"campaign_id"`
 	UserID       uint              `gorm:"not null;index" json:"user_id"`
 	TrackingCode string            `gorm:"size:64;not null;uniqueIndex" json:"tracking_code"` // Token acak unik
-	Status       string            `gorm:"size:32;default:'sent';index" json:"status"` // sent, opened, clicked, reported
-	SentAt       time.Time         `json:"sent_at"`
-	OpenedAt     *time.Time        `json:"opened_at,omitempty"`
-	ClickedAt    *time.Time        `json:"clicked_at,omitempty"` // Waktu karyawan mengklik link (Not Passed)
-	ReportedAt   *time.Time        `json:"reported_at,omitempty"` // Waktu karyawan menandai spam (Passed)
+	Status              string            `gorm:"size:32;default:'sent';index" json:"status"` // sent, opened, clicked, submitted, reported
+	SentAt              time.Time         `json:"sent_at"`
+	OpenedAt            *time.Time        `json:"opened_at,omitempty"`
+	ClickedAt           *time.Time        `json:"clicked_at,omitempty"` // Waktu karyawan mengklik link (Not Passed)
+	SubmittedAt         *time.Time        `json:"submitted_at,omitempty"` // Waktu karyawan memasukkan kredensial di mock portal
+	CredentialSubmitted bool              `gorm:"default:false" json:"credential_submitted"` // True jika memasukkan kredensial palsu
+	ReportedAt          *time.Time        `json:"reported_at,omitempty"` // Waktu karyawan menandai spam (Passed)
 	IPAddress    string            `gorm:"size:64" json:"ip_address,omitempty"`
 	UserAgent    string            `gorm:"size:255" json:"user_agent,omitempty"`
 	CreatedAt    time.Time         `json:"created_at"`

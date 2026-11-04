@@ -115,6 +115,7 @@ func main() {
 
 	// Phishing & Spam Awareness Simulation Public Tracking Route
 	r.GET("/sim/c/:code", simCtrl.HandleTrackingClick)
+	r.POST("/sim/c/:code/submit", simCtrl.HandleCredentialSubmit)
 
 	// User Webmail (Protected by Session Auth Middleware)
 	webmail := r.Group("/mail", middleware.UserAuthMiddleware())
@@ -228,6 +229,7 @@ func main() {
 			adminAPI.POST("/admin/simulations", simCtrl.CreateCampaign)
 			adminAPI.POST("/admin/simulations/:id/launch", simCtrl.LaunchCampaign)
 			adminAPI.GET("/admin/simulations/:id/stats", simCtrl.GetCampaignStats)
+			adminAPI.GET("/admin/simulations/:id/export", simCtrl.ExportCampaignCSV)
 
 			// Domain Management (Admin)
 			adminAPI.GET("/domains", mailCtrl.ListDomains)
