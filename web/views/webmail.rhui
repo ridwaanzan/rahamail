@@ -348,11 +348,15 @@
                             <span>Hapus Permanen</span>
                         </button>
                         </if><else>
-                        <button onclick="moveCurrentMail('Spam')" class="px-2.5 py-1.5 rounded-lg text-xs font-medium text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 border border-amber-500/20 transition-all flex items-center gap-1.5">
+                        <button onclick="reportPhishingCurrentMail()" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border border-rose-500/20 transition-all flex items-center gap-1.5 shadow-sm" title="Laporkan email mencurigakan atau simulasi phishing">
+                            <i class="bi bi-shield-exclamation text-rose-500"></i>
+                            <span>Laporkan Phishing</span>
+                        </button>
+                        <button onclick="moveCurrentMail('Spam')" class="px-2.5 py-1.5 rounded-lg text-xs font-medium text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 border border-amber-500/20 transition-all flex items-center gap-1.5" title="Tandai sebagai Spam">
                             <i class="bi bi-shield-slash"></i>
                             <span>Spam</span>
                         </button>
-                        <button onclick="moveCurrentMail('Trash')" class="px-2.5 py-1.5 rounded-lg text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border border-rose-500/20 transition-all flex items-center gap-1.5">
+                        <button onclick="moveCurrentMail('Trash')" class="px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-500/10 border border-light-border dark:border-dark-border transition-all flex items-center gap-1.5">
                             <i class="bi bi-trash"></i>
                             <span>Hapus</span>
                         </button>
@@ -1367,6 +1371,47 @@
                 }
             } catch (err) {
                 console.error(err);
+            }
+        }
+
+        async function reportPhishingCurrentMail() {
+            if (!currentLoadedMailId) return;
+            const confirmed = await showModalConfirm({
+                title: 'Laporkan Phishing / Email Mencurigakan',
+                message: 'Apakah Anda yakin ingin melaporkan email ini sebagai potensi phising/spam berbahaya? Pesan akan dipindahkan ke folder Spam untuk perlindungan akun Anda.',
+                type: 'warning',
+                confirmText: 'Laporkan Sekarang'
+            });
+            if (!confirmed) return;
+
+            try {
+                const res = await fetch('/api/v1/webmail/messages/move', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message_id: currentLoadedMailId, target_mailbox: 'Spam' })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    const mailIdToRemove = currentLoadedMailId;
+                    document.getElementById(`msg-item-${mailIdToRemove}`)?.remove();
+                    document.getElementById('readerEmptyState').classList.remove('hidden');
+                    document.getElementById('readerContainer').classList.add('hidden');
+                    currentLoadedMailId = null;
+
+                    if (data.is_simulation_reported) {
+                        await showModalAlert({
+                            title: '🛡️ Uji Coba Keamanan Lolos!',
+                            message: 'Hebat! Email yang baru saja Anda laporkan adalah bagian dari Program Simulasi Kesadaran Keamanan Siber (Phishing Test). Sikap waspada Anda berhasil melindungi sistem!',
+                            type: 'success'
+                        });
+                    } else {
+                        showToast('Email mencurigakan berhasil dilaporkan dan dipindahkan ke folder Spam.', 'success');
+                    }
+                } else {
+                    showModalAlert({ title: 'Gagal Melaporkan', message: data.error || 'Terjadi kesalahan.', type: 'error' });
+                }
+            } catch (err) {
+                showModalAlert({ title: 'Kesalahan Jaringan', message: 'Gagal menghubungi server.', type: 'error' });
             }
         }
 

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"mail-server/internal/antivirus"
 	"mail-server/internal/backup"
 	"mail-server/internal/delivery"
 	"mail-server/internal/domain"
@@ -281,11 +282,13 @@ func (mc *MailController) RenderAdminDomains(c *gin.Context) {
 // RenderAdminSimulations merender halaman simulasi phishing & spam awareness
 func (mc *MailController) RenderAdminSimulations(c *gin.Context) {
 	currentUser, _ := c.Get("user")
+	presets := simulation.GetDefaultPresets()
 	web.RenderWithLayout(c, http.StatusOK, "layouts/admin", "admin_simulations", gin.H{
 		"title":       "RaHaMail - Phishing & Spam Awareness",
 		"page_title":  "Phishing & Spam Awareness",
 		"active_tab":  "simulations",
 		"currentUser": currentUser,
+		"presets":     presets,
 		"db_driver":   repository.ActiveDriver,
 	})
 }
@@ -796,15 +799,46 @@ func (mc *MailController) MoveMessage(c *gin.Context) {
 		return
 	}
 
+	previousBox := msg.Mailbox
 	repository.DB.Model(&msg).Update("mailbox", req.TargetBox)
+
+	isSimulationReport := false
+	var simTarget *domain.PhishingTarget
 
 	// Jika dipindahkan ke Spam, periksa apakah email ini merupakan bagian dari simulasi phishing yang aktif
 	if strings.EqualFold(req.TargetBox, "Spam") {
 		senderAddr := trust.ExtractEmailAddress(msg.From)
-		_, _ = simulation.RecordReport(currentUser.ID, senderAddr)
+		var err error
+		simTarget, err = simulation.RecordReport(currentUser.ID, senderAddr)
+		if err == nil && simTarget != nil {
+			isSimulationReport = true
+		}
+
+		// Jika bukan simulasi, pelajari ke Rspamd sebagai SPAM (Bayesian Learning)
+		if !isSimulationReport && msg.StoragePath != "" {
+			go func(path string) {
+				if data, err := os.ReadFile(path); err == nil {
+					_ = antivirus.TrainRspamd(data, true)
+				}
+			}(msg.StoragePath)
+		}
+	} else if strings.EqualFold(previousBox, "Spam") && (strings.EqualFold(req.TargetBox, "INBOX") || strings.EqualFold(req.TargetBox, "Archive")) {
+		// Jika dipindahkan keluar dari folder Spam ke Inbox/Archive, latih sebagai HAM (bukan spam)
+		if msg.StoragePath != "" {
+			go func(path string) {
+				if data, err := os.ReadFile(path); err == nil {
+					_ = antivirus.TrainRspamd(data, false)
+				}
+			}(msg.StoragePath)
+		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "Email berhasil dipindahkan ke " + req.TargetBox})
+	c.JSON(http.StatusOK, gin.H{
+		"status":                 "success",
+		"message":                "Email berhasil dipindahkan ke " + req.TargetBox,
+		"is_simulation_reported": isSimulationReport,
+		"simulation_target":      simTarget,
+	})
 }
 
 // DeleteMessage menghapus email secara permanen (database dan file fisik .eml)

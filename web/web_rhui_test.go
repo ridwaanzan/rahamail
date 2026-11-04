@@ -41,4 +41,26 @@ func TestRHUIEngineInitAndRender(t *testing.T) {
 		t.Fatalf("Render admin_domains failed: %v", err)
 	}
 	t.Logf("admin_domains rendered %d bytes:\n%s", domainsBuf.Len(), domainsBuf.String()[:1000])
+
+	// Verify admin_simulations renders cleanly with presets
+	simBuf := new(bytes.Buffer)
+	err = engine.Render(simBuf, "admin_simulations", map[string]any{
+		"title":     "Test Simulations",
+		"db_driver": "sqlite3",
+		"presets": []map[string]any{
+			{
+				"Title":        "IT Password Reset",
+				"SenderName":   "IT Admin",
+				"SenderEmail":  "it@fake.xyz",
+				"Subject":      "Reset Pass",
+				"TemplateHTML": "<p>Hello</p>",
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("Render admin_simulations failed: %v", err)
+	}
+	if simBuf.Len() == 0 {
+		t.Fatalf("Rendered admin_simulations buffer is empty")
+	}
 }

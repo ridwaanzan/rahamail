@@ -146,6 +146,33 @@ func CheckRspamd(data []byte) (isSpam bool, spamScore float64, err error) {
 	return false, 0.0, nil
 }
 
+// TrainRspamd mengirimkan data email ke Rspamd untuk pembelajaran Bayesian:
+// endpoint = "/learnspam" (untuk melatih deteksi spam) atau "/learnham" (untuk melatih deteksi email valid)
+func TrainRspamd(data []byte, isSpam bool) error {
+	actionPath := "/learnham"
+	if isSpam {
+		actionPath = "/learnspam"
+	}
+	rspamdURL := GetRspamdURL() + actionPath
+
+	req, err := http.NewRequest("POST", rspamdURL, bytes.NewReader(data))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "message/rfc822")
+	client := &http.Client{Timeout: 3 * time.Second}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		// Rspamd offline/tidak aktif, graceful bypass tanpa memutus alur
+		return nil
+	}
+	defer resp.Body.Close()
+
+	return nil
+}
+
 // ScanIncomingMessage melakukan pemindaian gabungan ClamAV dan Rspamd
 func ScanIncomingMessage(rawBytes []byte) ScanResult {
 	result := ScanResult{

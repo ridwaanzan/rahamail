@@ -1,23 +1,34 @@
     <script>
-        // Forward function declarations to guarantee global availability immediately
+        // Global state for presets
+        let availablePresets = [];
+
+        function renderPresetOptions(presets) {
+            availablePresets = presets || [];
+            const select = document.getElementById('simPresetSelect');
+            if (select) {
+                select.innerHTML = '<option value="">-- Pilih Skenario Phishing Siap Pakai --</option>';
+                availablePresets.forEach((p, idx) => {
+                    select.innerHTML += `<option value="${idx}">${escapeHtml(p.title || p.Title)}</option>`;
+                });
+            }
+        }
+
+        async function fetchPresets() {
+            try {
+                const res = await fetch('/api/v1/admin/simulations/presets');
+                const data = await res.json();
+                renderPresetOptions(data.presets || []);
+            } catch (e) {
+                console.error("Gagal load presets dari API:", e);
+            }
+        }
+
         function openNewCampaignModal() {
             const modal = document.getElementById('modalNewCampaign');
             if (modal) modal.classList.remove('hidden');
 
             if (availablePresets.length === 0) {
-                fetch('/api/v1/admin/simulations/presets')
-                    .then(res => res.json())
-                    .then(data => {
-                        availablePresets = data.presets || [];
-                        const select = document.getElementById('simPresetSelect');
-                        if (select) {
-                            select.innerHTML = '<option value="">-- Pilih Skenario Phishing Siap Pakai --</option>';
-                            availablePresets.forEach((p, idx) => {
-                                select.innerHTML += `<option value="${idx}">${escapeHtml(p.title)}</option>`;
-                            });
-                        }
-                    })
-                    .catch(e => console.error("Gagal load presets:", e));
+                fetchPresets();
             }
         }
         window.openNewCampaignModal = openNewCampaignModal;
@@ -27,6 +38,22 @@
             if (modal) modal.classList.add('hidden');
         }
         window.closeNewCampaignModal = closeNewCampaignModal;
+
+        function onSelectPresetChange() {
+            const select = document.getElementById('simPresetSelect');
+            if (!select) return;
+            const idx = select.value;
+            if (idx === "") return;
+            const preset = availablePresets[idx];
+            if (!preset) return;
+
+            document.getElementById('simCampaignTitle').value = preset.title || preset.Title || '';
+            document.getElementById('simSenderName').value = preset.sender_name || preset.SenderName || '';
+            document.getElementById('simSenderEmail').value = preset.sender_email || preset.SenderEmail || '';
+            document.getElementById('simSubject').value = preset.subject || preset.Subject || '';
+            document.getElementById('simTemplateBody').value = preset.template_html || preset.TemplateHTML || '';
+        }
+        window.onSelectPresetChange = onSelectPresetChange;
     </script>
 
     <div class="space-y-6">
@@ -176,6 +203,9 @@
                     <label class="block text-[11px] font-bold text-light-muted dark:text-dark-muted mb-1 uppercase tracking-wider">Pilih dari Template Preset Bawaan</label>
                     <select id="simPresetSelect" onchange="onSelectPresetChange()" class="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-text dark:text-white focus:outline-none focus:border-cyan-500">
                         <option value="">-- Pilih Skenario Phishing Siap Pakai --</option>
+                        <each items="presets" as="p">
+                            <option :value="@index">{{ p.Title }}</option>
+                        </each>
                     </select>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -216,10 +246,10 @@
     </div>
 
     <script>
-        let availablePresets = [];
-
         document.addEventListener('DOMContentLoaded', () => {
             loadSimulations();
+            // Inisialisasi presets bawaan
+            fetchPresets();
         });
 
         async function loadSimulations() {
@@ -374,44 +404,6 @@
             } catch (err) {
                 showModalAlert({ title: 'Kesalahan Jaringan', message: err.message, type: 'error' });
             }
-        }
-
-        async function openNewCampaignModal() {
-            const modal = document.getElementById('modalNewCampaign');
-            if (modal) modal.classList.remove('hidden');
-
-            if (availablePresets.length === 0) {
-                try {
-                    const res = await fetch('/api/v1/admin/simulations/presets');
-                    const data = await res.json();
-                    availablePresets = data.presets || [];
-                    const select = document.getElementById('simPresetSelect');
-                    select.innerHTML = '<option value="">-- Pilih Skenario Phishing Siap Pakai --</option>';
-                    availablePresets.forEach((p, idx) => {
-                        select.innerHTML += `<option value="${idx}">${escapeHtml(p.title)}</option>`;
-                    });
-                } catch (e) {
-                    console.error("Gagal load presets:", e);
-                }
-            }
-        }
-
-        function closeNewCampaignModal() {
-            const modal = document.getElementById('modalNewCampaign');
-            if (modal) modal.classList.add('hidden');
-        }
-
-        function onSelectPresetChange() {
-            const idx = document.getElementById('simPresetSelect').value;
-            if (idx === "") return;
-            const preset = availablePresets[idx];
-            if (!preset) return;
-
-            document.getElementById('simCampaignTitle').value = preset.title;
-            document.getElementById('simSenderName').value = preset.sender_name;
-            document.getElementById('simSenderEmail').value = preset.sender_email;
-            document.getElementById('simSubject').value = preset.subject;
-            document.getElementById('simTemplateBody').value = preset.template_html;
         }
 
         async function submitNewCampaign() {
