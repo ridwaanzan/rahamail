@@ -18,6 +18,15 @@ Version 1.4.3 brings a major UI engine modernization by migrating all SSR views 
   - Added dedicated **"🛡️ Laporkan Phishing"** button directly to the Webmail email reader toolbar.
   - Allows employees to report suspicious emails or simulations in one click with a confirmation dialog.
   - If the message is part of an active company security test, the system recognizes the user's vigilance, immediately records a **`reported` (PASSED)** score, and shows an instant congratulatory educational modal.
+- **Phishing Credential Harvester Stage (Mock Security Portal)**:
+  - Added optional credential harvesting simulation stage (`simulation_login.rhui`) that intercepts tracking link clicks before redirecting to the educational Teachable Moment.
+  - Measures the *Credential Submission Rate* (whether the user attempts to enter account passwords) without storing actual passwords, recording `credential_submitted: true` and status `submitted`.
+- **Phishing Campaign Audit CSV Export**:
+  - Added `GET /api/v1/admin/simulations/:id/export` endpoint generating complete employee compliance CSV reports for ISO 27001 / SOC 2 audits.
+  - Added one-click **"Ekspor CSV Audit"** button on the campaign breakdown dashboard.
+- **RHUI Engine Benchmarks & Loop Metadata**:
+  - Added official `BenchmarkRHUIEngineRender` suite demonstrating ultra-low ~30 µs render latency.
+  - Adopted `@count` loop metadata in `admin_domains.rhui` for automatic row numbering.
 - **Bi-Directional Rspamd Bayesian Machine Learning**:
   - Automatically trains Rspamd via `/learnspam` when users classify non-simulation emails as Spam.
   - Automatically trains Rspamd via `/learnham` when users restore false positives from Spam back to `INBOX` or `Archive`.

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"mail-server/internal/domain"
 	"mail-server/internal/repository"
@@ -41,7 +42,50 @@ func (sc *SimulationController) HandleTrackingClick(c *gin.Context) {
 		senderEmail = target.Campaign.SenderEmail
 	}
 
+	targetEmail := ""
+	if target.User != nil {
+		targetEmail = target.User.Email
+	}
+
+	// Jika target belum memasukkan kredensial, tampilkan mock login portal (Credential Harvester simulation)
+	if !target.CredentialSubmitted {
+		c.HTML(http.StatusOK, "simulation_login", gin.H{
+			"title":         "Konfirmasi Kredensial - Portal Internal",
+			"tracking_code": target.TrackingCode,
+			"target_email":  targetEmail,
+		})
+		return
+	}
+
 	// Render halaman Teachable Moment (Edukasi Keamanan)
+	c.HTML(http.StatusOK, "simulation_teachable", gin.H{
+		"title":        "Peringatan Edukasi Keamanan",
+		"sender_email": senderEmail,
+		"campaign":     target.Campaign,
+		"target":       target,
+	})
+}
+
+// HandleCredentialSubmit menangani saat target memasukkan password di mock portal: POST /sim/c/:code/submit
+func (sc *SimulationController) HandleCredentialSubmit(c *gin.Context) {
+	code := c.Param("code")
+	if code == "" {
+		c.String(http.StatusBadRequest, "Invalid tracking code")
+		return
+	}
+
+	target, err := simulation.RecordCredentialSubmission(code)
+	if err != nil {
+		c.String(http.StatusNotFound, "Tautan simulasi tidak valid atau telah kedaluwarsa.")
+		return
+	}
+
+	senderEmail := "unknown@suspicious-domain.xyz"
+	if target.Campaign != nil && target.Campaign.SenderEmail != "" {
+		senderEmail = target.Campaign.SenderEmail
+	}
+
+	// Setelah submit, tampilkan halaman Teachable Moment edukasi
 	c.HTML(http.StatusOK, "simulation_teachable", gin.H{
 		"title":        "Peringatan Edukasi Keamanan",
 		"sender_email": senderEmail,
@@ -185,4 +229,60 @@ func (sc *SimulationController) GetCampaignStats(c *gin.Context) {
 		"failure_rate":       fmt.Sprintf("%.1f%%", failureRate),
 		"targets":            campaign.Targets,
 	})
+}
+
+// ExportCampaignCSV mengekspor hasil simulasi ke format CSV untuk audit compliance: GET /api/v1/admin/simulations/:id/export
+func (sc *SimulationController) ExportCampaignCSV(c *gin.Context) {
+	idStr := c.Param("id")
+	campaignID, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID kampanye tidak valid"})
+		return
+	}
+
+	var campaign domain.PhishingCampaign
+	if err := repository.DB.Preload("Targets.User").First(&campaign, campaignID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Kampanye tidak ditemukan"})
+		return
+	}
+
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=phishing_report_campaign_%d.csv", campaign.ID))
+	c.Header("Content-Type", "text/csv; charset=utf-8")
+
+	var buf strings.Builder
+	buf.WriteString("ID,Email Karyawan,Status,Waktu Kirim,Waktu Klik,Kredensial Dimasukkan,Waktu Lapor Spam,IP Address\n")
+
+	for _, t := range campaign.Targets {
+		email := ""
+		if t.User != nil {
+			email = t.User.Email
+		}
+		sentTime := t.SentAt.Format(time.RFC3339)
+		clickTime := ""
+		if t.ClickedAt != nil {
+			clickTime = t.ClickedAt.Format(time.RFC3339)
+		}
+		reportTime := ""
+		if t.ReportedAt != nil {
+			reportTime = t.ReportedAt.Format(time.RFC3339)
+		}
+
+		credSubmitted := "Tidak"
+		if t.CredentialSubmitted {
+			credSubmitted = "Ya (Vulnerable)"
+		}
+
+		buf.WriteString(fmt.Sprintf("%d,%s,%s,%s,%s,%s,%s,%s\n",
+			t.ID,
+			email,
+			t.Status,
+			sentTime,
+			clickTime,
+			credSubmitted,
+			reportTime,
+			t.IPAddress,
+		))
+	}
+
+	c.String(http.StatusOK, buf.String())
 }

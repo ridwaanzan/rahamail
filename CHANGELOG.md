@@ -19,6 +19,15 @@ All notable changes to the **RaHaMail** project will be documented in this file.
   - Directly flags suspicious emails and moves them to Spam with real-time feedback modal:
     - If the reported email is part of an active company security test, the employee receives an instant congratulations modal (*PASSED*).
     - Status is recorded in real time to the simulation campaign analytics dashboard (`status: reported`).
+- **Phishing Credential Harvester Stage (Mock Security Portal)**:
+  - Added optional credential harvesting simulation stage (`simulation_login.rhui`) that intercepts tracking link clicks before redirecting to the educational Teachable Moment.
+  - Measures the *Credential Submission Rate* (whether the user attempts to enter account passwords) without storing actual passwords, recording `credential_submitted: true` and status `submitted`.
+- **Phishing Campaign Audit CSV Export**:
+  - Added `GET /api/v1/admin/simulations/:id/export` endpoint generating complete employee compliance CSV reports for ISO 27001 / SOC 2 audits.
+  - Added one-click **"Ekspor CSV Audit"** button on the campaign breakdown dashboard.
+- **RHUI Engine Benchmarks & Loop Metadata**:
+  - Added official `BenchmarkRHUIEngineRender` suite demonstrating ultra-low ~30 µs render latency.
+  - Adopted `@count` loop metadata in `admin_domains.rhui` for automatic row numbering.
 - **Bi-Directional Rspamd Bayesian Machine Learning**:
   - Added `TrainRspamd(data []byte, isSpam bool)` in `internal/antivirus/scanner.go`.
   - Moving non-simulation emails into the `Spam` folder automatically trains Rspamd via `/learnspam` in a background goroutine.

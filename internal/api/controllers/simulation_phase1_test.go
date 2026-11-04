@@ -35,6 +35,7 @@ func TestPhishingSimulationPhase1Flow(t *testing.T) {
 
 	// 1. Setup Routes
 	r.GET("/sim/c/:code", simCtrl.HandleTrackingClick)
+	r.POST("/sim/c/:code/submit", simCtrl.HandleCredentialSubmit)
 
 	userGroup := r.Group("/api/v1/webmail")
 	var currentUser *domain.User
@@ -91,22 +92,40 @@ func TestPhishingSimulationPhase1Flow(t *testing.T) {
 	}
 
 	bodyStr := w.Body.String()
-	if !strings.Contains(bodyStr, "NOT PASSED") {
-		t.Errorf("Expected Teachable Moment page to show NOT PASSED status")
+	// Step 1: Mock login portal is rendered first (Credential Harvester Stage)
+	if !strings.Contains(bodyStr, "Portal Verifikasi Keamanan") {
+		t.Errorf("Expected Credential Harvester portal page, got:\n%s", bodyStr)
 	}
-	t.Logf("Response body length: %d, body:\n%s", len(bodyStr), bodyStr)
-	if !strings.Contains(bodyStr, fakeSender) {
+
+	// Step 2: Submit credentials to /sim/c/:code/submit -> should render Teachable Moment page with NOT PASSED
+	wSubmit := httptest.NewRecorder()
+	reqSubmit, _ := http.NewRequest("POST", "/sim/c/"+code+"/submit", strings.NewReader("password=SecretPassword123!"))
+	reqSubmit.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	r.ServeHTTP(wSubmit, reqSubmit)
+
+	if wSubmit.Code != http.StatusOK {
+		t.Fatalf("Expected 200 OK from credential submit, got %d: %s", wSubmit.Code, wSubmit.Body.String())
+	}
+
+	submitBodyStr := wSubmit.Body.String()
+	if !strings.Contains(submitBodyStr, "NOT PASSED") {
+		t.Errorf("Expected Teachable Moment page to show NOT PASSED status after submit")
+	}
+	if !strings.Contains(submitBodyStr, fakeSender) {
 		t.Errorf("Expected Teachable Moment page to show fake sender: %s", fakeSender)
 	}
 
 	// Verify database record
 	var verifyTarget domain.PhishingTarget
 	repository.DB.First(&verifyTarget, target.ID)
-	if verifyTarget.Status != "clicked" {
-		t.Errorf("Expected target status to be 'clicked', got '%s'", verifyTarget.Status)
+	if verifyTarget.Status != "submitted" && verifyTarget.Status != "clicked" {
+		t.Errorf("Expected target status to be 'submitted' or 'clicked', got '%s'", verifyTarget.Status)
 	}
 	if verifyTarget.ClickedAt == nil {
 		t.Errorf("Expected target ClickedAt to be populated")
+	}
+	if !verifyTarget.CredentialSubmitted {
+		t.Errorf("Expected target CredentialSubmitted to be true")
 	}
 
 	// 4. Test Reporting as Spam via /api/v1/webmail/messages/move -> Should update status to 'reported' (PASSED)

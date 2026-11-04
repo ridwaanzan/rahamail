@@ -13,6 +13,7 @@
             <table class="w-full text-left text-xs">
                 <thead class="text-[11px] uppercase tracking-wider text-light-muted dark:text-dark-muted border-b border-light-border dark:border-dark-border">
                     <tr>
+                        <th class="py-3 px-3 font-semibold w-10 text-center">#</th>
                         <th class="py-3 px-4 font-semibold">Nama Domain</th>
                         <th class="py-3 px-4 font-semibold">DKIM Selector</th>
                         <th class="py-3 px-4 font-semibold">Key Spec</th>
@@ -23,6 +24,7 @@
                 <tbody class="divide-y divide-light-border dark:divide-dark-border">
                     <each items="domains" as="domain">
                         <tr class="hover:bg-slate-50 dark:hover:bg-dark-cardHover transition-colors">
+                            <td class="py-3.5 px-3 font-mono text-center text-light-muted dark:text-dark-muted text-[11px]">{{ @count }}</td>
                             <td class="py-3.5 px-4 font-bold text-light-text dark:text-white">{{ domain.Name }}</td>
                             <td class="py-3.5 px-4 font-mono text-cyan-600 dark:text-cyan-400">{{ domain.DKIMSelector }}</td>
                             <td class="py-3.5 px-4 text-slate-500 dark:text-dark-muted">RSA 2048-bit</td>
@@ -38,7 +40,7 @@
                     </each>
                     <if test="len(domains) == 0">
                         <tr>
-                            <td colspan="5" class="py-8 text-center text-slate-400">Belum ada domain terdaftar.</td>
+                            <td colspan="6" class="py-8 text-center text-slate-400">Belum ada domain terdaftar.</td>
                         </tr>
                     </if>
                 </tbody>

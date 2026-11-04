@@ -64,3 +64,27 @@ func TestRHUIEngineInitAndRender(t *testing.T) {
 		t.Fatalf("Rendered admin_simulations buffer is empty")
 	}
 }
+
+func BenchmarkRHUIEngineRender(b *testing.B) {
+	engine, err := GetRHUIEngine()
+	if err != nil {
+		b.Fatalf("GetRHUIEngine failed: %v", err)
+	}
+
+	data := map[string]any{
+		"title":     "Benchmark Domains",
+		"db_driver": "sqlite3",
+		"domains": []map[string]any{
+			{"Name": "alpha.example.com", "DKIMSelector": "mail", "DKIMPublicKey": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQ=="},
+			{"Name": "beta.example.com", "DKIMSelector": "mail", "DKIMPublicKey": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQ=="},
+			{"Name": "gamma.example.com", "DKIMSelector": "mail", "DKIMPublicKey": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQ=="},
+		},
+	}
+
+	buf := new(bytes.Buffer)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		buf.Reset()
+		_ = engine.Render(buf, "admin_domains", data)
+	}
+}

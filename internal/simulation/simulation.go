@@ -235,6 +235,27 @@ func RecordClick(trackingCode string, ipAddress string, userAgent string) (*doma
 	return &target, nil
 }
 
+// RecordCredentialSubmission mencatat saat karyawan memasukkan kredensial di mock portal (Status: submitted -> NOT PASSED)
+func RecordCredentialSubmission(trackingCode string) (*domain.PhishingTarget, error) {
+	var target domain.PhishingTarget
+	err := repository.DB.Preload("Campaign").Preload("User").
+		Where("tracking_code = ?", trackingCode).First(&target).Error
+	if err != nil {
+		return nil, fmt.Errorf("tracking code not found: %w", err)
+	}
+
+	now := time.Now()
+	target.Status = "submitted"
+	target.SubmittedAt = &now
+	target.CredentialSubmitted = true
+
+	if err := repository.DB.Save(&target).Error; err != nil {
+		return nil, err
+	}
+
+	return &target, nil
+}
+
 // RecordReport mencatat saat karyawan melaporkan email simulasi sebagai spam/phishing (Status: reported -> PASSED)
 func RecordReport(userID uint, senderEmail string) (*domain.PhishingTarget, error) {
 	var target domain.PhishingTarget

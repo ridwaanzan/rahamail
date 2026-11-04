@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/css/bootstrap-icons.min.css">
+</head>
+<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4 font-sans text-slate-800">
+    <div class="max-w-md w-full bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+        <div class="p-6 sm:p-8 space-y-6">
+            <div class="text-center space-y-2">
+                <div class="w-12 h-12 mx-auto rounded-xl bg-blue-600 text-white flex items-center justify-center text-xl font-bold shadow-md shadow-blue-500/30">
+                    <i class="bi bi-shield-lock-fill"></i>
+                </div>
+                <h2 class="text-xl font-bold text-slate-900 tracking-tight">Portal Verifikasi Keamanan</h2>
+                <p class="text-xs text-slate-500">Konfirmasikan kredensial akun email Anda untuk melanjutkan.</p>
+            </div>
+
+            <form action="/sim/c/{{ tracking_code }}/submit" method="POST" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Email Karyawan</label>
+                    <input type="email" value="{{ target_email }}" readonly class="w-full px-3.5 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 text-slate-500 cursor-not-allowed">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Kata Sandi Email</label>
+                    <input type="password" name="password" placeholder="••••••••" required autofocus class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-900">
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" class="w-full py-2.5 px-4 text-xs font-semibold rounded-xl text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-md shadow-blue-500/20 flex items-center justify-center gap-2">
+                        <span>Konfirmasi & Lanjutkan</span>
+                        <i class="bi bi-arrow-right"></i>
+                    </button>
+                </div>
+            </form>
+
+            <div class="text-center border-t border-slate-100 pt-4">
+                <span class="text-[11px] text-slate-400">Pemberitahuan Sistem Keamanan Internal &copy; 2026</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
