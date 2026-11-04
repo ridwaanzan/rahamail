@@ -7,5 +7,4 @@ rahamail
 *.db-wal
 var/
 node_modules/
-/.agents/
 /.vscode/
