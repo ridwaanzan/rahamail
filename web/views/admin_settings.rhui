@@ -1,0 +1,45 @@
+    <div class="space-y-6">
+        <div>
+            <h3 class="text-xl font-bold tracking-tight text-light-text dark:text-white">Server Settings &amp; S3 Cloud Backup</h3>
+            <p class="text-xs text-light-muted dark:text-dark-muted">Pengaturan cadangan data otomatis dan enkripsi client-side AES-256 GCM.</p>
+        </div>
+
+        <div class="p-6 rounded-2xl bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border max-w-xl space-y-4 shadow-card-light dark:shadow-card-dark">
+            <div>
+                <label class="block text-xs font-semibold text-light-muted dark:text-dark-muted mb-1.5 uppercase tracking-wider">S3 BUCKET NAME</label>
+                <input type="text" id="s3Bucket" placeholder="my-corp-backups" class="w-full px-3.5 py-2 text-xs rounded-xl bg-slate-100 dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-text dark:text-white focus:outline-none focus:border-cyan-500" />
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-light-muted dark:text-dark-muted mb-1.5 uppercase tracking-wider">CLIENT-SIDE ENCRYPTION KEY (AES-256)</label>
+                <input type="password" id="s3Key" placeholder="••••••••••••••••" class="w-full px-3.5 py-2 text-xs rounded-xl bg-slate-100 dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-text dark:text-white focus:outline-none focus:border-cyan-500" />
+            </div>
+            <button onclick="triggerBackupNow()" class="px-5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white transition-all shadow-cyan-glow flex items-center gap-1.5">
+                <i class="bi bi-cloud-arrow-up-fill"></i> Trigger Backup Now
+            </button>
+        </div>
+    </div>
+
+    <script>
+        async function triggerBackupNow() {
+            const bucket = document.getElementById('s3Bucket').value.trim();
+            const key = document.getElementById('s3Key').value.trim();
+
+            try {
+                const res = await fetch('/api/v1/admin/backup/trigger', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ bucket, encryption_key: key })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showModalAlert({ title: 'Backup Cloud Berhasil', message: data.message || 'Proses enkripsi dan backup cloud berhasil dijalankan!', type: 'success' });
+                } else {
+                    showModalAlert({ title: 'Gagal Backup', message: data.error || 'Terjadi kesalahan sistem saat menjalankan backup.', type: 'error' });
+                }
+            } catch (err) {
+                showModalAlert({ title: 'Kesalahan Jaringan', message: 'Gagal menghubungi server.', type: 'error' });
+            }
+        }
+
+        window.triggerBackupNow = triggerBackupNow;
+    </script>

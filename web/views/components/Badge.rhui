@@ -1,0 +1,27 @@
+<component name="ui:Badge">
+  <props>
+    <prop name="label" default="" />
+    <prop name="variant" default="info" />
+  </props>
+
+  <if test="variant == 'success'">
+    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+      <i class="bi bi-check-circle-fill text-[10px]"></i> {{ label }}
+    </span>
+  </if>
+  <else-if test="variant == 'danger'">
+    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+      <i class="bi bi-exclamation-octagon-fill text-[10px]"></i> {{ label }}
+    </span>
+  </else-if>
+  <else-if test="variant == 'warning'">
+    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+      <i class="bi bi-exclamation-triangle-fill text-[10px]"></i> {{ label }}
+    </span>
+  </else-if>
+  <else>
+    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
+      <i class="bi bi-info-circle-fill text-[10px]"></i> {{ label }}
+    </span>
+  </else>
+</component>

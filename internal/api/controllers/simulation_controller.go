@@ -42,7 +42,7 @@ func (sc *SimulationController) HandleTrackingClick(c *gin.Context) {
 	}
 
 	// Render halaman Teachable Moment (Edukasi Keamanan)
-	c.HTML(http.StatusOK, "simulation_teachable.tmpl", gin.H{
+	c.HTML(http.StatusOK, "simulation_teachable", gin.H{
 		"title":        "Peringatan Edukasi Keamanan",
 		"sender_email": senderEmail,
 		"campaign":     target.Campaign,

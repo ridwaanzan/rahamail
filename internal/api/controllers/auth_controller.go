@@ -97,7 +97,7 @@ func (ac *AuthController) RenderRegister(c *gin.Context) {
 
 	question, captchaToken, _ := generateCaptchaToken()
 
-	c.HTML(http.StatusOK, "register.tmpl", gin.H{
+	c.HTML(http.StatusOK, "register", gin.H{
 		"title":         "Daftar Akun Email Baru - RaHaMail",
 		"domains":       domains,
 		"captcha_q":     question,
@@ -115,7 +115,7 @@ func (ac *AuthController) RenderLogin(c *gin.Context) {
 		}
 	}
 
-	c.HTML(http.StatusOK, "login.tmpl", gin.H{
+	c.HTML(http.StatusOK, "login", gin.H{
 		"title": "Masuk ke RaHaMail Webmail",
 		"next":  c.Query("next"),
 	})

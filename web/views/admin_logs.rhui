@@ -1,0 +1,44 @@
+    <div class="space-y-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h3 class="text-xl font-bold tracking-tight text-light-text dark:text-white">Server-Sent Events (SSE) Live Feed</h3>
+                <p class="text-xs text-light-muted dark:text-dark-muted">Koneksi stream log diagnostik langsung dari memori backend Golang tanpa polling.</p>
+            </div>
+            <button onclick="document.getElementById('sseTerminal').innerHTML = ''" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-dark-card border border-light-border dark:border-dark-border text-light-muted dark:text-dark-muted hover:text-cyan-500 transition-colors flex items-center gap-1.5">
+                <i class="bi bi-trash"></i> Bersihkan Log
+            </button>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-black font-mono text-xs text-emerald-400 h-[650px] overflow-y-auto space-y-1.5 border border-slate-800 shadow-2xl" id="sseTerminal">
+            <div class="text-slate-500">[*] Menginisialisasi koneksi EventSource ke /api/v1/sse...</div>
+        </div>
+    </div>
+
+    <script>
+        // Live Log Stream
+        const sse = new EventSource('/api/v1/sse');
+        sse.onopen = () => {
+            appendLog('SYSTEM', 'Tersambung ke server SSE live stream', 'text-emerald-400');
+        };
+        sse.onerror = () => {
+            appendLog('ERROR', 'Koneksi terputus atau reconnecting...', 'text-rose-400');
+        };
+        sse.onmessage = (e) => {
+            try {
+                const data = JSON.parse(e.data);
+                appendLog(data.type || 'EVENT', JSON.stringify(data), 'text-cyan-400');
+            } catch (err) {
+                appendLog('RAW', e.data, 'text-slate-300');
+            }
+        };
+
+        function appendLog(category, msg, color) {
+            const terminal = document.getElementById('sseTerminal');
+            if (!terminal) return;
+            const time = new Date().toLocaleTimeString();
+            const div = document.createElement('div');
+            div.innerHTML = `<span class="text-slate-500">[${time}]</span> <span class="${color}">[${category}]</span> <span class="text-slate-200">${msg}</span>`;
+            terminal.appendChild(div);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+    </script>

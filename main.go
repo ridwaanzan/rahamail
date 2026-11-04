@@ -18,6 +18,7 @@ import (
 	"mail-server/web"
 
 	"github.com/gin-gonic/gin"
+	rhuigin "github.com/suserc0de/rhui/adapter/gin"
 )
 
 func main() {
@@ -94,12 +95,13 @@ func main() {
 	}
 	r.StaticFS("/static", staticFS)
 
-	// Memuat Template HTML (.tmpl) langsung dari Memory Binary (go:embed)
-	tmpl, err := web.GetTemplates()
+	// Memuat Declarative RHUI Engine langsung dari Memory Binary (go:embed)
+	rhuiEngine, err := web.GetRHUIEngine()
 	if err != nil {
-		log.Fatalf("❌ Gagal memuat embedded templates: %v", err)
+		log.Fatalf("❌ Gagal memuat embedded RHUI templates: %v", err)
 	}
-	r.SetHTMLTemplate(tmpl)
+	r.HTMLRender = rhuigin.New(rhuiEngine)
+	web.SetGlobalRHUIEngine(rhuiEngine)
 
 	// Controller
 	mailCtrl := controllers.NewMailController()
