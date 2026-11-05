@@ -1,0 +1,1 @@
+<ui:MailListFragment :current_folder="current_folder" :messages="messages" :scheduled_mails="scheduled_mails" />

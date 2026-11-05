@@ -205,85 +205,13 @@
                 <!-- Search Input Bar -->
                 <div class="relative">
                     <i class="bi bi-search absolute left-3 top-2.5 text-light-muted dark:text-dark-muted text-xs"></i>
-                    <input type="text" id="searchInput" placeholder="Cari pesan atau pengirim..." onkeyup="filterMessages()" class="w-full pl-8 pr-3 py-1.5 rounded-lg text-xs bg-slate-100 dark:bg-dark-card border border-light-border dark:border-dark-border text-light-text dark:text-white placeholder:text-light-muted dark:placeholder:text-dark-muted focus:outline-none focus:border-cyan-500 transition-colors">
+                    <input type="text" id="searchInput" placeholder="Cari pesan atau pengirim..." :value="search_query" oninput="handleServerSearch(this.value)" class="w-full pl-8 pr-3 py-1.5 rounded-lg text-xs bg-slate-100 dark:bg-dark-card border border-light-border dark:border-dark-border text-light-text dark:text-white placeholder:text-light-muted dark:placeholder:text-dark-muted focus:outline-none focus:border-cyan-500 transition-colors">
                 </div>
             </div>
 
             <!-- Mail Items List (Scrollable) -->
             <div class="flex-1 overflow-y-auto divide-y divide-light-border dark:divide-dark-border/60" id="mailListContainer">
-                <if test="current_folder == 'Scheduled'">
-                    <!-- List Email Terjadwal -->
-                    <if test="len(scheduled_mails) > 0">
-                    <each items="scheduled_mails" as="item">
-                    <div class="mail-item p-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-dark-card/60 transition-colors" :data-id="item.ID">
-                        <div class="flex items-center justify-between mb-1">
-                            <span class="text-[11px] text-amber-500 font-semibold flex items-center gap-1">
-                                <i class="bi bi-clock text-[10px]"></i>{{ item.ScheduledAt | dateFormat("02 Jan 15:04") }}
-                            </span>
-                            <span class="text-[10px] px-1.5 py-0.2 rounded font-medium bg-amber-500/10 text-amber-500 border border-amber-500/20">
-                                {{ item.Status }}
-                            </span>
-                        </div>
-                        <h4 class="text-xs font-semibold text-light-text dark:text-white truncate mb-0.5">{{ item.Subject }}</h4>
-                        <p class="text-[11px] text-light-muted dark:text-dark-muted truncate">Kepada: {{ item.To }}</p>
-                        <if test="item.Status == 'pending'">
-                        <div class="mt-2 text-right">
-                            <button type="button" :data-id="item.ID" onclick="cancelSchedule(this.getAttribute('data-id'))" class="px-2 py-0.5 text-[10px] font-medium text-rose-500 hover:text-white hover:bg-rose-600 border border-rose-500/30 rounded transition-all">
-                                <i class="bi bi-x-circle mr-1"></i>Batalkan
-                            </button>
-                        </div>
-                        </if>
-                    </div>
-                    </each>
-                    </if><else>
-                    <div class="text-center py-12 px-4 text-light-muted dark:text-dark-muted">
-                        <i class="bi bi-clock-history text-3xl opacity-30 block mb-2"></i>
-                        <p class="text-xs">Tidak ada email yang sedang dijadwalkan.</p>
-                    </div>
-                    </else>
-                </if><else>
-                    <!-- List Email Reguler -->
-                    <if test="len(messages) > 0">
-                    <each items="messages" as="msg">
-                    <div class="mail-item p-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-dark-card/60 transition-colors" :data-id="msg.ID" onclick="loadMessageDetail(this.getAttribute('data-id'))">
-                        <div class="flex items-center justify-between mb-1">
-                            <span class="text-xs font-semibold text-light-text dark:text-slate-300 truncate pr-2">
-                                {{ msg.From }}
-                            </span>
-                            <span class="text-[10px] text-light-muted dark:text-dark-muted shrink-0">{{ msg.ReceivedAt | dateFormat("02 Jan 15:04") }}</span>
-                        </div>
-                        <h4 class="text-xs font-medium text-slate-700 dark:text-slate-300 truncate mb-1">
-                            {{ msg.Subject }}
-                        </h4>
-                        <p class="text-[11px] text-light-muted dark:text-dark-muted truncate line-clamp-1 mb-2">
-                            {{ msg.Snippet }}
-                        </p>
-                        <div class="flex items-center justify-between pt-1">
-                            <div class="flex items-center gap-1.5">
-                                <span class="text-[9px] px-1 py-0.2 rounded font-mono bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                                    SPF: {{ msg.SPFStatus }}
-                                </span>
-                                <span class="text-[9px] px-1 py-0.2 rounded font-mono bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
-                                    DKIM: {{ msg.DKIMStatus }}
-                                </span>
-                            </div>
-                            <button type="button" :data-id="msg.ID" onclick="toggleStar(event, this.getAttribute('data-id'))" class="text-light-muted dark:text-dark-muted hover:text-amber-400 p-0.5" title="Bintang">
-                                <if test="msg.IsFlagged">
-                                    <i class="bi bi-star-fill text-amber-400 text-xs"></i>
-                                </if><else>
-                                    <i class="bi bi-star text-xs"></i>
-                                </else>
-                            </button>
-                        </div>
-                    </div>
-                    </each>
-                    </if><else>
-                    <div class="text-center py-12 px-4 text-light-muted dark:text-dark-muted">
-                        <i class="bi bi-inbox text-3xl opacity-30 block mb-2"></i>
-                        <p class="text-xs">Belum ada email di folder ini.</p>
-                    </div>
-                    </else>
-                </else>
+                <ui:MailListFragment :current_folder="current_folder" :messages="messages" :scheduled_mails="scheduled_mails" />
             </div>
 
             <!-- Pagination Footer -->
@@ -1497,12 +1425,39 @@
             }
         }
 
+        let searchDebounceTimer = null;
+        function handleServerSearch(query) {
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(async () => {
+                const folder = '{{ current_folder }}';
+                const container = document.getElementById('mailListContainer');
+                if (!container) return;
+
+                try {
+                    // Update URL state tanpa reload browser
+                    const url = new URL(window.location);
+                    if (query && query.trim() !== '') {
+                        url.searchParams.set('q', query.trim());
+                    } else {
+                        url.searchParams.delete('q');
+                    }
+                    url.searchParams.set('page', '1');
+                    window.history.replaceState({}, '', url);
+
+                    // Fetch server-rendered RHUI HTML fragment
+                    const res = await fetch(`/api/v1/webmail/messages/fragment?folder=${encodeURIComponent(folder)}&q=${encodeURIComponent(query)}&page=1`);
+                    if (res.ok) {
+                        const html = await res.text();
+                        container.innerHTML = html;
+                    }
+                } catch (err) {
+                    console.error('Server search error:', err);
+                }
+            }, 300);
+        }
+
         function filterMessages() {
-            const query = document.getElementById('searchInput').value.toLowerCase();
-            document.querySelectorAll('.mail-item').forEach(item => {
-                const text = item.textContent.toLowerCase();
-                item.style.display = text.includes(query) ? '' : 'none';
-            });
+            handleServerSearch(document.getElementById('searchInput').value);
         }
 
         function previewAttachment(idx) {

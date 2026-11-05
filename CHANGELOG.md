@@ -4,6 +4,28 @@ All notable changes to the **RaHaMail** project will be documented in this file.
 
 ---
 
+## [1.5.0] - 2026-11-05
+
+### Added
+- **Server-Side Full-Text & Multi-Field Search (FTS & Query LIKE)**:
+  - Added query parameter `?q=...` support to `RenderWebmail` and `/api/v1/webmail/messages/fragment`.
+  - Searches dynamically across Subject, Sender (`from`), Recipient (`to`), and message snippet text on the server.
+  - Zero client-side DOM latency on large mailboxes with automatic debounced input (300ms) and dynamic URL history update (`history.replaceState`).
+- **RHUI Atomic Components & Fragment Streaming**:
+  - Decoupled webmail message items into standalone atomic component `<ui:MailItem :msg="msg" />` (`web/views/components/MailItem.rhui`).
+  - Added `<ui:ScheduledItem :item="item" />` (`web/views/components/ScheduledItem.rhui`) and `<ui:MailListFragment />` (`web/views/components/MailListFragment.rhui`).
+  - Added server-side partial rendering helper `web.RenderFragment(...)` and `web.RenderFragmentToString(...)`.
+- **Live Fragment & JSON Mailbox Endpoint**:
+  - Added `GET /api/v1/webmail/messages/fragment` supporting both server-rendered HTML fragments (for HTMX and dynamic DOM insertion) and JSON responses (`?format=json`).
+- **Webmail v1.5.0 Test Suite**:
+  - Added unit and integration test coverage (`internal/api/controllers/webmail_v15_test.go`) validating JSON query filtering, HTML fragment rendering, and full webmail server-side search.
+
+### Changed
+- Refactored `web/views/webmail.rhui` message list to use modular `<ui:MailListFragment />` rather than inline template loops.
+- Replaced client-side DOM-only search with instant debounced server search.
+
+---
+
 ## [1.4.3] - 2026-11-04
 
 ### Added

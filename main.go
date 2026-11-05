@@ -171,6 +171,7 @@ func main() {
 		// User Webmail API (Protected & Outbound Throttled)
 		mailAPI := api.Group("/webmail", middleware.UserAuthMiddleware())
 		{
+			mailAPI.GET("/messages/fragment", mailCtrl.GetMessagesFragment)
 			mailAPI.GET("/messages/:id", mailCtrl.GetMessageDetail)
 			mailAPI.POST("/send", middleware.UserRateLimitMiddleware(middleware.OutboundSendLimiter, "Batas pengiriman pesan terlampaui."), mailCtrl.ComposeAndSendEmail)
 			mailAPI.POST("/schedule", mailCtrl.ScheduleEmail)
