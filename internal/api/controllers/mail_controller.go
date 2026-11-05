@@ -663,6 +663,9 @@ func (mc *MailController) ComposeAndSendEmail(c *gin.Context) {
 		Subject     string `json:"subject" binding:"required"`
 		BodyHTML    string `json:"body_html"`
 		BodyText    string `json:"body_text"`
+		InReplyTo   string `json:"in_reply_to"`
+		References  string `json:"references"`
+		ThreadID    string `json:"thread_id"`
 		Attachments []struct {
 			FileName    string `json:"file_name"`
 			ContentType string `json:"content_type"`
@@ -704,6 +707,8 @@ func (mc *MailController) ComposeAndSendEmail(c *gin.Context) {
 		Subject:     req.Subject,
 		BodyHTML:    req.BodyHTML,
 		BodyText:    req.BodyText,
+		InReplyTo:   req.InReplyTo,
+		References:  req.References,
 		Attachments: attInputs,
 	}
 
@@ -714,7 +719,10 @@ func (mc *MailController) ComposeAndSendEmail(c *gin.Context) {
 	}
 
 	// Tanda tangani dengan DKIM jika domain pengirim memiliki kunci
-	fromDomain := currentUser.Domain.Name
+	var fromDomain string
+	if currentUser.Domain != nil {
+		fromDomain = currentUser.Domain.Name
+	}
 	if fromDomain == "" {
 		parts := strings.Split(currentUser.Email, "@")
 		if len(parts) == 2 {
@@ -746,10 +754,22 @@ func (mc *MailController) ComposeAndSendEmail(c *gin.Context) {
 		snippet = snippet[:197] + "..."
 	}
 
+	threadID := req.ThreadID
+	if threadID == "" {
+		if req.InReplyTo != "" {
+			threadID = req.InReplyTo
+		} else {
+			threadID = messageID
+		}
+	}
+
 	sentMsg := domain.Message{
 		UserID:      currentUser.ID,
 		Mailbox:     "Sent",
 		MessageID:   messageID,
+		InReplyTo:   req.InReplyTo,
+		References:  req.References,
+		ThreadID:    threadID,
 		From:        currentUser.Email,
 		To:          req.To,
 		Subject:     req.Subject,
@@ -791,6 +811,9 @@ func (mc *MailController) ComposeAndSendEmail(c *gin.Context) {
 						UserID:      recUser.ID,
 						Mailbox:     "INBOX",
 						MessageID:   messageID,
+						InReplyTo:   req.InReplyTo,
+						References:  req.References,
+						ThreadID:    threadID,
 						From:        currentUser.Email,
 						To:          rec,
 						Subject:     req.Subject,
@@ -878,10 +901,40 @@ func (mc *MailController) GetMessageDetail(c *gin.Context) {
 		msg.DMARCStatus,
 	)
 
+	// Ambil percakapan terkait dalam satu thread (jika ada thread_id atau in_reply_to)
+	var threadMessages []domain.Message
+	targetThreadID := msg.ThreadID
+	if targetThreadID == "" {
+		targetThreadID = msg.MessageID
+	}
+	if targetThreadID != "" {
+		repository.DB.Where("user_id = ? AND (thread_id = ? OR message_id = ? OR in_reply_to = ?)",
+			currentUser.ID, targetThreadID, targetThreadID, targetThreadID).
+			Order("received_at asc, id asc").
+			Find(&threadMessages)
+	}
+	if len(threadMessages) == 0 {
+		threadMessages = []domain.Message{msg}
+	}
+
+	// Jika format request meminta HTML fragment untuk thread tree
+	if c.Query("format") == "fragment" {
+		err := web.RenderFragment(c, http.StatusOK, "thread_tree_fragment", gin.H{
+			"threads":   threadMessages,
+			"active_id": msg.ID,
+		})
+		if err != nil {
+			c.String(http.StatusInternalServerError, "Gagal merender thread tree: %v", err)
+		}
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"message":        msg,
-		"content":        parsed,
-		"security_alert": alert,
+		"message":         msg,
+		"content":         parsed,
+		"security_alert":  alert,
+		"thread_messages": threadMessages,
+		"thread_count":    len(threadMessages),
 	})
 }
 

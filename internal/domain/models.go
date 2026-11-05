@@ -171,6 +171,9 @@ type Message struct {
 	ID          uint           `gorm:"primaryKey" json:"id"`
 	UserID      uint           `gorm:"not null;index" json:"user_id"`
 	MessageID   string         `gorm:"size:255;index" json:"message_id"` // Standard RFC 5322 Message-ID
+	InReplyTo   string         `gorm:"size:255;index" json:"in_reply_to,omitempty"` // RFC 5322 In-Reply-To ID
+	References  string         `gorm:"type:text" json:"references,omitempty"` // RFC 5322 References chain
+	ThreadID    string         `gorm:"size:255;index" json:"thread_id"` // Unique thread identifier for conversation grouping
 	Mailbox     string         `gorm:"size:64;default:'INBOX';index" json:"mailbox"` // INBOX, Sent, Trash, Spam
 	From        string         `gorm:"size:255;not null" json:"from"`
 	To          string         `gorm:"type:text;not null" json:"to"`

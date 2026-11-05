@@ -350,9 +350,35 @@
                 </div>
 
                 <!-- Sandboxed Body Viewer (Iframe or Plain Text) -->
-                <div class="flex-1 p-4 overflow-hidden flex flex-col bg-slate-50 dark:bg-dark-bg">
-                    <div id="textContentContainer" class="hidden h-full overflow-y-auto p-4 rounded-xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-xs font-mono whitespace-pre-wrap text-light-text dark:text-slate-200"></div>
-                    <iframe id="htmlContentFrame" class="hidden w-full h-full rounded-xl bg-white border border-light-border dark:border-dark-border" sandbox="allow-same-origin"></iframe>
+                <div class="flex-1 p-4 overflow-y-auto flex flex-col gap-4 bg-slate-50 dark:bg-dark-bg">
+                    <div id="textContentContainer" class="hidden min-h-[220px] p-4 rounded-xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-xs font-mono whitespace-pre-wrap text-light-text dark:text-slate-200"></div>
+                    <iframe id="htmlContentFrame" class="hidden w-full min-h-[340px] rounded-xl bg-white border border-light-border dark:border-dark-border" sandbox="allow-same-origin"></iframe>
+
+                    <!-- RFC 5322 Conversation Thread Tree Container -->
+                    <div id="threadTreeContainer" class="hidden"></div>
+
+                    <!-- Inline Quick Reply Form -->
+                    <div id="inlineQuickReplyBox" class="mt-2 p-4 rounded-xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border shadow-sm space-y-3">
+                        <div class="flex items-center justify-between text-xs font-bold text-light-text dark:text-white">
+                            <span class="flex items-center gap-1.5 text-cyan-600 dark:text-cyan-400">
+                                <i class="bi bi-reply-fill"></i> Balas Cepat (Quick Reply)
+                            </span>
+                            <span class="text-[11px] font-normal text-light-muted dark:text-dark-muted">Kirim balasan langsung tanpa modal</span>
+                        </div>
+                        <div>
+                            <textarea id="quickReplyText" rows="3" placeholder="Tulis balasan Anda di sini..." class="w-full p-2.5 rounded-xl border border-light-border dark:border-dark-border bg-slate-50 dark:bg-dark-bg text-light-text dark:text-white text-xs focus:outline-none focus:border-cyan-500 transition-colors"></textarea>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="openReplyModal()" class="px-2.5 py-1 rounded-lg text-xs font-medium text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                                    <i class="bi bi-arrows-angle-expand mr-1"></i>Buka Editor Lengkap
+                                </button>
+                            </div>
+                            <button type="button" id="btnSendQuickReply" onclick="sendQuickReply()" class="px-4 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white transition-all shadow-cyan-glow flex items-center gap-1.5">
+                                <i class="bi bi-send-fill text-[11px]"></i> Kirim Balasan
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -1281,6 +1307,27 @@
                     textContainer.classList.remove('hidden');
                     textContainer.textContent = content.body_text || msg.snippet;
                 }
+
+                // Muat RFC 5322 Thread Aggregation (Thread Tree)
+                const threadContainer = document.getElementById('threadTreeContainer');
+                if (data.thread_count && data.thread_count > 1) {
+                    try {
+                        const threadRes = await fetch(`/api/v1/webmail/messages/${id}?format=fragment`);
+                        if (threadRes.ok) {
+                            threadContainer.innerHTML = await threadRes.text();
+                            threadContainer.classList.remove('hidden');
+                        }
+                    } catch (tErr) {
+                        console.error('Failed to load thread tree:', tErr);
+                    }
+                } else {
+                    threadContainer.innerHTML = '';
+                    threadContainer.classList.add('hidden');
+                }
+
+                // Inisialisasi Quick Reply Box
+                document.getElementById('quickReplyText').value = '';
+                document.getElementById('inlineQuickReplyBox').classList.remove('hidden');
             } catch (err) {
                 showModalAlert({ title: 'Gagal Memuat Konten', message: 'Gagal mengambil konten email: ' + err.message, type: 'error' });
             }
@@ -1397,6 +1444,72 @@
                 }
             } catch (err) {
                 showModalAlert({ title: 'Kesalahan Jaringan', message: 'Gagal menghubungi server.', type: 'error' });
+            }
+        }
+
+        // Toggle accordion baris thread percakapan
+        function toggleThreadItem(headerEl) {
+            const card = headerEl.closest('.border');
+            const body = card.querySelector('.thread-body');
+            const chevron = headerEl.querySelector('.chevron-icon');
+            if (body.classList.contains('hidden')) {
+                body.classList.remove('hidden');
+                if (chevron) chevron.classList.add('rotate-180');
+            } else {
+                body.classList.add('hidden');
+                if (chevron) chevron.classList.remove('rotate-180');
+            }
+        }
+
+        // Inline Quick Reply Handler
+        async function sendQuickReply() {
+            if (!currentLoadedMail) return;
+            const bodyText = document.getElementById('quickReplyText').value.trim();
+            if (!bodyText) {
+                showToast('Tuliskan pesan balasan terlebih dahulu', 'warning');
+                return;
+            }
+
+            const sendBtn = document.getElementById('btnSendQuickReply');
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = '<i class="bi bi-hourglass-split animate-spin text-[11px]"></i> Mengirim...';
+
+            let subject = currentLoadedMail.subject || '';
+            if (!subject.toLowerCase().startsWith('re:')) {
+                subject = 'Re: ' + subject;
+            }
+
+            const payload = {
+                to: currentLoadedMail.from,
+                subject: subject,
+                body_text: bodyText,
+                in_reply_to: currentLoadedMail.message_id || '',
+                references: currentLoadedMail.message_id || '',
+                thread_id: currentLoadedMail.thread_id || currentLoadedMail.message_id || ''
+            };
+
+            try {
+                const res = await fetch('/api/v1/webmail/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast('Balasan berhasil dikirim!', 'success');
+                    document.getElementById('quickReplyText').value = '';
+                    // Reload detail email untuk menyegarkan thread tree
+                    if (currentLoadedMailId) {
+                        loadMessageDetail(currentLoadedMailId);
+                    }
+                } else {
+                    showModalAlert({ title: 'Gagal Mengirim', message: data.error || 'Terjadi kesalahan sistem', type: 'error' });
+                }
+            } catch (err) {
+                showModalAlert({ title: 'Kesalahan Jaringan', message: 'Gagal terhubung ke server.', type: 'error' });
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = '<i class="bi bi-send-fill text-[11px]"></i> Kirim Balasan';
             }
         }
 
