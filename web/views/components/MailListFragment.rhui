@@ -1,0 +1,31 @@
+<component name="ui:MailListFragment">
+  <props>
+    <prop name="current_folder" default="INBOX" />
+    <prop name="messages" default="" />
+    <prop name="scheduled_mails" default="" />
+  </props>
+
+  <if test="current_folder == 'Scheduled'">
+    <if test="len(scheduled_mails) > 0">
+      <each items="scheduled_mails" as="item">
+        <ui:ScheduledItem :item="item" />
+      </each>
+    </if><else>
+      <div class="text-center py-12 px-4 text-light-muted dark:text-dark-muted">
+        <i class="bi bi-clock-history text-3xl opacity-30 block mb-2"></i>
+        <p class="text-xs">Tidak ada email yang sedang dijadwalkan.</p>
+      </div>
+    </else>
+  </if><else>
+    <if test="len(messages) > 0">
+      <each items="messages" as="msg">
+        <ui:MailItem :msg="msg" />
+      </each>
+    </if><else>
+      <div class="text-center py-12 px-4 text-light-muted dark:text-dark-muted">
+        <i class="bi bi-inbox text-3xl opacity-30 block mb-2"></i>
+        <p class="text-xs">Belum ada email di folder ini.</p>
+      </div>
+    </else>
+  </else>
+</component>

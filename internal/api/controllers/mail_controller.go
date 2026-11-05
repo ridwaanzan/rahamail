@@ -106,12 +106,13 @@ func (mc *MailController) CompleteSetup(c *gin.Context) {
 	})
 }
 
-// RenderWebmail merender tampilan utama webmail user dengan dukungan pagination
+// RenderWebmail merender tampilan utama webmail user dengan dukungan pagination dan server-side search
 func (mc *MailController) RenderWebmail(c *gin.Context) {
 	val, _ := c.Get("user")
 	currentUser := val.(*domain.User)
 
 	folder := c.DefaultQuery("folder", "INBOX")
+	searchQuery := strings.TrimSpace(c.Query("q"))
 
 	// Parsing parameter pagination: ?page=1&limit=25
 	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
@@ -129,25 +130,33 @@ func (mc *MailController) RenderWebmail(c *gin.Context) {
 	var totalItems int64
 
 	if folder == "Scheduled" {
-		repository.DB.Model(&domain.ScheduledMail{}).
-			Where("user_id = ?", currentUser.ID).
-			Count(&totalItems)
+		query := repository.DB.Model(&domain.ScheduledMail{}).Where("user_id = ?", currentUser.ID)
+		if searchQuery != "" {
+			likePattern := "%" + searchQuery + "%"
+			query = query.Where("(subject LIKE ? OR `to` LIKE ? OR body_text LIKE ?)", likePattern, likePattern, likePattern)
+		}
+		query.Count(&totalItems)
 
-		repository.DB.Where("user_id = ?", currentUser.ID).
-			Order("scheduled_at desc").
-			Offset(offset).
-			Limit(limit).
-			Find(&scheduledMails)
+		dataQuery := repository.DB.Where("user_id = ?", currentUser.ID)
+		if searchQuery != "" {
+			likePattern := "%" + searchQuery + "%"
+			dataQuery = dataQuery.Where("(subject LIKE ? OR `to` LIKE ? OR body_text LIKE ?)", likePattern, likePattern, likePattern)
+		}
+		dataQuery.Order("scheduled_at desc").Offset(offset).Limit(limit).Find(&scheduledMails)
 	} else {
-		repository.DB.Model(&domain.Message{}).
-			Where("user_id = ? AND mailbox = ?", currentUser.ID, folder).
-			Count(&totalItems)
+		query := repository.DB.Model(&domain.Message{}).Where("user_id = ? AND mailbox = ?", currentUser.ID, folder)
+		if searchQuery != "" {
+			likePattern := "%" + searchQuery + "%"
+			query = query.Where("(subject LIKE ? OR `from` LIKE ? OR `to` LIKE ? OR snippet LIKE ?)", likePattern, likePattern, likePattern, likePattern)
+		}
+		query.Count(&totalItems)
 
-		repository.DB.Where("user_id = ? AND mailbox = ?", currentUser.ID, folder).
-			Order("id desc").
-			Offset(offset).
-			Limit(limit).
-			Find(&messages)
+		dataQuery := repository.DB.Where("user_id = ? AND mailbox = ?", currentUser.ID, folder)
+		if searchQuery != "" {
+			likePattern := "%" + searchQuery + "%"
+			dataQuery = dataQuery.Where("(subject LIKE ? OR `from` LIKE ? OR `to` LIKE ? OR snippet LIKE ?)", likePattern, likePattern, likePattern, likePattern)
+		}
+		dataQuery.Order("id desc").Offset(offset).Limit(limit).Find(&messages)
 	}
 
 	var scheduledCount int64
@@ -230,7 +239,104 @@ func (mc *MailController) RenderWebmail(c *gin.Context) {
 		"prev_page":       page - 1,
 		"has_next":        page < totalPages,
 		"next_page":       page + 1,
+		"search_query":    searchQuery,
 	})
+}
+
+// GetMessagesFragment mengembalikan fragment HTML baris pesan (/api/v1/webmail/messages/fragment)
+// untuk dynamic search tanpa full page reload dan infinite scroll / HTMX
+func (mc *MailController) GetMessagesFragment(c *gin.Context) {
+	val, _ := c.Get("user")
+	currentUser := val.(*domain.User)
+
+	folder := c.DefaultQuery("folder", "INBOX")
+	searchQuery := strings.TrimSpace(c.Query("q"))
+
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil || page < 1 {
+		page = 1
+	}
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "25"))
+	if err != nil || limit < 5 || limit > 100 {
+		limit = 25
+	}
+	offset := (page - 1) * limit
+
+	var messages []domain.Message
+	var scheduledMails []domain.ScheduledMail
+	var totalItems int64
+
+	if folder == "Scheduled" {
+		query := repository.DB.Model(&domain.ScheduledMail{}).Where("user_id = ?", currentUser.ID)
+		if searchQuery != "" {
+			likePattern := "%" + searchQuery + "%"
+			query = query.Where("(subject LIKE ? OR `to` LIKE ? OR body_text LIKE ?)", likePattern, likePattern, likePattern)
+		}
+		query.Count(&totalItems)
+
+		dataQuery := repository.DB.Where("user_id = ?", currentUser.ID)
+		if searchQuery != "" {
+			likePattern := "%" + searchQuery + "%"
+			dataQuery = dataQuery.Where("(subject LIKE ? OR `to` LIKE ? OR body_text LIKE ?)", likePattern, likePattern, likePattern)
+		}
+		dataQuery.Order("scheduled_at desc").Offset(offset).Limit(limit).Find(&scheduledMails)
+	} else {
+		query := repository.DB.Model(&domain.Message{}).Where("user_id = ? AND mailbox = ?", currentUser.ID, folder)
+		if searchQuery != "" {
+			likePattern := "%" + searchQuery + "%"
+			query = query.Where("(subject LIKE ? OR `from` LIKE ? OR `to` LIKE ? OR snippet LIKE ?)", likePattern, likePattern, likePattern, likePattern)
+		}
+		query.Count(&totalItems)
+
+		dataQuery := repository.DB.Where("user_id = ? AND mailbox = ?", currentUser.ID, folder)
+		if searchQuery != "" {
+			likePattern := "%" + searchQuery + "%"
+			dataQuery = dataQuery.Where("(subject LIKE ? OR `from` LIKE ? OR `to` LIKE ? OR snippet LIKE ?)", likePattern, likePattern, likePattern, likePattern)
+		}
+		dataQuery.Order("id desc").Offset(offset).Limit(limit).Find(&messages)
+	}
+
+	totalPages := int((totalItems + int64(limit) - 1) / int64(limit))
+	if totalPages < 1 {
+		totalPages = 1
+	}
+	startItem := offset + 1
+	if totalItems == 0 {
+		startItem = 0
+	}
+	endItem := offset + limit
+	if int64(endItem) > totalItems {
+		endItem = int(totalItems)
+	}
+
+	// Dukung respons JSON jika client menyertakan format=json
+	if c.Query("format") == "json" {
+		c.JSON(http.StatusOK, gin.H{
+			"folder":          folder,
+			"q":               searchQuery,
+			"page":            page,
+			"limit":           limit,
+			"total_items":     totalItems,
+			"total_pages":     totalPages,
+			"start_item":      startItem,
+			"end_item":        endItem,
+			"has_prev":        page > 1,
+			"has_next":        page < totalPages,
+			"messages":        messages,
+			"scheduled_mails": scheduledMails,
+		})
+		return
+	}
+
+	// Render RHUI fragment component
+	err = web.RenderFragment(c, http.StatusOK, "mail_items_fragment", gin.H{
+		"current_folder":  folder,
+		"messages":        messages,
+		"scheduled_mails": scheduledMails,
+	})
+	if err != nil {
+		c.String(http.StatusInternalServerError, "Gagal merender fragment: %v", err)
+	}
 }
 
 // RenderIndex merender template Go HTML (.tmpl) untuk Overview Dashboard
