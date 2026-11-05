@@ -1,0 +1,1 @@
+<ui:ThreadTree :threads="threads" :active_id="active_id" />

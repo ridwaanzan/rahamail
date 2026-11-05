@@ -139,6 +139,7 @@ func (s *Session) Data(r io.Reader) error {
 	subject := "(No Subject)"
 	messageID := fmt.Sprintf("<%d.%s@rahamail.local>", time.Now().UnixNano(), "mta")
 	date := time.Now()
+	var inReplyTo, references string
 	var snippet string
 
 	if err == nil {
@@ -148,6 +149,12 @@ func (s *Session) Data(r io.Reader) error {
 		}
 		if mid, err := header.MessageID(); err == nil && mid != "" {
 			messageID = mid
+		}
+		if irt := header.Get("In-Reply-To"); irt != "" {
+			inReplyTo = irt
+		}
+		if refs := header.Get("References"); refs != "" {
+			references = refs
 		}
 		if d, err := header.Date(); err == nil {
 			date = d
@@ -242,10 +249,18 @@ func (s *Session) Data(r io.Reader) error {
 				virusStatus = scanRes.VirusName
 			}
 
+			threadID := messageID
+			if inReplyTo != "" {
+				threadID = inReplyTo
+			}
+
 			msg := domain.Message{
 				UserID:      user.ID,
 				Mailbox:     targetMailbox,
 				MessageID:   messageID,
+				InReplyTo:   inReplyTo,
+				References:  references,
+				ThreadID:    threadID,
 				From:        s.from,
 				To:          recipient,
 				Subject:     subject,

@@ -20,6 +20,9 @@ type ParsedEmail struct {
 	To          string       `json:"to"`
 	Cc          string       `json:"cc"`
 	Date        string       `json:"date"`
+	MessageID   string       `json:"message_id,omitempty"`
+	InReplyTo   string       `json:"in_reply_to,omitempty"`
+	References  string       `json:"references,omitempty"`
 	BodyHTML    string       `json:"body_html"`
 	BodyText    string       `json:"body_text"`
 	Attachments []Attachment `json:"attachments"`
@@ -79,6 +82,15 @@ func ParseEML(filePath string, fallbackSnippet string) (*ParsedEmail, error) {
 	}
 	if date, err := header.Date(); err == nil {
 		result.Date = date.Format("02 Jan 2006 15:04:05 MST")
+	}
+	if msgID, err := header.MessageID(); err == nil && msgID != "" {
+		result.MessageID = msgID
+	}
+	if inReplyTo := header.Get("In-Reply-To"); inReplyTo != "" {
+		result.InReplyTo = inReplyTo
+	}
+	if references := header.Get("References"); references != "" {
+		result.References = references
 	}
 
 	partIdx := 0

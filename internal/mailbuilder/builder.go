@@ -21,6 +21,8 @@ type OutgoingEmail struct {
 	Subject     string
 	BodyHTML    string
 	BodyText    string
+	InReplyTo   string
+	References  string
 	Attachments []AttachmentInput
 }
 
@@ -46,6 +48,12 @@ func BuildRFC5322Message(mailData OutgoingEmail) ([]byte, string, error) {
 	buf.WriteString(fmt.Sprintf("Subject: %s\r\n", mime.QEncoding.Encode("utf-8", mailData.Subject)))
 	buf.WriteString(fmt.Sprintf("Date: %s\r\n", dateStr))
 	buf.WriteString(fmt.Sprintf("Message-ID: %s\r\n", messageID))
+	if mailData.InReplyTo != "" {
+		buf.WriteString(fmt.Sprintf("In-Reply-To: %s\r\n", mailData.InReplyTo))
+	}
+	if mailData.References != "" {
+		buf.WriteString(fmt.Sprintf("References: %s\r\n", mailData.References))
+	}
 	buf.WriteString("MIME-Version: 1.0\r\n")
 
 	hasAttachments := len(mailData.Attachments) > 0

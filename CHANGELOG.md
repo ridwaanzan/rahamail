@@ -4,6 +4,27 @@ All notable changes to the **RaHaMail** project will be documented in this file.
 
 ---
 
+## [1.6.0] - 2026-11-05
+
+### Added
+- **RFC 5322 Conversation Thread Aggregation**:
+  - Implemented automatic message threading by tracking `Message-ID`, `In-Reply-To`, `References`, and `ThreadID`.
+  - Inbound SMTP MTA and Webmail Compose pipelines now persist and link message chains across replies.
+  - Detail endpoint `GET /api/v1/webmail/messages/:id` aggregates entire conversation histories in chronological order.
+- **Collapsible RHUI Thread Tree (`<ui:ThreadTree />`)**:
+  - Modular component `web/views/components/ThreadTree.rhui` utilizing RHUI v1.0.4 loop metadata:
+    - `@first`: Highlights the latest reply with cyan accent and expanded message body.
+    - `@last`: Labels the originating root thread email.
+    - `@even` / `@odd`: Subtle zebra styling for clean conversational visual rhythm.
+  - Dedicated SSR fragment endpoint `GET /api/v1/webmail/messages/:id?format=fragment`.
+- **Inline Quick Reply Form**:
+  - Added lightweight inline composer directly beneath active email threads in webmail.
+  - Supports instant replies with automatic `Re:` subject prefixing and thread header linkage without opening a full modal dialog.
+- **Webmail v1.6.0 Test Suite**:
+  - Added test coverage in `internal/api/controllers/webmail_v16_test.go` validating thread aggregation, SSR HTML fragment output, and header propagation on quick replies.
+
+---
+
 ## [1.5.0] - 2026-11-05
 
 ### Added

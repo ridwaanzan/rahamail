@@ -1,0 +1,76 @@
+<component name="ui:ThreadTree">
+  <props>
+    <prop name="threads" default="" />
+    <prop name="active_id" default="" />
+  </props>
+
+  <div class="thread-tree-container space-y-3">
+    <div class="flex items-center justify-between pb-2 border-b border-light-border dark:border-dark-border text-xs text-light-muted dark:text-dark-muted font-semibold">
+      <span class="flex items-center gap-1.5 text-cyan-600 dark:text-cyan-400">
+        <i class="bi bi-chat-square-text text-sm"></i> Riwayat Percakapan ({{ len(threads) }} Pesan)
+      </span>
+      <span class="text-[11px] opacity-75">RFC 5322 Thread Aggregation</span>
+    </div>
+
+    <each items="threads" as="t">
+      <div 
+        class="border rounded-xl transition-all overflow-hidden" 
+        :class="t.ID == active_id ? 'border-cyan-500/50 bg-cyan-500/5 dark:bg-cyan-500/10' : (@even ? 'border-light-border dark:border-dark-border bg-slate-50/50 dark:bg-dark-card/30' : 'border-light-border dark:border-dark-border bg-white dark:bg-dark-card/60')"
+      >
+        <!-- Accordion Header -->
+        <div 
+          class="p-3 flex items-center justify-between cursor-pointer select-none hover:bg-slate-100/60 dark:hover:bg-dark-card transition-colors"
+          onclick="toggleThreadItem(this)"
+        >
+          <div class="flex items-center gap-2.5 truncate">
+            <span class="w-7 h-7 rounded-lg bg-slate-200 dark:bg-slate-800 text-light-text dark:text-white flex items-center justify-center text-xs font-bold shrink-0">
+              <if test="@first">
+                <i class="bi bi-arrow-return-right text-cyan-500"></i>
+              </if>
+              <else-if test="@last">
+                <i class="bi bi-chat-left-quote text-emerald-500"></i>
+              </else-if>
+              <else>
+                <i class="bi bi-chat-dots text-slate-400"></i>
+              </else>
+            </span>
+            <div class="truncate">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-semibold text-light-text dark:text-white truncate">{{ t.From }}</span>
+                <if test="@first">
+                  <span class="text-[9px] px-1.5 py-0.2 rounded font-semibold bg-cyan-500/10 text-cyan-500 border border-cyan-500/20">Terbaru</span>
+                </if>
+                <if test="@last">
+                  <span class="text-[9px] px-1.5 py-0.2 rounded font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">Awal Thread</span>
+                </if>
+              </div>
+              <p class="text-[11px] text-light-muted dark:text-dark-muted truncate">{{ t.Snippet }}</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 shrink-0">
+            <span class="text-[10px] text-light-muted dark:text-dark-muted">{{ t.ReceivedAt | dateFormat("02 Jan 15:04") }}</span>
+            <i class="bi bi-chevron-down text-xs text-light-muted dark:text-dark-muted transition-transform duration-200 chevron-icon"></i>
+          </div>
+        </div>
+
+        <!-- Accordion Body (Expanded if active or first) -->
+        <div class="thread-body p-3.5 pt-0 border-t border-light-border/50 dark:border-dark-border/50 text-xs text-light-text dark:text-slate-300 space-y-2" :class="t.ID == active_id ? '' : (@first ? '' : 'hidden')">
+          <div class="flex items-center justify-between text-[11px] text-light-muted dark:text-dark-muted py-1 border-b border-light-border/40 dark:border-dark-border/40">
+            <span>Kepada: <strong class="text-light-text dark:text-slate-200">{{ t.To }}</strong></span>
+            <div class="flex items-center gap-1.5">
+              <span class="text-[9px] px-1 py-0.2 rounded font-mono bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">SPF: {{ t.SPFStatus }}</span>
+              <span class="text-[9px] px-1 py-0.2 rounded font-mono bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">DKIM: {{ t.DKIMStatus }}</span>
+            </div>
+          </div>
+          <p class="whitespace-pre-wrap leading-relaxed py-1.5 text-slate-700 dark:text-slate-300">{{ t.Snippet }}</p>
+          <div class="text-right pt-1">
+            <button type="button" :data-id="t.ID" onclick="loadMessageDetail(this.getAttribute('data-id'))" class="px-2.5 py-1 rounded text-[11px] font-semibold text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/10 transition-colors">
+              <i class="bi bi-eye mr-1"></i>Buka Email Lengkap
+            </button>
+          </div>
+        </div>
+      </div>
+    </each>
+  </div>
+</component>
