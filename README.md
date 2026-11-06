@@ -2,7 +2,7 @@
 
 > Modern, ultra-lightweight, high-performance, single-binary Mail Server written in pure Go with Webmail Portal, Admin Dashboard, SMTP Inbound & Submission, IMAP4rev1 Server, Email Scheduler, Server-Sent Events (SSE), and embedded SQLite WAL storage.
 
-[![Release](https://img.shields.io/badge/release-v1.4.3-blue.svg)](RELEASE_NOTES.md)
+[![Release](https://img.shields.io/badge/release-v1.6.1-blue.svg)](RELEASE_NOTES.md)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Go Report Card](https://img.shields.io/badge/Go-1.26+-00ADD8.svg)](https://go.dev/)
 [![Docker Image Size](https://img.shields.io/badge/docker%20image-~51MB-2496ED.svg)](Dockerfile)
@@ -32,7 +32,9 @@
 - **Super Admin RBAC & Route Protection (v1.4.1)**: Full role-based authentication guarding all Admin Web Views (`/`, `/admin/domains`, `/admin/simulations`, `/admin/logs`, `/admin/settings`) and Admin REST APIs. Includes one-time gated setup protection (`/setup`), dynamic active admin profile topbar, and session logout.
 - **Employee Phishing & Spam Awareness Simulation (v1.4.3)**: Built-in human risk management training platform. Enables security administrators to dispatch controlled phishing simulations, inject encrypted tracking tokens (`/sim/c/:code`), record non-compliance (*NOT PASSED* vs *PASSED*), present mock credential harvesting login portals to gauge credential submission risks, and display instant educational landing pages (*Teachable Moments*). Employees can directly report phishing emails with one click in Webmail to pass the simulation. Includes downloadable CSV audit compliance reports for ISO 27001 / SOC 2.
 - **Bi-Directional Rspamd Bayesian Machine Learning (v1.4.3)**: Automated background learning pipeline for spam and ham classification (`/learnspam` and `/learnham`) based on user email folder actions.
-- **RHUI Template Engine v1.0.4 (v1.4.3)**: Pure-Go component template engine rendering all administrative and webmail views with zero Node.js runtime, high-concurrency atomic snapshotting, loop metadata (`@count`, `@index`), and sub-35µs render latency.
+- **RHUI Template Engine Security & Resilience Hardening (v1.6.1)**: Pure-Go component template engine rendering all administrative and webmail views with zero Node.js runtime, recursion depth guards (`WithMaxRenderDepth(64)`), strict URL allowlists, automatic inline script stripping, and ~15µs render latency.
+- **RFC 5322 Conversation Threading & Inline Quick Reply (v1.6.0)**: Automatic message grouping by `In-Reply-To` and `References` headers, collapsible accordion thread tree (`<ui:ThreadTree />`), and quick inline composer.
+- **Server-Side Full-Text Search & Atomic Fragments (v1.5.0)**: Millisecond debounced search across large mailboxes and modular fragment streaming for infinite scroll.
 - **Inbound Trust & Unknown Domain Warning Banner**: Automatic sender reputation analysis engine (`internal/trust`). Detects first-time external senders, scans payloads for suspicious URLs and attachments, and renders interactive warning banners in Webmail with one-click **"Mark as Trusted / Add to Contacts"** and **"Move to Spam"** actions.
 - **Antivirus & Anti-Spam Filtering (ClamAV & Rspamd)**: Real-time scan of incoming emails via ClamAV INSTREAM socket (blocking malware with `554 5.7.1`) and Rspamd HTTP checks routing spam to `Spam` folders.
 - **Inbound DMARC, SPF & DKIM Verification (RFC 7489 & RFC 8601)**: Strict policy enforcement (`p=reject` / `p=quarantine`) with automatic `Authentication-Results` header generation.

@@ -4,6 +4,51 @@ This document tracks all official releases of **RaHaMail**, highlighting new fea
 
 ---
 
+## 📦 Version 1.6.1 (November 6, 2026) — RHUI Security & Resilience Hardening, Recursion Depth Guard
+
+Version 1.6.1 delivers crucial security hardening and engine resilience updates from **RHUI** (`github.com/suserc0de/rhui`), incorporating recursion depth limits, strict URL allowlists, and automatic inline script blocking in dynamic template bindings.
+
+### 🌟 Release Highlights
+- **Recursion Depth Protection (`WithMaxRenderDepth`)**:
+  - Configured recursion depth limit of 64 levels (`rhui.WithMaxRenderDepth(64)`) to defend against circular component imports or nested macro runaway DoS.
+- **Strict Attribute & URL Scheme Allowlisting**:
+  - Dynamic attribute spreading automatically strips event handler attributes starting with `on*` (`onclick`, `onerror`, `onload`).
+  - Dynamic `href` and `src` attributes now enforce strict safe schemes (`http://`, `https://`, `mailto:`, `tel:`, `sms:`, and relative anchors), defusing malicious pseudo-protocols like `javascript:` or `data:`.
+- **Bounded LRU Expression Cache**:
+  - Thread-safe 4,096-item LRU expression cache prevents high-volume dynamic filter queries from consuming unbounded process memory.
+- **Zero-Race Concurrency Verification**:
+  - Passed all concurrent race-detection test suites (`go test -race ./...`) with sub-20µs SSR benchmark timings.
+
+---
+
+## 📦 Version 1.6.0 (November 5, 2026) — RFC 5322 Conversation Threading & Inline Quick Reply
+
+Version 1.6.0 introduces smart email conversation grouping (*Conversation Threads*), an accordion-style thread tree viewer, and a seamless inline quick reply composer in Webmail.
+
+### 🌟 Release Highlights
+- **RFC 5322 Conversation Thread Aggregation**:
+  - Automatically correlates related emails via `Message-ID`, `In-Reply-To`, and `References` headers into a unified conversation tree.
+- **Collapsible RHUI Thread Tree (`<ui:ThreadTree />`)**:
+  - Modular accordion tree using RHUI v1.0.4 loop metadata: `@first` expands the latest reply, `@last` anchors root context, and `@even`/`@odd` creates zebra hierarchy contrast.
+- **Inline Quick Reply Form**:
+  - Directly reply to email threads without modal disruption, pre-populating recipient, subject, and thread reference headers.
+
+---
+
+## 📦 Version 1.5.0 (November 5, 2026) — Server-Side Full-Text Search (FTS) & Atomic RHUI Fragments
+
+Version 1.5.0 introduces server-side multi-field full-text search, eliminating client-side DOM latency, and breaks down the webmail list into atomic RHUI components with HTML fragment streaming for infinite scroll.
+
+### 🌟 Release Highlights
+- **Server-Side Full-Text Search**:
+  - Debounced server search across subject, sender, recipient, and snippets without full-page reloads.
+- **Atomic RHUI Components**:
+  - Modular `<ui:MailItem />`, `<ui:ScheduledItem />`, and `<ui:MailListFragment />` components.
+- **Fragment Streaming Endpoint**:
+  - Dedicated `GET /api/v1/webmail/messages/fragment` endpoint serving partial HTML fragments and JSON formats.
+
+---
+
 ## 📦 Version 1.4.3 (November 4, 2026) — RHUI v1.0.4 Engine, Webmail Phishing Reporting, Rspamd Bayesian Training & Security Hardening
 
 Version 1.4.3 brings a major UI engine modernization by migrating all SSR views and layouts to **RHUI v1.0.4** (`github.com/suserc0de/rhui`), adding an interactive **"Report Phishing"** workflow in Webmail for employee awareness testing, implementing **automated two-way Bayesian machine learning** with Rspamd, and resolving phishing template preset fetching.

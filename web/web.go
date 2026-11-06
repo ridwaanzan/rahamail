@@ -20,6 +20,7 @@ func GetRHUIEngine() (*rhui.Engine, error) {
 		rhui.WithFS(viewsFS),
 		rhui.WithDir("views"),
 		rhui.WithExtension(".rhui"),
+		rhui.WithMaxRenderDepth(64), // Security & Recursion depth limit hardening
 	)
 }
 
