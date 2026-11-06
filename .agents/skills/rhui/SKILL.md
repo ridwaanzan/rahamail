@@ -315,9 +315,17 @@ func serveSitemap(w http.ResponseWriter, r *http.Request) {
 
 ---
 
-## 8. Best Practices & Troubleshooting
+## 8. Best Practices, Security & Troubleshooting
 
+### Security & Resilience Hardening (v1.0.4 - v1.0.5)
+- **Inline Event Handler Protection**: All attributes starting with `on` (`onclick`, `onerror`, `onload`, `onmouseover`, etc.) are automatically blocked on dynamic attribute spreading (`:attrs="attrs"`).
+- **Strict URL Scheme Allowlist**: Dynamic URL bindings on `href` and `src` only allow safe protocols (`http://`, `https://`, `mailto:`, `tel:`, `sms:`) and relative/anchor paths (`#`, `/`, `./`, `../`, `?`). Pseudo-protocols (`javascript:`, `data:`, `vbscript:`, `blob:`, `file:`) and protocol-relative URIs (`//`) are strictly neutralized to `#unsafe-url`.
+- **Recursion Depth Limit**: Configure `rhui.WithMaxRenderDepth(64)` (default: 64) to guard against circular component recursion and Stack Overflow DoS.
+- **SSE Stream Security**: Configure `sse.WithAllowedOrigin("https://yourdomain.com")` on `sse.NewBroker()` to protect SSE endpoints against open wildcard access.
+- **Bounded Expression Cache**: Internal expression compilation uses a thread-safe LRU cache (default 4,096 items) preventing memory exhaustion (OOM) from dynamic expressions.
+
+### Best Practices & Rules
 - **Never concatenate raw HTML in Go handlers**: Keep UI layout and tag composition inside `.rhui` components; pass clean domain structs or maps from Go.
 - **Always close `<if>` before opening `<else>`**: In RHUI syntax, write `<if test="...">...</if><else>...</else>`.
 - **VS Code Syntax Highlighting**: Add `"files.associations": { "*.rhui": "html" }` in `.vscode/settings.json`.
-- **Concurrency & Thread Safety**: All template ASTs are immutable and safe for concurrent reads across goroutines (`go test -race ./...` clean).
+- **Concurrency & Thread Safety**: All template ASTs and engine states are managed via atomic snapshots (`atomic.Pointer[engineState]`), safe for continuous concurrent `Render()` operations during background `Reload()`.
