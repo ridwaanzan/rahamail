@@ -4,6 +4,19 @@ All notable changes to the **RaHaMail** project will be documented in this file.
 
 ---
 
+## [1.6.1] - 2026-11-06
+
+### Added
+- **RHUI Template Engine Security & Resilience Hardening**:
+  - Upgraded `github.com/suserc0de/rhui` to latest master revision incorporating v1.0.5 resilience features.
+  - Configured recursion depth limit `rhui.WithMaxRenderDepth(64)` in `web/web.go` protecting against circular component recursion and stack exhaustion DoS.
+  - Automatic inline event handler neutralization (`on*` attributes blocked in dynamic attribute bindings).
+  - Strict URL scheme allowlisting for `href` and `src` attributes (disallowing pseudo-protocols `javascript:`, `vbscript:`, `data:`, `blob:`, `file:`, and protocol-relative `//`).
+  - Thread-safe bounded LRU expression cache (4,096 entries) eliminating dynamic expression memory bloat.
+  - Verified atomic snapshot template caching (`atomic.Pointer[engineState]`) with zero-race parallel rendering benchmarks.
+
+---
+
 ## [1.6.0] - 2026-11-05
 
 ### Added
