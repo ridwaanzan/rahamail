@@ -61,7 +61,7 @@
                 </div>
                 <div>
                     <span class="font-extrabold text-lg tracking-tight text-light-text dark:text-white">RaHa<span class="text-cyan-500">Mail</span></span>
-                    <span class="ml-2 px-2 py-0.5 text-[10px] font-bold rounded-full bg-cyan-500/10 text-cyan-500 border border-cyan-500/20">v1.4.3</span>
+                    <span class="ml-2 px-2 py-0.5 text-[10px] font-bold rounded-full bg-cyan-500/10 text-cyan-500 border border-cyan-500/20">v1.6.1</span>
                 </div>
             </div>
 
@@ -91,7 +91,7 @@
         <div class="absolute inset-0 bg-gradient-to-b from-cyan-500/5 via-transparent to-transparent pointer-events-none"></div>
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
             <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 mb-6">
-                <i class="bi bi-shield-check"></i> Version 1.4.3 Released — Template engine RHUI v1.0.4, Phishing Reporting, Rspamd Bayesian Training & SASL LOGIN
+                <i class="bi bi-shield-check"></i> Version 1.6.1 Released — RHUI Security & Resilience Hardening, Conversation Threading & Server FTS
             </div>
             <h1 class="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6">
                 Modern, Autonomous, <br class="hidden sm:inline" />
@@ -350,16 +350,82 @@
 
             <div class="space-y-8 relative before:absolute before:inset-0 before:left-4 sm:before:left-1/2 before:w-0.5 before:bg-light-border dark:before:bg-dark-border">
                 
-                <!-- Release v1.4.3 -->
+                <!-- Release v1.6.1 -->
                 <div class="relative flex flex-col sm:flex-row items-start group">
                     <div class="flex items-center justify-center w-8 h-8 rounded-full bg-cyan-500 text-white font-bold text-xs shadow-lg shadow-cyan-500/30 z-10 sm:mx-auto">
-                        1.4
+                        1.6
                     </div>
                     <div class="mt-4 sm:mt-0 sm:w-1/2 sm:pr-8 sm:text-right">
                         <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/10 text-cyan-500 border border-cyan-500/20 mb-1">
                             Latest Release
                         </div>
-                        <h4 class="text-base font-bold text-light-text dark:text-white">v1.4.3 — RHUI v1.0.4, Phishing Reporting & Rspamd Learning</h4>
+                        <h4 class="text-base font-bold text-light-text dark:text-white">v1.6.1 — RHUI Security &amp; Resilience Hardening</h4>
+                        <span class="text-xs text-light-muted dark:text-dark-muted">November 6, 2026</span>
+                    </div>
+                    <div class="mt-2 sm:mt-0 sm:w-1/2 sm:pl-8">
+                        <div class="p-5 rounded-2xl border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card shadow-sm space-y-2 text-xs">
+                            <p class="font-bold text-cyan-500"><i class="bi bi-shield-lock-fill mr-1"></i> Recursion Depth Limit &amp; DoS Guard:</p>
+                            <p class="text-light-muted dark:text-dark-muted">Configured <code>rhui.WithMaxRenderDepth(64)</code> to prevent stack overflow DoS from circular component imports.</p>
+
+                            <p class="font-bold text-emerald-500 pt-1"><i class="bi bi-shield-check mr-1"></i> Strict URL Scheme &amp; Script Neutralization:</p>
+                            <p class="text-light-muted dark:text-dark-muted">Dynamic attribute spreading automatically blocks event handlers (<code>on*</code>) and neutralizes dangerous pseudo-protocols (<code>javascript:</code>, <code>data:</code>) on <code>href</code>/<code>src</code>.</p>
+
+                            <p class="font-bold text-blue-500 pt-1"><i class="bi bi-memory mr-1"></i> Bounded LRU Cache &amp; Atomic Snapshots:</p>
+                            <p class="text-light-muted dark:text-dark-muted">Added thread-safe 4,096-entry LRU expression cache preventing memory bloat with verified race-free atomic snapshot template rendering.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Release v1.6.0 -->
+                <div class="relative flex flex-col sm:flex-row items-start group">
+                    <div class="flex items-center justify-center w-8 h-8 rounded-full bg-slate-700 text-white font-bold text-xs shadow z-10 sm:mx-auto">
+                        1.6
+                    </div>
+                    <div class="mt-4 sm:mt-0 sm:w-1/2 sm:pr-8 sm:text-right">
+                        <h4 class="text-base font-bold text-light-text dark:text-white">v1.6.0 — Conversation Threading &amp; Quick Reply</h4>
+                        <span class="text-xs text-light-muted dark:text-dark-muted">November 5, 2026</span>
+                    </div>
+                    <div class="mt-2 sm:mt-0 sm:w-1/2 sm:pl-8">
+                        <div class="p-5 rounded-2xl border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card shadow-sm space-y-2 text-xs">
+                            <p class="font-bold text-cyan-500"><i class="bi bi-chat-square-text-fill mr-1"></i> RFC 5322 Thread Aggregation:</p>
+                            <p class="text-light-muted dark:text-dark-muted">Correlates email reply chains via <code>In-Reply-To</code> and <code>References</code> headers into chronological conversation threads.</p>
+
+                            <p class="font-bold text-indigo-500 pt-1"><i class="bi bi-diagram-3-fill mr-1"></i> Collapsible RHUI Thread Tree:</p>
+                            <p class="text-light-muted dark:text-dark-muted">Interactive accordion thread viewer using RHUI loop metadata (<code>@first</code>, <code>@last</code>, <code>@even</code>/<code>@odd</code>) with SSR fragment streaming.</p>
+
+                            <p class="font-bold text-emerald-500 pt-1"><i class="bi bi-reply-all-fill mr-1"></i> Inline Quick Reply Form:</p>
+                            <p class="text-light-muted dark:text-dark-muted">Fast conversational replies without modal dialog disruption, pre-linking thread headers automatically.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Release v1.5.0 -->
+                <div class="relative flex flex-col sm:flex-row items-start group">
+                    <div class="flex items-center justify-center w-8 h-8 rounded-full bg-slate-700 text-white font-bold text-xs shadow z-10 sm:mx-auto">
+                        1.5
+                    </div>
+                    <div class="mt-4 sm:mt-0 sm:w-1/2 sm:pr-8 sm:text-right">
+                        <h4 class="text-base font-bold text-light-text dark:text-white">v1.5.0 — Server-Side FTS &amp; Atomic RHUI Components</h4>
+                        <span class="text-xs text-light-muted dark:text-dark-muted">November 5, 2026</span>
+                    </div>
+                    <div class="mt-2 sm:mt-0 sm:w-1/2 sm:pl-8">
+                        <div class="p-5 rounded-2xl border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card shadow-sm space-y-2 text-xs">
+                            <p class="font-bold text-cyan-500"><i class="bi bi-search mr-1"></i> Server-Side Full-Text Search:</p>
+                            <p class="text-light-muted dark:text-dark-muted">Debounced server search across subject, sender, recipient, and body snippet eliminating DOM overhead.</p>
+
+                            <p class="font-bold text-blue-500 pt-1"><i class="bi bi-puzzle-fill mr-1"></i> Atomic Components &amp; Fragment Streaming:</p>
+                            <p class="text-light-muted dark:text-dark-muted">Modular <code>MailItem</code> and <code>MailListFragment</code> with <code>/api/v1/webmail/messages/fragment</code> for infinite scroll.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Release v1.4.3 -->
+                <div class="relative flex flex-col sm:flex-row items-start group">
+                    <div class="flex items-center justify-center w-8 h-8 rounded-full bg-slate-700 text-white font-bold text-xs shadow z-10 sm:mx-auto">
+                        1.4
+                    </div>
+                    <div class="mt-4 sm:mt-0 sm:w-1/2 sm:pr-8 sm:text-right">
+                        <h4 class="text-base font-bold text-light-text dark:text-white">v1.4.3 — RHUI v1.0.4, Phishing Reporting &amp; Rspamd Learning</h4>
                         <span class="text-xs text-light-muted dark:text-dark-muted">November 4, 2026</span>
                     </div>
                     <div class="mt-2 sm:mt-0 sm:w-1/2 sm:pl-8">
@@ -538,7 +604,7 @@
   -v $(pwd)/data:/var/mail \
   -v $(pwd)/gomail.db:/app/gomail.db \
   --restart unless-stopped \
-  ridwaanzan/rahamail:v1.4.3</pre>
+  ridwaanzan/rahamail:v1.6.1</pre>
             </div>
 
             <!-- Tab 2: Binary -->
